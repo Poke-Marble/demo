@@ -86,15 +86,23 @@ export function validateMap(board: BoardDefinition): MapValidation {
   );
   const byId = new Map(tiles.map((tile) => [tile.id, tile]));
   const memberships = new Map<TileId, number>();
+  const facilityKeys = new Set<string>();
   for (const group of cityGroups) {
     fail(
       group.id.startsWith('group:') && group.nameKo.trim().length > 0,
       `Invalid group metadata: ${group.id}`,
     );
-    fail(group.cityIds.length === 3, `Group must contain three cities: ${group.id}`);
+    fail(
+      group.cityIds.length === 3,
+      `Group must contain three cities: ${group.id}`,
+    );
     fail(
       new Set(group.cityIds).size === group.cityIds.length,
       `Duplicate group member: ${group.id}`,
+    );
+    fail(
+      new Set(group.cityIds.map((id) => byId.get(id)?.side)).size === 1,
+      `Group must stay on one side: ${group.id}`,
     );
     for (const id of group.cityIds) {
       memberships.set(id, (memberships.get(id) ?? 0) + 1);
@@ -114,6 +122,40 @@ export function validateMap(board: BoardDefinition): MapValidation {
       tile.side === a.sideOrder[Math.floor(index / a.slotsPerSide)],
       `Wrong side at index ${index}`,
     );
+    const facility = tile.finalFacility;
+    if (facility) {
+      fail(
+        tile.kind === 'city',
+        `Only cities can have a final facility: ${tile.id}`,
+      );
+      fail(
+        /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(facility.key) &&
+          facility.nameKo.trim().length > 0 &&
+          facility.noteKo.trim().length > 0,
+        `Invalid final facility metadata: ${tile.id}`,
+      );
+      fail(
+        !facilityKeys.has(facility.key),
+        `Duplicate final facility key: ${facility.key}`,
+      );
+      facilityKeys.add(facility.key);
+      fail(
+        facility.basis === 'canonical' || facility.basis === 'board-adaptation',
+        `Invalid final facility basis: ${tile.id}`,
+      );
+      fail(
+        /^https:\/\//.test(facility.sourceUrl),
+        `Missing facility source: ${tile.id}`,
+      );
+      fail(
+        !['bell-tower', 'whirl', 'lugia-trial', 'ho-oh-trial'].includes(
+          facility.key,
+        ) &&
+          !/방울탑|소용돌이섬/.test(facility.nameKo) &&
+          !/\/(Bell_Tower|Whirl_Islands)(?:$|[#?])/.test(facility.sourceUrl),
+        `Trial location reused as final facility: ${tile.id}`,
+      );
+    }
     if (tile.kind === 'special') {
       fail(
         tile.placeKind === 'special' &&
@@ -195,6 +237,11 @@ export function validateMap(board: BoardDefinition): MapValidation {
   }
   for (const side of sides)
     fail(sideTargets[side].length > 0, `Empty side monopoly: ${side}`);
+  for (const side of sides)
+    fail(
+      sideTargets[side].length === 6,
+      `Side must contain six cities: ${side}`,
+    );
   const landmarks = tiles
     .filter((tile) => tile.kind === 'landmark')
     .map((tile) => tile.id);

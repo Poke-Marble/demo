@@ -1,6 +1,6 @@
 // Run: node --experimental-strip-types src/data/maps/kanto-johto.test.ts
 import { kantoJohtoMap } from './kanto-johto.ts';
-import { toMapDefinition } from './types.ts';
+import { constructionStages, toMapDefinition } from './types.ts';
 import type { BoardDefinition, BoardTile } from './types.ts';
 import { assertValidMap, validateMap } from './validate.ts';
 
@@ -39,7 +39,7 @@ test('32 slots, 8 groups, 19 settlements and 4 named landmarks', () => {
     board.tiles
       .filter((tile) => tile.kind === 'landmark')
       .map((tile) => tile.nameKo)
-      .join(',') === '쌍둥이섬,무인발전소,소용돌이섬,방울탑',
+      .join(',') === '무인발전소,쌍둥이섬,소용돌이섬,방울탑',
     'Landmark candidates',
   );
 });
@@ -52,7 +52,7 @@ test('all 56 triples of groups form independent attainable ownership sets', () =
         const chosen = [groups[i]!, groups[j]!, groups[k]!];
         const ids = chosen.flat();
         check(
-          new Set(ids).size === ids.length && ids.length >= 9,
+          new Set(ids).size === ids.length && ids.length === 9,
           'Groups overlap or are empty',
         );
         check(
@@ -147,6 +147,174 @@ test('projection preserves core IDs, group membership and movement order', () =>
   check(
     core.tiles.every((tile) => !('economy' in tile) && !('placeKind' in tile)),
     'Metadata leaked',
+  );
+});
+
+test('travel chapters connect early routes, urban events, Johto clues and the post-League summit', () => {
+  const chapters = [
+    ['pallet', 'viridian', 'pewter'],
+    ['mt-moon', 'cerulean', 'vermilion'],
+    ['lavender', 'celadon', 'saffron'],
+    ['fuchsia', 'safari-kanto', 'cinnabar'],
+    ['new-bark', 'cherrygrove', 'violet'],
+    ['ruins-alph', 'azalea', 'goldenrod'],
+    ['ecruteak', 'olivine', 'mahogany'],
+    ['blackthorn', 'indigo', 'mt-silver'],
+  ];
+  check(
+    board.id === 'map:kanto-johto:v3',
+    'New layout needs a distinct save identity',
+  );
+  chapters.forEach((places, index) => {
+    check(
+      board.cityGroups[index]!.cityIds.join() ===
+        places.map((slug) => `tile:kj:${slug}`).join(),
+      'Travel chapter order',
+    );
+  });
+  for (const side of ['south', 'west', 'north', 'east'] as const) {
+    const groups = board.cityGroups.filter((group) =>
+      group.cityIds.every(
+        (id) => board.tiles.find((tile) => tile.id === id)?.side === side,
+      ),
+    );
+    check(
+      groups.length === 2 &&
+        groups.flatMap((group) => group.cityIds).length === 6,
+      'Two complete groups per line',
+    );
+  }
+  const prices = board.tiles
+    .filter((tile) => tile.side === 'south' && tile.kind === 'city')
+    .map((tile) => tile.economy!.purchasePrice);
+  check(
+    prices.some((price, i) => i > 0 && price < prices[i - 1]!),
+    'Travel order must not be replaced by ascending draft prices',
+  );
+});
+
+test('construction content is diverse, optional, sourced and absent from the core projection', () => {
+  check(
+    constructionStages.map((stage) => stage.key).join() ===
+      'camp,shop,center,final-facility',
+    'Construction display stages',
+  );
+  check(constructionStages[0].marker === 'flag', 'Camp ownership marker');
+  const cities = board.tiles.filter((tile) => tile.kind === 'city');
+  check(
+    cities.every((tile) => tile.finalFacility),
+    'Every current destination has a facility proposal',
+  );
+  check(
+    new Set(cities.map((tile) => tile.finalFacility!.key)).size === 24,
+    'Distinct facility keys',
+  );
+  for (const [slug, key] of [
+    ['pallet', 'oak-lab'],
+    ['new-bark', 'elm-lab'],
+    ['celadon', 'celadon-department-store'],
+    ['saffron', 'silph-head-office'],
+    ['goldenrod', 'goldenrod-radio-tower'],
+    ['olivine', 'olivine-lighthouse'],
+    ['ecruteak', 'ecruteak-dance-theater'],
+  ]) {
+    check(
+      cities.find((tile) => tile.id === `tile:kj:${slug}`)?.finalFacility
+        ?.key === key,
+      'Representative facility',
+    );
+  }
+  check(
+    cities.filter((tile) => tile.finalFacility!.key.endsWith('-gym')).length ===
+      2,
+    'Gyms are not the universal final facility',
+  );
+  check(
+    cities.filter((tile) => tile.finalFacility!.basis === 'board-adaptation')
+      .length === 5,
+    'Creative facilities explicitly distinguished',
+  );
+  check(
+    board.tiles
+      .filter((tile) => tile.kind !== 'city')
+      .every((tile) => !tile.finalFacility),
+    'Noncities have no city facilities',
+  );
+  check(
+    toMapDefinition(board).tiles.every((tile) => !('finalFacility' in tile)),
+    'Core does not depend on art metadata',
+  );
+  const withoutFacilities = {
+    ...board,
+    tiles: board.tiles.map((tile) => {
+      const { finalFacility: ignored, ...rest } = tile;
+      void ignored;
+      return rest;
+    }),
+  };
+  assertValidMap(withoutFacilities);
+});
+
+test('reject malformed, duplicate, unsourced, misplaced or trial-derived final facilities', () => {
+  const facility = board.tiles[1]!.finalFacility!;
+  for (const patch of [{ key: '' }, { nameKo: '' }, { noteKo: '' }]) {
+    rejects(
+      withTile(1, (tile) => ({
+        ...tile,
+        finalFacility: { ...facility, ...patch },
+      })),
+      'Invalid final facility',
+    );
+  }
+  rejects(
+    withTile(2, (tile) => ({ ...tile, finalFacility: facility })),
+    'Duplicate final facility',
+  );
+  rejects(
+    withTile(1, (tile) => ({
+      ...tile,
+      finalFacility: { ...facility, sourceUrl: '' },
+    })),
+    'Missing facility source',
+  );
+  rejects(
+    withTile(7, (tile) => ({ ...tile, finalFacility: facility })),
+    'Only cities',
+  );
+  rejects(
+    withTile(8, (tile) => ({ ...tile, finalFacility: facility })),
+    'Only cities',
+  );
+  rejects(
+    withTile(1, (tile) => ({
+      ...tile,
+      finalFacility: { ...facility, key: 'bell-tower' },
+    })),
+    'Trial location reused',
+  );
+  rejects(
+    withTile(1, (tile) => ({
+      ...tile,
+      finalFacility: {
+        ...facility,
+        sourceUrl: 'https://bulbapedia.bulbagarden.net/wiki/Whirl_Islands',
+      },
+    })),
+    'Trial location reused',
+  );
+  const first = board.cityGroups[0]!;
+  rejects(
+    {
+      ...board,
+      cityGroups: [
+        {
+          ...first,
+          cityIds: [first.cityIds[0]!, first.cityIds[1]!, board.tiles[9]!.id],
+        },
+        ...board.cityGroups.slice(1),
+      ],
+    },
+    'Group must stay on one side',
   );
 });
 test('reject duplicate IDs and names, missing start and wrong dimensions', () => {
