@@ -3,12 +3,17 @@ import gym from '../assets/regional/gym.png';
 import port from '../assets/regional/port.png';
 import tree from '../assets/regional/tree.png';
 import town from '../assets/regional/townhouse.png';
+import { spriteRect } from './billboard';
 import { regionalScene, type ArtTile } from './places';
 
 export { tree as regionalTree };
 const NS = 'http://www.w3.org/2000/svg';
-const image = (url: string, x: number, y: number, w: number, h: number) =>
-  `<image href="${url}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMax meet"/>`;
+const image = (url: string, width: number, height: number) => {
+  const r = spriteRect(width, height);
+  return `<image href="${url}" x="${r.x}" y="${r.y}" width="${r.width}" height="${r.height}" preserveAspectRatio="xMidYMax meet"/>`;
+};
+const fallback =
+  '<path d="M25 77h50v31H25z" fill="#e1d8b6"/><path d="M21 77v-7h58v7z" fill="#527f87"/><path d="M43 88h14v20H43z" fill="#3b586b"/><path d="M29 86h8v8h-8zm34 0h8v8h-8z" fill="#92c7ca"/>';
 const rock = (x: number, y: number) =>
   `<path d="M${x} ${y}h8v-8h16v8h8v16h-32z" fill="#7d8894"/><path d="M${x + 8} ${y}h16v8h-16z" fill="#b9c3c0"/>`;
 const tower = (floors: number) =>
@@ -28,16 +33,16 @@ export function createRegionalFacility(tile: ArtTile, level: number) {
   let art: string;
   switch (scene) {
     case 'center':
-      art = image(center, 0, 35, 100, 70);
+      art = image(center, 160, 96);
       break;
     case 'gym':
-      art = image(gym, 4, 9, 92, 98);
+      art = `<path d="M8 67h84v5H8z" fill="#516f83"/>${image(gym, 160, 80)}`;
       break;
     case 'port':
-      art = `<path d="M2 94h96v18H2z" fill="#69b5cb"/><path d="M8 94h84v4H8zm0 9h84v3H8z" fill="#c2e7dc"/>${image(port, 2, 24, 96, 78)}<path d="M12 104h8v12h-8zm66 0h8v12h-8z" fill="#947455"/>`;
+      art = `<path d="M2 94h96v18H2z" fill="#69b5cb"/><path d="M8 94h84v4H8zm0 9h84v3H8z" fill="#c2e7dc"/>${image(port, 96, 80)}<path d="M12 104h8v12h-8zm66 0h8v12h-8z" fill="#947455"/>`;
       break;
     case 'forest':
-      art = image(tree, 0, 12, 57, 94) + image(tree, 43, 26, 53, 80);
+      art = image(tree, 144, 224);
       break;
     case 'whirl':
       art = `<path d="M0 78h100v30H0z" fill="#438eaf"/><path d="M8 84h76v5H8zm12 12h72v4H20z" fill="#91d5d5"/>${rock(12, 75)}${rock(62, 65)}<path d="M40 87h20v5H40v12h28v-5H49v-4h11v-4H40z" fill="#e0f1db"/>`;
@@ -67,12 +72,38 @@ export function createRegionalFacility(tile: ArtTile, level: number) {
       break;
     case 'power':
       art =
-        image(town, 5, 17, 90, 90) +
+        image(town, 160, 174) +
         `<path d="M68 8h12v46H68z" fill="#8e9ca6"/><path d="M38 65h15l-8 12h10L37 96l6-16H33z" fill="#eed376"/>`;
       break;
     default:
-      art = image(town, 8, 16, 84, 90);
+      art = image(town, 160, 174);
   }
   svg.innerHTML = `<ellipse cx="50" cy="108" rx="39" ry="6" fill="#24445233"/>${art}${level > 0 ? `<path d="M84 84h12v24H84z" fill="#384f68"/>${Array.from({ length: Math.min(3, level) }, (_, i) => `<path d="M87 ${102 - i * 7}h6v4h-6z" fill="#f1cf76"/>`).join('')}` : ''}`;
+  const missing = document.createElementNS(NS, 'g');
+  missing.setAttribute('class', 'pm-asset-fallback');
+  missing.setAttribute('display', 'none');
+  missing.innerHTML =
+    scene === 'forest'
+      ? '<path d="M46 78h8v30h-8z" fill="#8d7857"/><path d="M18 80V46h12V30h40v16h12v34z" fill="#548361"/><path d="M30 46h28v8H30z" fill="#8dbd73"/>'
+      : fallback;
+  svg.append(missing);
+  svg.querySelectorAll('image').forEach((node) => {
+    node.addEventListener(
+      'error',
+      () => {
+        node.remove();
+        missing.removeAttribute('display');
+        svg.dataset.assetStatus = 'fallback';
+      },
+      { once: true },
+    );
+    node.addEventListener(
+      'load',
+      () => {
+        svg.dataset.assetStatus = 'loaded';
+      },
+      { once: true },
+    );
+  });
   return svg;
 }

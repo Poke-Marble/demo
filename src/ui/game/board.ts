@@ -1,3 +1,6 @@
+import { billboard } from './art/billboard';
+import { alignPawnFoot } from './art/pawn-foot';
+import { createArtCredits } from './art/credits';
 import type { PokemonId, TileId } from '../../game/contracts';
 import type { GameView } from './adapter';
 import { boardCells } from './presentation';
@@ -36,17 +39,11 @@ export function createProjectedBoard(options: {
   center.className = 'pm-iso-center';
   const turn = document.createElement('small');
   turn.textContent = `TURN ${view.state.turnNumber}`;
-  const title = document.createElement('strong');
-  title.textContent = '관동 · 성도';
   const dice = document.createElement('span');
   dice.className = 'pm-dice';
   dice.textContent = options.dice;
-  const hint = document.createElement('small');
-  hint.textContent = options.animating
-    ? '다음 마을로 이동 중'
-    : 'Foxowl · TheDeadHeroAlistair · Game Freak · Vurtax · Acanthite Team · Palladium Forums / Kenney';
-  hint.className = 'pm-iso-credits';
-  center.append(turn, title, dice, hint);
+  center.append(turn, dice);
+  board.append(createArtCredits());
   board.append(center);
   view.map.tiles.forEach((tile, index) => {
     const cell = cells[index]!,
@@ -72,24 +69,18 @@ export function createProjectedBoard(options: {
     label.style.maxWidth = `${(g.width / sceneSize.width) * 100}%`;
     board.append(label);
     {
-      const building = document.createElement('button');
-      building.type = 'button';
-      building.tabIndex = -1;
+      const building = document.createElement('span');
       building.setAttribute('aria-hidden', 'true');
       building.className = `pm-iso-facility ${tile.kind === 'landmark' ? 'is-landmark' : ''}`;
       building.title = tile.nameKo + info;
-      building.onclick = () => {
-        tileButton.focus();
-        options.openTile(tile.id);
-      };
       const base = projectWorld(
         cell.row - 1 - 0.18,
         cell.column - 1 - 0.12,
         side,
       );
       atPoint(building, base);
-      building.style.width = `${(Math.min(70, g.width * 0.57) / sceneSize.width) * 100}%`;
-      building.style.height = `${(Math.min(100, g.width * (tile.kind === 'landmark' ? 1.15 : 0.78) + Math.min(3, holding?.facilityLevel ?? 0) * 9) / sceneSize.height) * 100}%`;
+      building.style.width = `${(billboard.width / sceneSize.width) * 100}%`;
+      building.style.height = `${(billboard.height / sceneSize.height) * 100}%`;
       building.append(
         createFacility(tile.kind, holding?.facilityLevel ?? 0, index, tile),
       );
@@ -111,6 +102,7 @@ export function createProjectedBoard(options: {
     shadow.className = 'pm-pawn-shadow';
     const figure = options.sprite(player.pokemonId, positions.has(player.id));
     figure.classList.add('pm-pawn-figure');
+    alignPawnFoot(figure);
     pawn.append(shadow, figure);
     atPoint(pawn, point);
     board.append(pawn);

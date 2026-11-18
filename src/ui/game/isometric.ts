@@ -1,4 +1,5 @@
-import { createRegionalFacility, regionalTree } from './art/regional';
+import { billboard } from './art/billboard';
+import { createRegionalFacility } from './art/regional';
 import type { ArtTile } from './art/places';
 import type { Tile } from '../../game/contracts';
 import {
@@ -83,9 +84,16 @@ export function createIsoTrees(side: number) {
     [0.3, 0.72],
     [0.65, 0.71],
   ].map(([r, c]) => {
-    const node = document.createElement('img');
-    node.src = regionalTree;
-    node.alt = '';
+    const node = document.createElement('span');
+    node.setAttribute('aria-hidden', 'true');
+    node.append(
+      createRegionalFacility(
+        { id: 'tile:art:forest', kind: 'start', visualScene: 'forest' },
+        0,
+      ),
+    );
+    node.style.width = `${(billboard.width / sceneSize.width) * 100}%`;
+    node.style.height = `${(billboard.height / sceneSize.height) * 100}%`;
     node.className = 'pm-iso-tree';
     atPoint(node, projectWorld(r! * side - 0.5, c! * side - 0.5, side));
     return node;

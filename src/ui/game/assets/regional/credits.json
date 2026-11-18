@@ -12,9 +12,9 @@
     },
     {
       "file": "gym.png",
-      "sha256": "b424db72e18131f6d941a96229e45c551042f9bae21732f57e362642bf867cec",
+      "sha256": "64579dbb86d963f2f81c13a54a2be2855ed6e42b7fdb4c8ea3b88b39e8d9b2a0",
       "authors": ["Foxowl", "TheDeadHeroAlistair", "Game Freak"],
-      "crop": [0, 2992, 224, 3232],
+      "crop": [32, 3152, 192, 3232],
       "source": "https://eeveeexpo.com/resources/565/",
       "download": "https://i.imgur.com/eL2B8ix.png",
       "terms": "Free to use with credit to Foxowl and specified people. Not CC0; underlying Game Freak rights remain.",
@@ -22,7 +22,7 @@
     },
     {
       "file": "port.png",
-      "sha256": "c8707250393bf4bf431495f5d0eb39ee75fe6615d363cac486180eb849e04160",
+      "sha256": "16b8bddd6b95fe9c74435d4a1f8e90229f138c8e592b186fdb64f8963e62ad43",
       "authors": [
         "Foxowl",
         "TheDeadHeroAlistair",
@@ -31,7 +31,7 @@
         "Acanthite Team",
         "Palladium Forums"
       ],
-      "crop": [0, 592, 256, 800],
+      "crop": [96, 720, 192, 800],
       "source": "https://eeveeexpo.com/resources/565/",
       "download": "https://i.imgur.com/eL2B8ix.png",
       "terms": "Free to use with credit to Foxowl and specified people. Not CC0; underlying Game Freak rights remain.",
@@ -49,9 +49,9 @@
     },
     {
       "file": "townhouse.png",
-      "sha256": "265a7e1ef15142d7a0febe48f4e134a68b0547dc925207edf11721c200f4351d",
+      "sha256": "ab4c13a67d8606adda751c318695888853e56ba40a9bfcfad4f11748f1cb61cc",
       "authors": ["Foxowl", "TheDeadHeroAlistair", "Game Freak"],
-      "crop": [0, 1104, 160, 1280],
+      "crop": [0, 1106, 160, 1280],
       "source": "https://eeveeexpo.com/resources/565/",
       "download": "https://i.imgur.com/eL2B8ix.png",
       "terms": "Free to use with credit to Foxowl and specified people. Not CC0; underlying Game Freak rights remain.",

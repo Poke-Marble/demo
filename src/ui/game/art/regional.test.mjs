@@ -7,6 +7,7 @@ import { URL } from 'node:url';
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
 const moduleURL = (source) =>
   `data:text/javascript,${encodeURIComponent(stripTypeScriptTypes(source))}`;
+const billboardURL = moduleURL(await read('./billboard.ts'));
 const placesURL = moduleURL(await read('./places.ts'));
 const { regionalScene, scenes } = await import(placesURL);
 test('stable IDs determine places regardless of ordering; unknown tiles stay neutral', () => {
@@ -56,7 +57,8 @@ test('every source/crop matches recorded SHA-256 and records authors and terms',
 test('all scene variants render upright SVGs; upgrades clamp to three marks without stretching sprites', async () => {
   const source = (await read('./regional.ts'))
     .replace(/import (\w+) from '.*?\.png';/g, 'const $1 = "asset.png";')
-    .replace("'./places'", JSON.stringify(placesURL));
+    .replace("'./places'", JSON.stringify(placesURL))
+    .replace("'./billboard'", JSON.stringify(billboardURL));
   const { createRegionalFacility } = await import(moduleURL(source));
   const previous = globalThis.document;
   globalThis.document = {
@@ -67,6 +69,10 @@ test('all scene variants render upright SVGs; upgrades clamp to three marks with
         this.attrs[key] = value;
       },
       innerHTML: '',
+      append() {},
+      querySelectorAll() {
+        return [];
+      },
     }),
   };
   try {
@@ -87,5 +93,22 @@ test('all scene variants render upright SVGs; upgrades clamp to three marks with
     assert.equal(rendered.size, scenes.length);
   } finally {
     globalThis.document = previous;
+  }
+});
+
+test('all source pixels share one scale and exact bottom-center foot', async () => {
+  const { spriteRect } = await import(billboardURL);
+  for (const [w, h] of [
+    [160, 96],
+    [160, 80],
+    [96, 80],
+    [144, 224],
+    [160, 174],
+  ]) {
+    const r = spriteRect(w, h);
+    assert.equal(r.x + r.width / 2, 50);
+    assert.equal(r.y + r.height, 108);
+    assert.equal(r.width / w, 0.5);
+    assert.equal(r.height / h, 0.5);
   }
 });

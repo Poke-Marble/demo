@@ -7,9 +7,10 @@ import { kantoJohtoMap } from '../../../data/maps/kanto-johto';
 import { sampleState } from '../../../data/sample-map';
 import { createInitialRoster } from '../setup';
 import type { GameView } from '../adapter';
+import { findSprite } from '../../../assets/sprites';
 const root = document.querySelector<HTMLElement>('#art-preview')!;
 root.innerHTML =
-  '<h1>관동 · 성도 시설 도감</h1><p>아트 독립 프리뷰 · 실제 맵은 읽기 전용. 아래 모서리 갤러리는 연결 예시이며 규칙을 변경하지 않습니다.</p><p>픽셀 시설: Foxowl / TheDeadHeroAlistair / Game Freak / Vurtax / Acanthite Team / Palladium Forums · 지면: Kenney (CC0)</p><output aria-live="polite">도시를 클릭하거나 Tab → Enter로 선택하세요.</output>';
+  '<output aria-live="polite">도시를 클릭하거나 Tab → Enter로 선택하세요.</output>';
 const participants = createInitialRoster('pokemon:0001');
 const cornerPreview = new URLSearchParams(location.search).has('corners');
 const corners = new Map([
@@ -57,7 +58,12 @@ const view: GameView = {
     turnNumber: 1,
     players: participants.map((p, i) => ({
       ...p,
-      position: map.tiles[[0, 8, 16, 24][i]!]!.id,
+      position:
+        map.tiles[
+          new URLSearchParams(location.search).has('overlap')
+            ? 9
+            : [0, 8, 16, 24][i]!
+        ]!.id,
       balance: 1000,
       bankrupt: false,
     })),
@@ -72,9 +78,13 @@ const board = createProjectedBoard({
   from: new Map(),
   sprite(id) {
     const p = document.createElement('span');
-    p.textContent = ['🌿', '🔥', '💧', '⚡'][
-      participants.findIndex((x) => x.pokemonId === id)
-    ]!;
+    const { animation, url } = findSprite(id, 'Idle');
+    if (animation && url) {
+      p.style.backgroundImage = `url("${url}")`;
+      p.style.width = `${animation.frameWidth}px`;
+      p.style.height = `${animation.frameHeight}px`;
+      p.style.imageRendering = 'pixelated';
+    } else p.textContent = '●';
     return p;
   },
   openTile(id) {
@@ -82,7 +92,16 @@ const board = createProjectedBoard({
       `${map.tiles.find((t) => t.id === id)!.nameKo} · ${id}`;
   },
 });
-root.append(board);
+const viewport = document.createElement('div');
+viewport.className = 'pm-board-area';
+viewport.setAttribute(
+  'aria-label',
+  '보드 영역 · 작은 화면에서는 가로로 스크롤',
+);
+viewport.append(board);
+root.append(viewport);
+if (viewport.clientWidth < board.clientWidth)
+  viewport.scrollLeft = (board.clientWidth - viewport.clientWidth) / 2;
 const gallery = document.createElement('section');
 gallery.className = 'art-gallery';
 gallery.setAttribute('aria-label', '장소별 시설 및 모서리 연결 예시');
