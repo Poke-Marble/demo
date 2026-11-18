@@ -5,7 +5,7 @@ import type {
   MapDefinition,
   PokemonId,
   TileId,
-} from "../../game/contracts";
+} from '../../game/contracts';
 
 export interface LobbyPlayer {
   name: string;
@@ -20,7 +20,7 @@ export interface UIChoice {
 }
 export interface GamePrompt {
   id: string;
-  kind: "purchase" | "upgrade" | "liquidate";
+  kind: 'purchase' | 'upgrade' | 'liquidate';
   title: string;
   description: string;
   choices: readonly UIChoice[];
@@ -39,7 +39,7 @@ export interface UIUpdate {
   view: GameView;
   events: readonly GameEvent[];
   /** Authoritative intermediate positions, including destination. No UI dice math. */
-  movement?: { playerId: GameState["activePlayerId"]; path: readonly TileId[] };
+  movement?: { playerId: GameState['activePlayerId']; path: readonly TileId[] };
 }
 export interface GameUIAdapter {
   readonly demo?: boolean;
