@@ -249,7 +249,7 @@ export function createSpecialEventPresenter(options: {
       });
       dialog.append(
         heading,
-        node('p', '', '규칙에서 전달한 이동 가능 목적지'),
+        node('p', '', '선택 후 확정'),
         list,
         status,
         confirm,

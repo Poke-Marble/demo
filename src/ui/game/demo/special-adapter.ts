@@ -24,8 +24,7 @@ export function createSpecialDemoAdapter() {
     view = {
       ...base.getView(),
       actions: [],
-      computer: { connected: false, status: '특수 연출 격리 데모' },
-      notice: 'DEMO · 사람 1 + COMPUTER 3 · 고정 결과/경제·AI 미연결',
+      computer: { connected: false, status: '대기 중' },
     };
   }
   boot();
@@ -70,7 +69,7 @@ export function createSpecialDemoAdapter() {
         if (!selection.cancellable) return;
         const { flightSelection: _selection, ...rest } = view;
         void _selection;
-        view = { ...rest, notice: 'DEMO · 목적지 선택 취소 · 이동 없음' };
+        view = { ...rest, notice: '비행 취소' };
         publish();
         return;
       }
@@ -91,7 +90,7 @@ export function createSpecialDemoAdapter() {
             i === 0 ? { ...p, position: tileId } : p,
           ),
         },
-        notice: 'DEMO · 착지 확정 / 출발 보상 계산 없음',
+        notice: '착지 완료',
       };
       const fly: SpecialEventRequest = {
         id: `special-demo:${session}:${++serial}`,
@@ -125,9 +124,7 @@ export function createSpecialDemoAdapter() {
             ].map((tile) => ({
               tileId: tile.id,
               label: tile.nameKo,
-              description: flightTrial
-                ? 'DEMO · 착지 후 칠색조 시험 요청'
-                : 'DEMO · 규칙 제공 목적지 예시',
+              ...(flightTrial ? { description: '착지 후 칠색조 시험' } : {}),
             })),
           },
         };
@@ -137,10 +134,9 @@ export function createSpecialDemoAdapter() {
       view = {
         ...view,
         notice: {
-          success:
-            'DEMO · 시험 성공 확정 · 다음 차례 정상 이동 / 가호 수치 미연결',
-          failure: 'DEMO · 시험 실패 확정 · 현재 칸 체류 / 자기 차례 재도전',
-          rope: 'DEMO · 탈출로프 확정 · 보상 없이 종료 / 현재 차례 정상 이동',
+          success: '시험 성공 확정 · 다음 차례 이동',
+          failure: '시험 실패 확정 · 체류 후 재도전',
+          rope: '탈출로프 · 보상 없이 종료 · 현재 차례 이동',
         }[scenario],
       };
       publish([

@@ -46,6 +46,15 @@ export interface GameView {
   prompt?: GamePrompt;
   notice?: string;
   flightSelection?: FlightSelection;
+  /** Extra asset notices supplied by integration; preserve explicit inline terms. */
+  credits?: readonly UICredit[];
+}
+export interface UICredit {
+  id: string;
+  label: string;
+  attribution: string;
+  sourceUrl?: string;
+  requiredInline?: boolean;
 }
 export interface UIUpdate {
   view: GameView;

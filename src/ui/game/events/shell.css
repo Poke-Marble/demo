@@ -1,0 +1,61 @@
+.pm-game.pm-shell .pm-header-setup {
+  justify-content: flex-end;
+}
+.pm-game.pm-shell .pm-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pm-game.pm-shell .pm-credits-button {
+  color: #d3eaed;
+  background: transparent;
+  border: 0;
+  padding: 10px 4px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.pm-game.pm-shell .pm-required-credit {
+  color: #d3eaed;
+  max-width: 1180px;
+  margin: 4px auto;
+  font-size: 12px;
+}
+.pm-game.pm-shell .pm-credits-content {
+  max-height: 55vh;
+  overflow-y: auto;
+  padding: 4px;
+  text-align: left;
+}
+.pm-game.pm-shell .pm-credit-entry {
+  margin-bottom: 18px;
+}
+.pm-game.pm-shell .pm-credit-entry p {
+  margin: 5px 0;
+  font-size: 12px;
+}
+.pm-game.pm-shell .pm-credit-entry a {
+  color: inherit;
+  text-decoration: underline;
+}
+.pm-game.pm-shell .pm-map-vignette {
+  min-height: 44px;
+  height: 44px;
+}
+.pm-game.pm-shell .pm-key-hint {
+  margin-top: 16px;
+}
+.pm-game.pm-shell .pm-setup-steps {
+  margin-bottom: 12px;
+}
+.pm-game.pm-shell .pm-dialogue {
+  min-height: 44px;
+}
+.pm-preview-tools.demo-tools {
+  padding: 8px 16px;
+}
+.pm-preview-tools summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
