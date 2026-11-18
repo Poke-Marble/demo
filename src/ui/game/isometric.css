@@ -89,9 +89,8 @@
   overflow: visible;
   pointer-events: none;
 }
-.pm-iso-facility > .pm-regional-sprite {
-  image-rendering: pixelated;
-  shape-rendering: crispEdges;
+.pm-iso-facility > .pm-construction-model {
+  shape-rendering: geometricPrecision;
 }
 .pm-iso-tree {
   position: absolute;
@@ -103,8 +102,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  image-rendering: pixelated;
-  shape-rendering: crispEdges;
+  shape-rendering: geometricPrecision;
   overflow: visible;
 }
 .pm-art-credits {

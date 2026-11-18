@@ -1,3 +1,5 @@
+import { createConstructionArt } from './art/buildings';
+import type { ConstructionVisual } from './art/construction';
 import { billboard } from './art/billboard';
 import { createRegionalFacility } from './art/regional';
 import type { ArtTile } from './art/places';
@@ -54,14 +56,15 @@ export function placeTile(
 }
 export function createFacility(
   kind: Tile['kind'],
-  level: number,
+  _level: number,
   index: number,
   tile?: ArtTile,
+  construction: ConstructionVisual = { stage: 'unowned' },
 ) {
-  return createRegionalFacility(
-    tile ?? { id: `tile:unknown:${index}`, kind },
-    level,
-  );
+  const visualTile = tile ?? { id: `tile:unknown:${index}`, kind };
+  return kind === 'city'
+    ? createConstructionArt(visualTile, construction)
+    : createRegionalFacility(visualTile);
 }
 export function createIsoGround() {
   const svg = document.createElementNS(NS, 'svg');

@@ -6,7 +6,7 @@ const config = {
   build: {
     outDir: 'artifacts/board-art-bundle',
     assetsInlineLimit: 0,
-    rollupOptions: { input: 'board-art-preview.html' },
+    rollupOptions: { input: ['board-art-preview.html', 'game-preview.html'] },
   },
 };
 if (process.argv.includes('--build')) await build(config);

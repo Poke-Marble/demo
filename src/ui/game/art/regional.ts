@@ -1,109 +1,115 @@
-import center from '../assets/regional/center.png';
-import gym from '../assets/regional/gym.png';
-import port from '../assets/regional/port.png';
-import tree from '../assets/regional/tree.png';
-import town from '../assets/regional/townhouse.png';
-import { spriteRect } from './billboard';
-import { regionalScene, type ArtTile } from './places';
-
-export { tree as regionalTree };
+import { regionalScene, type ArtTile, type RegionalScene } from './places';
+import { box, polygon } from './model-geometry';
+import { createConstructionArt } from './buildings';
 const NS = 'http://www.w3.org/2000/svg';
-const image = (url: string, width: number, height: number) => {
-  const r = spriteRect(width, height);
-  return `<image href="${url}" x="${r.x}" y="${r.y}" width="${r.width}" height="${r.height}" preserveAspectRatio="xMidYMax meet"/>`;
-};
-const fallback =
-  '<path d="M25 77h50v31H25z" fill="#e1d8b6"/><path d="M21 77v-7h58v7z" fill="#527f87"/><path d="M43 88h14v20H43z" fill="#3b586b"/><path d="M29 86h8v8h-8zm34 0h8v8h-8z" fill="#92c7ca"/>';
-const rock = (x: number, y: number) =>
-  `<path d="M${x} ${y}h8v-8h16v8h8v16h-32z" fill="#7d8894"/><path d="M${x + 8} ${y}h16v8h-16z" fill="#b9c3c0"/>`;
-const tower = (floors: number) =>
-  Array.from({ length: floors }, (_, i) => {
-    const y = 79 - i * 18,
-      w = 46 - i * 6;
-    return `<path d="M${50 - w / 2} ${y}h${w}v17h-${w}z" fill="#c99568"/><path d="M${50 - w / 2 + 6} ${y}h4v17h-4zm${w - 16} 0h4v17h-4z" fill="#70525b"/><path d="M${44 - w / 2} ${y}h${w + 12}v-4h-6v-4h-${w}v4h-6z" fill="#506e83"/><path d="M${50 - w / 2} ${y - 7}h${w}v3h-${w}z" fill="#91b0ac"/>`;
-  }).join('');
-export function createRegionalFacility(tile: ArtTile, level: number) {
-  const scene = regionalScene(tile);
+const foliage = ['#93ba81', '#689269', '#456f60'] as const;
+const stone = ['#bdc5bc', '#8d9f9d', '#697f89'] as const;
+const roof = ['#8caeab', '#63858c', '#496c7f'] as const;
+export function createSceneryArt(scene: RegionalScene) {
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 100 120');
-  svg.setAttribute('preserveAspectRatio', 'xMidYMax meet');
+  svg.setAttribute('class', 'pm-construction-model pm-scenery-model');
   svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('class', 'pm-regional-sprite');
   svg.dataset.scene = scene;
-  let art: string;
+  let art = polygon(
+    [
+      [-20, -17, 0],
+      [21, -17, 0],
+      [21, 18, 0],
+      [-20, 18, 0],
+    ],
+    '#304b55',
+    0.18,
+  );
   switch (scene) {
-    case 'center':
-      art = image(center, 160, 96);
-      break;
-    case 'gym':
-      art = `<path d="M8 67h84v5H8z" fill="#516f83"/>${image(gym, 160, 80)}`;
-      break;
-    case 'port':
-      art = `<path d="M2 94h96v18H2z" fill="#69b5cb"/><path d="M8 94h84v4H8zm0 9h84v3H8z" fill="#c2e7dc"/>${image(port, 96, 80)}<path d="M12 104h8v12h-8zm66 0h8v12h-8z" fill="#947455"/>`;
-      break;
     case 'forest':
-      art = image(tree, 144, 224);
+      art +=
+        box(-3, -3, 6, 6, 23, ['#b9a47f', '#998364', '#7d755d']) +
+        box(-15, -13, 30, 26, 12, foliage, 17) +
+        box(-11, -9, 22, 18, 12, foliage, 29) +
+        box(-6, -5, 12, 10, 8, foliage, 41);
       break;
     case 'whirl':
-      art = `<path d="M0 78h100v30H0z" fill="#438eaf"/><path d="M8 84h76v5H8zm12 12h72v4H20z" fill="#91d5d5"/>${rock(12, 75)}${rock(62, 65)}<path d="M40 87h20v5H40v12h28v-5H49v-4h11v-4H40z" fill="#e0f1db"/>`;
+      art += box(-21, -18, 42, 36, 1, ['#80bdc9', '#548ba4', '#3a6f90']);
+      art += box(-18, -13, 12, 13, 13, stone) + box(8, -7, 11, 12, 18, stone);
+      for (let i = 0; i < 3; i++)
+        art += polygon(
+          [
+            [-9 + i * 3, -1 + i * 3, 2],
+            [5 + i * 2, -1 + i * 3, 2],
+            [5 + i * 2, 2 + i * 3, 2],
+            [-9 + i * 3, 2 + i * 3, 2],
+          ],
+          '#d2e7df',
+        );
       break;
     case 'bell':
-      art =
-        tower(4) +
-        `<path d="M48 9h4v-7h-4z" fill="#efcb68"/><path d="M43 14h14v7H43z" fill="#e4b957"/>`;
-      break;
-    case 'shrine':
-      art =
-        tower(2) +
-        `<path d="M14 81h5v28h-5zm67 0h5v28h-5zM9 77h82v6H9z" fill="#a7615f"/>`;
+      for (let i = 0; i < 4; i++) {
+        const size = 28 - i * 4,
+          z = i * 13;
+        art +=
+          box(
+            -size / 2,
+            -size / 2,
+            size,
+            size,
+            12,
+            ['#e3c18b', '#be966b', '#957e70'],
+            z,
+          ) +
+          box(
+            -size / 2 - 3,
+            -size / 2 - 3,
+            size + 6,
+            size + 6,
+            3,
+            roof,
+            z + 12,
+          );
+      }
+      art += box(-2, -2, 4, 4, 6, ['#f3d88e', '#d8b765', '#aa935d'], 57);
       break;
     case 'fly':
-      art = `<path d="M6 97h88v12H6z" fill="#c2cbb2"/><path d="M47 47h6v50h-6z" fill="#6c7d83"/><path d="M53 49h30v7H53zm0 11h22v7H53z" fill="#dd986b"/><path d="M16 91h18v4H16zm50 0h18v4H66z" fill="#f3edce"/><path d="M21 35h18v5H21zm18 5h22v5H39zm22-5h18v5H61z" fill="#f3edce"/>`;
+      art +=
+        box(-20, -17, 40, 34, 2, ['#d6d9bf', '#a9bda9', '#8eaaa4']) +
+        box(-2, -2, 4, 4, 38, stone) +
+        box(0, -1, 17, 3, 5, ['#e9c787', '#d0a16e', '#ad8068'], 30) +
+        polygon(
+          [
+            [-11, 5, 3],
+            [-1, 5, 3],
+            [-1, 1, 3],
+            [10, 9, 3],
+            [-1, 16, 3],
+            [-1, 12, 3],
+            [-11, 12, 3],
+          ],
+          '#f2ecd0',
+        );
       break;
     case 'start':
-      art = `<path d="M8 96h84v12H8z" fill="#d8cba1"/><path d="M20 56h7v40h-7zm53 0h7v40h-7zM14 50h72v9H14z" fill="#ae605c"/><path d="M21 47h58v4H21z" fill="#f2c573"/><path d="M43 63h14v14H43z" fill="#f8f0d5"/><path d="M43 63h14v6H43z" fill="#ce7164"/>`;
-      break;
-    case 'mountain':
-      art =
-        rock(9, 78) +
-        rock(34, 53) +
-        rock(60, 77) +
-        `<path d="M43 81h17v23H43z" fill="#465467"/>`;
+      art +=
+        box(-19, -13, 38, 26, 2, stone) +
+        box(-15, 0, 4, 4, 31, stone) +
+        box(11, 0, 4, 4, 31, stone) +
+        box(-18, -2, 36, 8, 5, ['#f0cc88', '#d0a170', '#ac7e66'], 31);
       break;
     case 'power':
-      art =
-        image(town, 160, 174) +
-        `<path d="M68 8h12v46H68z" fill="#8e9ca6"/><path d="M38 65h15l-8 12h10L37 96l6-16H33z" fill="#eed376"/>`;
+      art +=
+        box(-15, -12, 29, 24, 20, stone) +
+        box(-16, -13, 31, 26, 4, roof, 20) +
+        box(6, -9, 5, 5, 16, stone, 24);
       break;
     default:
-      art = image(town, 160, 174);
+      art += box(-14, -11, 15, 15, 16, stone) + box(4, 1, 12, 12, 10, stone);
   }
-  svg.innerHTML = `<ellipse cx="50" cy="108" rx="39" ry="6" fill="#24445233"/>${art}${level > 0 ? `<path d="M84 84h12v24H84z" fill="#384f68"/>${Array.from({ length: Math.min(3, level) }, (_, i) => `<path d="M87 ${102 - i * 7}h6v4h-6z" fill="#f1cf76"/>`).join('')}` : ''}`;
-  const missing = document.createElementNS(NS, 'g');
-  missing.setAttribute('class', 'pm-asset-fallback');
-  missing.setAttribute('display', 'none');
-  missing.innerHTML =
-    scene === 'forest'
-      ? '<path d="M46 78h8v30h-8z" fill="#8d7857"/><path d="M18 80V46h12V30h40v16h12v34z" fill="#548361"/><path d="M30 46h28v8H30z" fill="#8dbd73"/>'
-      : fallback;
-  svg.append(missing);
-  svg.querySelectorAll('image').forEach((node) => {
-    node.addEventListener(
-      'error',
-      () => {
-        node.remove();
-        missing.removeAttribute('display');
-        svg.dataset.assetStatus = 'fallback';
-      },
-      { once: true },
-    );
-    node.addEventListener(
-      'load',
-      () => {
-        svg.dataset.assetStatus = 'loaded';
-      },
-      { once: true },
-    );
-  });
+  svg.innerHTML = art;
   return svg;
+}
+/** Compatibility wrapper; city ownership must be supplied through createConstructionArt. */
+export function createRegionalFacility(tile: ArtTile, _level = 0) {
+  void _level;
+  return tile.kind === 'city'
+    ? createConstructionArt(tile, { stage: 'unowned' })
+    : createSceneryArt(regionalScene(tile));
 }

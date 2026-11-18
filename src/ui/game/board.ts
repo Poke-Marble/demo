@@ -1,6 +1,15 @@
-import { billboard } from './art/billboard';
+import { modelPlacement } from './art/model-geometry';
+import {
+  constructionFromHolding,
+  type ConstructionVisual,
+  type BuildingMetadata,
+} from './art/construction';
 import { alignPawnFoot } from './art/pawn-foot';
 import { createArtCredits } from './art/credits';
+import {
+  animateConstruction,
+  shouldAnimateConstruction,
+} from './art/buildings';
 import type { PokemonId, TileId } from '../../game/contracts';
 import type { GameView } from './adapter';
 import { boardCells } from './presentation';
@@ -12,13 +21,7 @@ import {
   createTileFaces,
   placeTile,
 } from './isometric';
-import {
-  depthOrder,
-  pawnFoot,
-  projectWorld,
-  sceneSize,
-  tileGeometry,
-} from './projection';
+import { depthOrder, pawnFoot, sceneSize, tileGeometry } from './projection';
 
 export function createProjectedBoard(options: {
   view: GameView;
@@ -28,6 +31,9 @@ export function createProjectedBoard(options: {
   from: ReadonlyMap<string, TileId>;
   sprite(id: PokemonId, walk?: boolean): HTMLElement;
   openTile(id: TileId): void;
+  construction?: ReadonlyMap<TileId, ConstructionVisual>;
+  previousConstruction?: ReadonlyMap<TileId, ConstructionVisual>;
+  visualMetadata?: ReadonlyMap<TileId, BuildingMetadata>;
 }) {
   const { view, positions, from } = options;
   const board = document.createElement('div');
@@ -54,7 +60,13 @@ export function createProjectedBoard(options: {
     tileButton.dataset.focus = tile.id;
     tileButton.dataset.tileId = tile.id;
     const holding = view.state.holdings.find((h) => h.tileId === tile.id);
-    const info = holding ? ` · 시설 ${holding.facilityLevel}단계` : '';
+    const visual =
+      options.construction?.get(tile.id) ??
+      constructionFromHolding(
+        holding,
+        view.state.players.findIndex((p) => p.id === holding?.ownerId),
+      );
+    const info = tile.kind === 'city' ? ` · ${visual.stage}` : '';
     tileButton.setAttribute('aria-label', tile.nameKo + info);
     tileButton.title = tile.nameKo + info;
     tileButton.onclick = () => options.openTile(tile.id);
@@ -73,17 +85,28 @@ export function createProjectedBoard(options: {
       building.setAttribute('aria-hidden', 'true');
       building.className = `pm-iso-facility ${tile.kind === 'landmark' ? 'is-landmark' : ''}`;
       building.title = tile.nameKo + info;
-      const base = projectWorld(
-        cell.row - 1 - 0.18,
-        cell.column - 1 - 0.12,
-        side,
-      );
-      atPoint(building, base);
-      building.style.width = `${(billboard.width / sceneSize.width) * 100}%`;
-      building.style.height = `${(billboard.height / sceneSize.height) * 100}%`;
+      const placement = modelPlacement(g);
+      atPoint(building, placement, depthOrder({ x: g.x, y: placement.depthY }));
+      building.style.width = `${(placement.width / sceneSize.width) * 100}%`;
+      building.style.height = `${(placement.height / sceneSize.height) * 100}%`;
+      building.dataset.tileId = tile.id;
       building.append(
-        createFacility(tile.kind, holding?.facilityLevel ?? 0, index, tile),
+        createFacility(
+          tile.kind,
+          holding?.facilityLevel ?? 0,
+          index,
+          { ...tile, ...options.visualMetadata?.get(tile.id) },
+          visual,
+        ),
       );
+      if (
+        tile.kind === 'city' &&
+        shouldAnimateConstruction(
+          options.previousConstruction?.get(tile.id),
+          visual,
+        )
+      )
+        animateConstruction(building.firstElementChild!);
       board.append(building);
     }
   });

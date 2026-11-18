@@ -1,5 +1,7 @@
 # Regional pixel assets
 
+현재 렌더에서는 아래 평면 PNG를 사용하지 않는다. 후속 공통 투영 건축 세트로 교체했으며, 이전 커밋의 출처·조건·해시 기록 보존을 위해 파일을 유지한다. 현재 건설 상태 API와 채택 판단은 `../../art/construction-models.md`를 참고한다. 새 건축·수목은 외부 비트맵이 아닌 repo-native SVG 코드다.
+
 2026-11-18 원문 확인: https://eeveeexpo.com/resources/565/ — Foxowl, “Public Gen 3 Tiles!” (2021-02-28).
 
 원문 사용 조건: “Enjoy, they're free to use (with credit to me and the people I specified).”
