@@ -3,13 +3,21 @@ import type {
   GameEvent,
   GameState,
   MapDefinition,
+  MapId,
+  PlayerId,
   PokemonId,
   TileId,
 } from '../../game/contracts';
 
-export interface LobbyPlayer {
+export interface SetupParticipant {
+  id: PlayerId;
   name: string;
   pokemonId: PokemonId;
+  controller: 'human' | 'computer';
+}
+export interface GameSetup {
+  mapId: MapId;
+  participants: readonly SetupParticipant[];
 }
 export interface UIChoice {
   id: string;
@@ -30,6 +38,8 @@ export interface GameView {
   state: GameState;
   map: MapDefinition;
   mapName: string;
+  participants: readonly SetupParticipant[];
+  computer: { connected: boolean; status: string };
   /** Authoritative available actions; UI never infers legality from balances. */
   actions: readonly UIChoice[];
   prompt?: GamePrompt;
@@ -46,7 +56,9 @@ export interface GameUIAdapter {
   getView(): GameView;
   subscribe(listener: (update: UIUpdate) => void): () => void;
   dispatch(action: GameAction): void | Promise<void>;
-  start(players: readonly LobbyPlayer[]): void | Promise<void>;
+  start(setup: GameSetup): void | Promise<void>;
   choose(promptId: string, choiceId: string): void | Promise<void>;
   restart(): void | Promise<void>;
+  /** Delegates the entire computer turn to the integration layer, never UI rules. */
+  runComputerTurn?(playerId: PlayerId, signal: AbortSignal): Promise<void>;
 }
