@@ -44,7 +44,8 @@ export function createProjectedBoard(options: {
   const hint = document.createElement('small');
   hint.textContent = options.animating
     ? '다음 마을로 이동 중'
-    : 'Tiny Town · Kenney · CC0';
+    : 'Foxowl · TheDeadHeroAlistair · Game Freak · Vurtax · Acanthite Team · Palladium Forums / Kenney';
+  hint.className = 'pm-iso-credits';
   center.append(turn, title, dice, hint);
   board.append(center);
   view.map.tiles.forEach((tile, index) => {
@@ -70,7 +71,7 @@ export function createProjectedBoard(options: {
     atPoint(label, { x: g.x, y: g.y + g.height / 2 + g.thickness + 8 }, 20000);
     label.style.maxWidth = `${(g.width / sceneSize.width) * 100}%`;
     board.append(label);
-    if (tile.kind !== 'start') {
+    {
       const building = document.createElement('button');
       building.type = 'button';
       building.tabIndex = -1;
@@ -90,15 +91,9 @@ export function createProjectedBoard(options: {
       building.style.width = `${(Math.min(70, g.width * 0.57) / sceneSize.width) * 100}%`;
       building.style.height = `${(Math.min(100, g.width * (tile.kind === 'landmark' ? 1.15 : 0.78) + Math.min(3, holding?.facilityLevel ?? 0) * 9) / sceneSize.height) * 100}%`;
       building.append(
-        createFacility(tile.kind, holding?.facilityLevel ?? 0, index),
+        createFacility(tile.kind, holding?.facilityLevel ?? 0, index, tile),
       );
       board.append(building);
-    } else {
-      const start = document.createElement('span');
-      start.className = 'pm-iso-start';
-      start.textContent = 'START';
-      atPoint(start, g, 20001);
-      board.append(start);
     }
   });
   view.state.players.forEach((player, seat) => {

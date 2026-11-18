@@ -85,6 +85,10 @@
   overflow: visible;
   pointer-events: visiblePainted;
 }
+.pm-iso-facility > .pm-regional-sprite {
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+}
 .pm-game .pm-iso-facility:hover:not(:disabled) {
   transform: translate(-50%, -100%);
   filter: brightness(1.12) drop-shadow(2px 4px 1px #253f4655);
@@ -159,6 +163,12 @@
   letter-spacing: 1px;
   white-space: nowrap;
 }
+.pm-iso-center > .pm-iso-credits {
+  max-width: 26cqw;
+  white-space: normal;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
 .pm-iso-center .pm-dice {
   font-size: clamp(14px, 2.8cqw, 25px);
   min-width: 30px;
@@ -182,9 +192,6 @@
   }
   .pm-iso-center {
     gap: 1px;
-  }
-  .pm-iso-center > small:last-child {
-    display: none;
   }
 }
 @media (min-width: 901px) {
