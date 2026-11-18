@@ -1,12 +1,7 @@
 import { findSprite } from '../../assets/sprites';
-import type {
-  GameEvent,
-  Player,
-  PokemonId,
-  TileId,
-} from '../../game/contracts';
+import type { GameEvent, PokemonId, TileId } from '../../game/contracts';
 import type { GameUIAdapter, UIChoice, UIUpdate } from './adapter';
-import { boardCells } from './presentation';
+import { createProjectedBoard } from './board';
 import {
   startingPartners as partners,
   createInitialRoster,
@@ -14,6 +9,7 @@ import {
 } from './setup';
 import { createWorldScenery } from './scenery';
 import './game.css';
+import './isometric.css';
 export type {
   GameUIAdapter,
   GameView,
@@ -84,6 +80,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     durations: readonly number[];
   }[] = [];
   const offsets = new Map<string, TileId>();
+  const movementFrom = new Map<string, TileId>();
   const waiters = new Map<ReturnType<typeof setTimeout>, () => void>();
   const sleep = (ms: number) =>
     new Promise<void>((resolve) => {
@@ -341,13 +338,6 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       el('p', 'pm-key-hint', '선택 Tab  ·  결정 Enter  ·  이전 화면 Esc'),
     );
   }
-  function token(p: Player, i: number) {
-    const t = el('span', `pm-token pm-player-${i}`);
-    t.title = p.name;
-    t.setAttribute('aria-label', p.name);
-    t.append(sprite(p.pokemonId, offsets.has(p.id)));
-    return t;
-  }
   function render() {
     if (disposed) return;
     const focused =
@@ -384,66 +374,28 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     }
     const layout = el('main', 'pm-layout');
     const boardArea = el('section', 'pm-board-area');
-    const { side, cells } = boardCells(view.map.tiles.length);
-    boardArea.append(el('p', 'pm-map-label', `▶ ${view.mapName}`));
-    const board = el('div', 'pm-board');
-    board.setAttribute('aria-label', '게임 보드');
-    board.style.gridTemplateColumns = `repeat(${side}, 1fr)`;
-    board.style.gridTemplateRows = `repeat(${side}, 1fr)`;
-    board.append(createWorldScenery());
-    const center = el('div', 'pm-board-center');
-    center.style.gridArea = `2 / 2 / ${side} / ${side}`;
-    center.append(
-      el('span', 'pm-eyebrow', `TURN ${view.state.turnNumber}`),
-      el('strong', 'pm-map-logo', '관동 · 성도'),
-      el('span', 'pm-dice', dice),
-      el(
-        'small',
-        '',
-        animating ? '다음 마을로 이동 중' : '우리의 모험이 이어지는 곳',
-      ),
-    );
-    if (side > 2) board.append(center);
-    view.map.tiles.forEach((tile, index) => {
-      const cell = cells[index]!;
-      const b = button(
-        '',
-        () => {
-          const holding = view.state.holdings.find((h) => h.tileId === tile.id);
-          modal(
-            tile.nameKo,
-            holding
-              ? `${view.state.players.find((p) => p.id === holding.ownerId)?.name ?? '소유자'} · 시설 ${holding.facilityLevel}단계`
-              : '소유 정보 없음',
-            [],
-            true,
-          );
-        },
-        `pm-tile pm-${tile.kind}`,
-      );
-      b.dataset.focus = tile.id;
-      b.style.gridRow = String(cell.row);
-      b.style.gridColumn = String(cell.column);
-      b.append(el('span', 'pm-tile-name', tile.nameKo));
-      const art = el('span', `pm-tile-art pm-art-${index % 3}`);
-      art.setAttribute('aria-hidden', 'true');
-      b.append(art);
-      const holding = view.state.holdings.find((h) => h.tileId === tile.id);
-      if (holding)
-        b.append(
-          el(
-            'small',
-            '',
-            `${view.state.players.find((p) => p.id === holding.ownerId)?.name ?? ''} · Lv.${holding.facilityLevel}`,
-          ),
+    const mapLabel = el('p', 'pm-map-label', view.mapName);
+    boardArea.append(mapLabel);
+    const board = createProjectedBoard({
+      view,
+      dice,
+      animating,
+      positions: offsets,
+      from: movementFrom,
+      sprite,
+      openTile(tileId) {
+        const tile = view.map.tiles.find((t) => t.id === tileId)!;
+        const holding = view.state.holdings.find((h) => h.tileId === tileId);
+        const owner = view.state.players.find((p) => p.id === holding?.ownerId);
+        modal(
+          tile.nameKo,
+          holding
+            ? (owner?.name ?? '') + ' / Lv.' + holding.facilityLevel
+            : tile.nameKo,
+          [],
+          true,
         );
-      const tokens = el('span', 'pm-tokens');
-      view.state.players.forEach((p, i) => {
-        if (!p.bankrupt && (offsets.get(p.id) ?? p.position) === tile.id)
-          tokens.append(token(p, i));
-      });
-      b.append(tokens);
-      board.append(b);
+      },
     });
     boardArea.append(board);
     layout.append(boardArea);
@@ -717,13 +669,26 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       !matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       animating = true;
+      const previous = update.events.find(
+        (event) =>
+          event.type === 'player-moved' &&
+          event.playerId === update.movement?.playerId,
+      );
+      let previousTile =
+        previous?.type === 'player-moved'
+          ? previous.from
+          : update.movement.path[0];
       for (const tile of update.movement.path) {
         if (disposed || current !== generation) break;
+        if (previousTile)
+          movementFrom.set(update.movement.playerId, previousTile);
         offsets.set(update.movement.playerId, tile);
         render();
-        await sleep(180);
+        await sleep(230);
+        previousTile = tile;
       }
       offsets.clear();
+      movementFrom.clear();
       animating = false;
     }
     render();

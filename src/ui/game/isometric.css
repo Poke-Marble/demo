@@ -1,0 +1,198 @@
+/* Screen-space orthographic scene: only terrain is projected, never the HUD. */
+.pm-board.pm-board-iso {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1000/720;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  isolation: isolate;
+  overflow: visible;
+  container-type: inline-size;
+}
+.pm-iso-ground {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 16px 14px #041b2c44);
+}
+.pm-iso-tile {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+  filter: drop-shadow(0 3px 1px #314c5b25);
+}
+.pm-iso-tile > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.pm-game .pm-board-iso .pm-iso-tile:hover:not(:disabled),
+.pm-game .pm-board-iso .pm-iso-tile:active:not(:disabled) {
+  transform: none;
+  filter: brightness(1.12) drop-shadow(0 3px 2px #233c4a55);
+}
+.pm-iso-tile:focus-visible {
+  outline: none;
+}
+.pm-iso-tile:focus-visible .pm-face-top {
+  stroke: #ffc562;
+  stroke-width: 5;
+}
+.pm-iso-tile:focus-visible ~ .pm-iso-label {
+  opacity: 1;
+}
+.pm-iso-label {
+  position: absolute;
+  transform: translate(-50%, 0);
+  font-size: clamp(6px, 1.1cqw, 10px);
+  line-height: 1.25;
+  font-weight: 700;
+  color: #e7f1e3;
+  background: #173a4dd9;
+  border-radius: 4px;
+  padding: 2px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  text-shadow: 0 1px #0a293b;
+}
+.pm-iso-facility {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 0;
+  border: 0;
+  background: none;
+  pointer-events: none;
+  filter: drop-shadow(2px 4px 1px #253f4630);
+}
+.pm-iso-facility > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: visiblePainted;
+}
+.pm-game .pm-iso-facility:hover:not(:disabled) {
+  transform: translate(-50%, -100%);
+  filter: brightness(1.12) drop-shadow(2px 4px 1px #253f4655);
+}
+.pm-iso-tree {
+  position: absolute;
+  width: 4%;
+  height: auto;
+  transform: translate(-50%, -100%);
+  image-rendering: pixelated;
+  pointer-events: none;
+  filter: drop-shadow(3px 4px 1px #2a574544);
+}
+.pm-iso-pawn {
+  position: absolute;
+  width: 4.4%;
+  height: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.pm-pawn-shadow {
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: clamp(4px, 1cqw, 9px);
+  border-radius: 50%;
+  background: #203b4a66;
+  box-shadow: 0 1px 1px #1a344b33;
+  transform: translateX(-50%);
+}
+.pm-pawn-figure {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-50%) scale(var(--pawn-scale, 1.15));
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 1px #e4e9be);
+  will-change: translate;
+}
+.pm-iso-start {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: #8a6c44;
+  font-size: clamp(6px, 1.3cqw, 11px);
+  font-weight: 900;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+.pm-iso-center {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+  z-index: 18000;
+  color: #395f59;
+  text-shadow: 0 1px #e7efd0;
+}
+.pm-iso-center > strong {
+  font-size: clamp(14px, 3cqw, 28px);
+  letter-spacing: 3px;
+  white-space: nowrap;
+}
+.pm-iso-center > small {
+  font-size: clamp(6px, 1.1cqw, 10px);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.pm-iso-center .pm-dice {
+  font-size: clamp(14px, 2.8cqw, 25px);
+  min-width: 30px;
+  margin: 3px 0;
+  padding: 0 6px;
+}
+@container (max-width:540px) {
+  .pm-pawn-figure {
+    --pawn-scale: 0.85;
+  }
+  .pm-iso-tree {
+    width: 4.5%;
+  }
+  .pm-iso-label {
+    padding: 1px 2px;
+  }
+}
+@container (max-width:380px) {
+  .pm-pawn-figure {
+    --pawn-scale: 0.6;
+  }
+  .pm-iso-center {
+    gap: 1px;
+  }
+  .pm-iso-center > small:last-child {
+    display: none;
+  }
+}
+@media (min-width: 901px) {
+  .pm-board-area:has(.pm-board-iso) {
+    align-self: center;
+  }
+  .pm-layout:has(.pm-board-iso) {
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 14px;
+  }
+}

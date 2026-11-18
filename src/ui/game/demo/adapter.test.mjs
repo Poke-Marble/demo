@@ -16,12 +16,16 @@ const source = await readFile(new URL('./adapter.ts', import.meta.url), 'utf8');
 const setupURL = moduleURL(
   await readFile(new URL('../setup.ts', import.meta.url), 'utf8'),
 );
+const projectionMapURL = moduleURL(
+  await readFile(new URL('./projection-map.ts', import.meta.url), 'utf8'),
+);
 const { createInitialRoster } = await import(setupURL);
 const { createDemoAdapter } = await import(
   moduleURL(
     source
       .replaceAll('../../../data/sample-map', sampleURL)
-      .replaceAll('../setup', setupURL),
+      .replaceAll('../setup', setupURL)
+      .replaceAll('./projection-map', projectionMapURL),
   )
 );
 
@@ -99,5 +103,39 @@ test('computer execution honours abort and rejects stale player IDs', async () =
     adapter.getView().state,
     before,
     'aborted execution must not move or end turn',
+  );
+});
+
+test('32-cell showcase publishes every intermediate waypoint instead of jumping corners', () => {
+  const adapter = createDemoAdapter({
+    boardSize: 32,
+    showcase: true,
+    movementSteps: 3,
+  });
+  let update;
+  adapter.subscribe((u) => {
+    update = u;
+  });
+  adapter.start({
+    mapId: adapter.getView().map.id,
+    participants: createInitialRoster('pokemon:0001'),
+  });
+  const view = adapter.getView();
+  assert.equal(view.map.tiles.length, 32);
+  assert.deepEqual(
+    view.state.players.map((p) =>
+      view.map.tiles.findIndex((t) => t.id === p.position),
+    ),
+    [0, 7, 16, 24],
+  );
+  assert.ok(view.state.holdings.some((h) => h.facilityLevel === 3));
+  adapter.dispatch({ type: 'roll-dice', playerId: view.state.activePlayerId });
+  assert.deepEqual(
+    update.movement.path,
+    view.map.tiles.slice(0, 4).map((t) => t.id),
+  );
+  assert.equal(
+    adapter.getView().state.players[0].position,
+    view.map.tiles[3].id,
   );
 });

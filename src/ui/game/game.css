@@ -19,9 +19,8 @@
 .pm-game * {
   box-sizing: border-box;
 }
-.pm-game button,
-.pm-game input,
 .pm-game button {
+  font: inherit;
   cursor: pointer;
 }
 .pm-game button:disabled {

@@ -1,0 +1,47 @@
+{
+  "download": "https://opengameart.org/sites/default/files/kenney_tiny-town.zip",
+  "pack": "Tiny Town 1.1",
+  "files": [
+    {
+      "originalMember": "Tiles/tile_0001.png",
+      "creator": "Kenney",
+      "purpose": "grass ground texture",
+      "license": "CC0-1.0",
+      "sha256": "cf3b3df8669e621af90944fb3155b15f13adf203dda464e6149d7318f3660713",
+      "modifications": "None; browser projection/scaling only",
+      "file": "tile_0001.png"
+    },
+    {
+      "originalMember": "Tiles/tile_0002.png",
+      "creator": "Kenney",
+      "purpose": "flower grass detail",
+      "license": "CC0-1.0",
+      "sha256": "ea524c6974ad6203f46a3e68a360883d0d53dbbdaa237f6cd81ac6fd5be6ea7c",
+      "modifications": "None; browser projection/scaling only",
+      "file": "tile_0002.png"
+    },
+    {
+      "originalMember": "Tiles/tile_0005.png",
+      "creator": "Kenney",
+      "purpose": "upright round tree",
+      "license": "CC0-1.0",
+      "sha256": "5c09569d7e0351146e194d9beb7b573e0869978334cc9e093a57dea8705e81da",
+      "modifications": "None; browser projection/scaling only",
+      "file": "tile_0005.png"
+    },
+    {
+      "originalMember": "Tiles/tile_0028.png",
+      "creator": "Kenney",
+      "purpose": "upright small tree",
+      "license": "CC0-1.0",
+      "sha256": "a8b6bdb8954e01dbe6abebaec6d3eedf4fcfeb825b7d982ed488c57a573fdaac",
+      "modifications": "None; browser projection/scaling only",
+      "file": "tile_0028.png"
+    }
+  ],
+  "source": "https://kenney.nl/assets/tiny-town",
+  "mirrorPage": "https://opengameart.org/content/tiny-town",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "evidence": "Official pack page CC0 plus bundled License.txt names Kenney and permits personal/educational/commercial use.",
+  "verifiedAt": "2026-11-18"
+}

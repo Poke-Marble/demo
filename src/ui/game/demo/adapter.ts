@@ -13,11 +13,18 @@ import type {
   UIUpdate,
 } from '../adapter';
 import { createInitialRoster } from '../setup';
+import { projectionMap } from './projection-map';
 
 /** Scripted UI fixture. Computer decisions and economics are NOT real AI/rules. */
 export function createDemoAdapter(
-  options: { computerDelayMs?: number } = {},
+  options: {
+    computerDelayMs?: number;
+    boardSize?: 4 | 32;
+    showcase?: boolean;
+    movementSteps?: number;
+  } = {},
 ): GameUIAdapter {
+  const map = options.boardSize === 32 ? projectionMap : sampleMap;
   let state: GameState = sampleState;
   let participants: readonly SetupParticipant[] =
     createInitialRoster('pokemon:0001');
@@ -28,13 +35,12 @@ export function createDemoAdapter(
   const listeners = new Set<(u: UIUpdate) => void>();
   const getView = (): GameView => ({
     state,
-    map: sampleMap,
-    mapName: '관동 · 성도 / 4칸 샘플',
+    map,
+    mapName: `관동 · 성도 / ${map.tiles.length}칸 UI 샘플`,
     participants,
     computer: { connected: true, status: computerStatus },
     ...(prompt ? { prompt } : {}),
-    notice:
-      'DEMO · 4칸 샘플 · 컴퓨터 고정 행동 시연 / 실제 AI·게임 규칙 미연결',
+    notice: `DEMO · ${map.tiles.length}칸 UI 샘플 · 컴퓨터 고정 행동 / 실제 AI·게임 규칙 미연결${options.showcase ? ' · 높이/겹침 QA 배치' : ''}`,
     actions:
       state.phase === 'playing' && !prompt
         ? [
@@ -62,11 +68,13 @@ export function createDemoAdapter(
   };
   function movePlayer(playerId: PlayerId) {
     const player = state.players.find((p) => p.id === playerId)!;
-    const destination =
-      sampleMap.tiles[
-        (sampleMap.tiles.findIndex((t) => t.id === player.position) + 1) %
-          sampleMap.tiles.length
-      ]!.id;
+    const startIndex = map.tiles.findIndex((t) => t.id === player.position);
+    const steps = Math.max(1, Math.min(8, options.movementSteps ?? 1));
+    const path = Array.from(
+      { length: steps },
+      (_, i) => map.tiles[(startIndex + i + 1) % map.tiles.length]!.id,
+    );
+    const destination = path.at(-1)!;
     state = {
       ...state,
       players: state.players.map((p) =>
@@ -75,7 +83,7 @@ export function createDemoAdapter(
     };
     return {
       events: [
-        { type: 'dice-rolled', playerId, values: [1] },
+        { type: 'dice-rolled', playerId, values: [steps] },
         {
           type: 'player-moved',
           playerId,
@@ -83,7 +91,7 @@ export function createDemoAdapter(
           to: destination,
         },
       ] as UIUpdate['events'],
-      movement: { playerId, path: [player.position, destination] },
+      movement: { playerId, path: [player.position, ...path] },
     };
   }
   function endTurn(playerId: PlayerId) {
@@ -175,7 +183,7 @@ export function createDemoAdapter(
     },
     start(setup: GameSetup) {
       if (
-        setup.mapId !== sampleMap.id ||
+        setup.mapId !== map.id ||
         setup.participants.length !== 4 ||
         setup.participants.filter((p) => p.controller === 'human').length !==
           1 ||
@@ -187,12 +195,23 @@ export function createDemoAdapter(
         ...sampleState,
         phase: 'playing',
         turnNumber: 1,
+        mapId: map.id,
+        holdings: options.showcase
+          ? [2, 6, 12, 21, 27].map((i, n) => ({
+              tileId: map.tiles[i % map.tiles.length]!.id,
+              ownerId: participants[n % 4]!.id,
+              facilityLevel: (n % 3) + 1,
+            }))
+          : [],
         activePlayerId: participants.find((p) => p.controller === 'human')!.id,
-        players: participants.map(({ id, name, pokemonId }) => ({
+        players: participants.map(({ id, name, pokemonId }, index) => ({
           id,
           name,
           pokemonId,
-          position: sampleMap.tiles[0].id,
+          position:
+            map.tiles[
+              options.showcase ? [0, 7, 16, 24][index]! % map.tiles.length : 0
+            ]!.id,
           balance: 1000,
           bankrupt: false,
         })),
@@ -212,7 +231,7 @@ export function createDemoAdapter(
         return;
       const kind = prompt.kind;
       prompt = undefined;
-      const tileId: TileId = sampleMap.tiles[1].id;
+      const tileId: TileId = map.tiles[1]!.id;
       if (choice === 'confirm')
         state = {
           ...state,
