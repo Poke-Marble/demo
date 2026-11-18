@@ -8,6 +8,8 @@ import {
   isHumanTurn,
 } from './setup';
 import { createWorldScenery } from './scenery';
+import { createSpecialEventPresenter } from './events/presenter';
+export type { SpecialEventRequest, FlightSelection } from './events/contracts';
 import './game.css';
 import './isometric.css';
 export type {
@@ -71,6 +73,51 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
   let computerRunning = false;
   let computerError = false;
   let recordsOpen = false;
+  let effectsLocked = false;
+  let effectFocus: HTMLElement | null = null;
+  function lockEffects(locked: boolean) {
+    if (locked && !effectsLocked) {
+      effectFocus =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+    }
+    effectsLocked = locked;
+    host.inert = locked;
+    if (!locked)
+      requestAnimationFrame(() => {
+        if (disposed || effectsLocked) return;
+        if (effectFocus?.isConnected) effectFocus.focus();
+        else
+          host
+            .querySelector<HTMLButtonElement>('button:not(:disabled)')
+            ?.focus();
+        effectFocus = null;
+      });
+  }
+  const effects = createSpecialEventPresenter({
+    root,
+    lock: lockEffects,
+    partnerVisual(request) {
+      const player = view.state.players.find((p) => p.id === request.playerId);
+      return player ? sprite(player.pokemonId) : undefined;
+    },
+    describe(request) {
+      const player = view.state.players.find((p) => p.id === request.playerId);
+      return {
+        playerName: player?.name ?? '트레이너',
+        partnerName:
+          partners.find((p) => p.id === player?.pokemonId)?.name ?? '내 포켓몬',
+        ...(request.type === 'fly'
+          ? {
+              destinationName:
+                view.map.tiles.find((t) => t.id === request.to)?.nameKo ??
+                request.to,
+            }
+          : {}),
+      };
+    },
+  });
   const humanTurn = () => isHumanTurn(view.state, view.participants);
   let queue = Promise.resolve();
   let frameId = 0;
@@ -111,7 +158,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     if (status) status.textContent = message;
   };
   async function invoke(fn: () => void | Promise<void>) {
-    if (busy || animating || disposed) return;
+    if (busy || animating || effectsLocked || disposed) return;
     busy = true;
     render();
     errorMessage = '';
@@ -145,6 +192,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       !!choice.disabled ||
       busy ||
       animating ||
+      effectsLocked ||
       !humanTurn() ||
       (!promptId &&
         (!choice.action ||
@@ -549,7 +597,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       Array.from(host.querySelectorAll<HTMLElement>('[data-focus]'))
         .find((n) => n.dataset.focus === focused)
         ?.focus();
-    if (!animating && view.state.phase === 'finished') {
+    if (!animating && !effectsLocked && view.state.phase === 'finished') {
       const winner = view.state.players.find(
         (p) => p.id === view.state.victory?.winnerId,
       );
@@ -567,7 +615,13 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         ],
         false,
       );
-    } else if (!animating && view.prompt && humanTurn()) {
+    } else if (
+      !animating &&
+      !effectsLocked &&
+      view.prompt &&
+      humanTurn() &&
+      !view.flightSelection
+    ) {
       const p = view.prompt;
       modal(
         p.title,
@@ -576,6 +630,11 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         !!p.dismissible,
       );
     }
+    if (!animating && !effectsLocked)
+      effects.select(
+        view.flightSelection,
+        adapter.selectFlightDestination?.bind(adapter),
+      );
     scheduleComputerTurn();
   }
   function scheduleComputerTurn() {
@@ -583,6 +642,8 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       disposed ||
       busy ||
       animating ||
+      effectsLocked ||
+      !!view.flightSelection ||
       computerRunning ||
       humanTurn() ||
       view.state.phase !== 'playing' ||
@@ -652,13 +713,13 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     view = update.view;
     if (view.state.phase === 'finished') computerAbort?.abort();
     if (view.state.phase === 'setup') {
+      effects.reset();
       computerAbort?.abort();
       computerAbort = null;
       computerRunning = false;
       computerRunKey = '';
       computerError = false;
       setupScreen = 'title';
-      generation++;
       log = [];
       dice = '—';
     }
@@ -691,12 +752,41 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       movementFrom.clear();
       animating = false;
     }
+    if (current !== generation || disposed) return;
+    if (update.effects?.length) {
+      closeDialog();
+      animating = true;
+      render();
+      await effects.enqueue(update.effects);
+      if (current !== generation || disposed) return;
+      if (effectsLocked) lockEffects(false);
+      animating = false;
+    }
     render();
   }
   const unsubscribe = adapter.subscribe((u) => {
+    if (u.view.state.phase === 'setup') {
+      generation++;
+      effects.reset();
+      for (const [timer, done] of waiters) {
+        clearTimeout(timer);
+        done();
+      }
+      waiters.clear();
+      offsets.clear();
+      movementFrom.clear();
+      animating = false;
+    } else if (u.effects?.length) {
+      // Lock synchronously, before promise delivery or a second input event.
+      lockEffects(true);
+    }
+    const receivedGeneration = generation;
     queue = queue
-      .then(() => update(u))
+      .then(() => {
+        if (receivedGeneration === generation) return update(u);
+      })
       .catch(() => {
+        lockEffects(false);
         animating = false;
         tell('화면을 갱신하지 못했습니다.');
       });
@@ -721,6 +811,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
   return {
     destroy() {
       disposed = true;
+      effects.destroy();
       computerAbort?.abort();
       cancelAnimationFrame(frameId);
       spriteFrames = [];

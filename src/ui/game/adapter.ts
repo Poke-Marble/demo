@@ -8,6 +8,7 @@ import type {
   PokemonId,
   TileId,
 } from '../../game/contracts';
+import type { FlightSelection, SpecialEventRequest } from './events/contracts';
 
 export interface SetupParticipant {
   id: PlayerId;
@@ -44,12 +45,15 @@ export interface GameView {
   actions: readonly UIChoice[];
   prompt?: GamePrompt;
   notice?: string;
+  flightSelection?: FlightSelection;
 }
 export interface UIUpdate {
   view: GameView;
   events: readonly GameEvent[];
   /** Authoritative intermediate positions, including destination. No UI dice math. */
   movement?: { playerId: GameState['activePlayerId']; path: readonly TileId[] };
+  /** Ordered, authoritative requests. No rules are resolved by presentation. */
+  effects?: readonly SpecialEventRequest[];
 }
 export interface GameUIAdapter {
   readonly demo?: boolean;
@@ -59,6 +63,11 @@ export interface GameUIAdapter {
   start(setup: GameSetup): void | Promise<void>;
   choose(promptId: string, choiceId: string): void | Promise<void>;
   restart(): void | Promise<void>;
+  /** null cancels; the integration validates prompt identity and destination. */
+  selectFlightDestination?(
+    promptId: string,
+    tileId: TileId | null,
+  ): void | Promise<void>;
   /** Delegates the entire computer turn to the integration layer, never UI rules. */
   runComputerTurn?(playerId: PlayerId, signal: AbortSignal): Promise<void>;
 }
