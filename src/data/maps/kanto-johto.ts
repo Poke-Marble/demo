@@ -50,7 +50,6 @@ const groups = [
       ['celadon', '무지개시티'],
       ['saffron', '노랑시티'],
       ['mt-moon', '달맞이산', 'poi'],
-      ['rock-tunnel', '돌산터널', 'poi'],
     ],
   },
   {
@@ -73,7 +72,6 @@ const groups = [
       ['azalea', '고동마을'],
       ['goldenrod', '금빛시티'],
       ['olivine', '담청시티'],
-      ['cianwood', '진청시티'],
     ],
   },
   {
@@ -94,7 +92,6 @@ const groups = [
     region: 'johto',
     places: [
       ['blackthorn', '검은먹시티'],
-      ['lake-rage', '분노의 호수', 'poi'],
       ['mt-silver', '은빛산', 'poi'],
       ['indigo', '석영고원', 'poi'],
     ],
@@ -142,8 +139,31 @@ function landmark(
   };
 }
 
+function special(
+  special: 'lugia-trial' | 'ho-oh-trial' | 'fly',
+  nameKo: string,
+  side: BoardSide,
+): BoardTile {
+  return {
+    id: tileId(special),
+    kind: 'special',
+    special,
+    nameKo,
+    side,
+    region: 'johto',
+    placeKind: 'special',
+    sourceUrl: wiki(
+      special === 'lugia-trial'
+        ? '소용돌이섬'
+        : special === 'ho-oh-trial'
+          ? '방울탑'
+          : '공중날기',
+    ),
+  };
+}
+
 export const kantoJohtoMap: BoardDefinition = {
-  id: 'map:kanto-johto:v1',
+  id: 'map:kanto-johto:v2',
   completeness: 'complete',
   assumptions: {
     tileCount: 32,
@@ -166,6 +186,7 @@ export const kantoJohtoMap: BoardDefinition = {
     },
     ...cities.slice(0, 2).flat(),
     landmark('seafoam', '쌍둥이섬', 'kanto', 'south'),
+    special('lugia-trial', '소용돌이섬 · 루기아 시험', 'west'),
     ...cities.slice(2, 4).flat(),
     landmark(
       'power-plant',
@@ -174,8 +195,10 @@ export const kantoJohtoMap: BoardDefinition = {
       'west',
       '무인 발전소 (관동)',
     ),
+    special('ho-oh-trial', '방울탑 · 칠색조 시험', 'north'),
     ...cities.slice(4, 6).flat(),
     landmark('whirl', '소용돌이섬', 'johto', 'north'),
+    special('fly', '공중날기', 'east'),
     ...cities.slice(6, 8).flat(),
     landmark('bell-tower', '방울탑', 'johto', 'east'),
   ],

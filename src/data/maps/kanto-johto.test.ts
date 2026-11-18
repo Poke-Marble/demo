@@ -25,14 +25,14 @@ const withTile = (
   tiles: board.tiles.map((tile, i) => (i === index ? update(tile) : tile)),
 });
 
-test('32 slots, 8 groups, 20 settlements and 4 named landmarks', () => {
+test('32 slots, 8 groups, 19 settlements and 4 named landmarks', () => {
   assertValidMap(board);
   check(
     board.tiles.length === 32 && board.cityGroups.length === 8,
     'MVP dimensions',
   );
   check(
-    board.tiles.filter((tile) => tile.placeKind === 'settlement').length === 20,
+    board.tiles.filter((tile) => tile.placeKind === 'settlement').length === 19,
     'Settlement count',
   );
   check(
@@ -67,16 +67,59 @@ test('all 56 triples of groups form independent attainable ownership sets', () =
   }
   check(combinations === 56, 'Missing group triple');
 });
+
+test('corners are nonpurchasable, eight groups each have three cities, projection preserves specials', () => {
+  check(
+    board.cityGroups.every((group) => group.cityIds.length === 3),
+    'Group sizes',
+  );
+  check(
+    board.tiles.filter((tile) => tile.kind === 'city').length === 24,
+    'City count',
+  );
+  const core = toMapDefinition(board);
+  for (const [index, special] of [
+    [8, 'lugia-trial'],
+    [16, 'ho-oh-trial'],
+    [24, 'fly'],
+  ] as const) {
+    const tile = board.tiles[index]!;
+    check(
+      tile.kind === 'special' && tile.special === special && !tile.economy,
+      'Special corner',
+    );
+    const projected = core.tiles[index]!;
+    check(
+      projected.kind === 'special' && projected.special === special,
+      'Special projection',
+    );
+    rejects(
+      withTile(index, (tile) => ({
+        ...tile,
+        economy: { purchasePrice: 1, upgradeCosts: [], tollByLevel: [1] },
+      })),
+      'Special cannot',
+    );
+  }
+  rejects(
+    withTile(8, (tile) => ({ ...tile, kind: 'landmark' })),
+    'Wrong special corner',
+  );
+  rejects(
+    withTile(1, (tile) => ({ ...tile, kind: 'special', special: 'fly' })),
+    'Exactly three special',
+  );
+});
 test('all four sides and all four landmarks have purchasable distinct targets', () => {
   const targets = validateMap(board).monopolyTargets;
   check(
     Object.values(targets.sides)
       .map((ids) => ids.length)
-      .join(',') === '6,7,7,7',
+      .join(',') === '6,6,6,6',
     'Side target sizes',
   );
   check(
-    new Set(Object.values(targets.sides).flat()).size === 27,
+    new Set(Object.values(targets.sides).flat()).size === 24,
     'Side coverage',
   );
   check(

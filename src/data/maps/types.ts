@@ -12,7 +12,7 @@ export interface PropertySeed {
 export type BoardTile = Tile & {
   readonly side: BoardSide;
   readonly region: Region | 'shared';
-  readonly placeKind: 'start' | 'settlement' | 'point-of-interest';
+  readonly placeKind: 'start' | 'settlement' | 'point-of-interest' | 'special';
   readonly sourceUrl: string;
   readonly economy?: PropertySeed;
 };
@@ -39,7 +39,9 @@ export function toMapDefinition(board: BoardDefinition): MapDefinition {
       const base = { id: tile.id, nameKo: tile.nameKo };
       return tile.kind === 'city'
         ? { ...base, kind: 'city', groupId: tile.groupId, side: tile.side }
-        : { ...base, kind: tile.kind };
+        : tile.kind === 'special'
+          ? { ...base, kind: 'special', special: tile.special }
+          : { ...base, kind: tile.kind };
     }),
     cityGroups: board.cityGroups.map((group) => ({
       ...group,

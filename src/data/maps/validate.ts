@@ -69,6 +69,21 @@ export function validateMap(board: BoardDefinition): MapValidation {
     'Duplicate group ID',
   );
 
+  for (const [index, special] of [
+    [8, 'lugia-trial'],
+    [16, 'ho-oh-trial'],
+    [24, 'fly'],
+  ] as const) {
+    const tile = tiles[index];
+    fail(
+      tile?.kind === 'special' && tile.special === special,
+      `Wrong special corner at index ${index}`,
+    );
+  }
+  fail(
+    tiles.filter((tile) => tile.kind === 'special').length === 3,
+    'Exactly three special tiles required',
+  );
   const byId = new Map(tiles.map((tile) => [tile.id, tile]));
   const memberships = new Map<TileId, number>();
   for (const group of cityGroups) {
@@ -76,7 +91,7 @@ export function validateMap(board: BoardDefinition): MapValidation {
       group.id.startsWith('group:') && group.nameKo.trim().length > 0,
       `Invalid group metadata: ${group.id}`,
     );
-    fail(group.cityIds.length >= 2, `Empty or singleton group: ${group.id}`);
+    fail(group.cityIds.length === 3, `Group must contain three cities: ${group.id}`);
     fail(
       new Set(group.cityIds).size === group.cityIds.length,
       `Duplicate group member: ${group.id}`,
@@ -99,6 +114,19 @@ export function validateMap(board: BoardDefinition): MapValidation {
       tile.side === a.sideOrder[Math.floor(index / a.slotsPerSide)],
       `Wrong side at index ${index}`,
     );
+    if (tile.kind === 'special') {
+      fail(
+        tile.placeKind === 'special' &&
+          !tile.economy &&
+          !memberships.has(tile.id),
+        'Special cannot be purchasable or a city member',
+      );
+      fail(
+        /^https:\/\//.test(tile.sourceUrl),
+        `Missing place source: ${tile.id}`,
+      );
+      continue;
+    }
     if (tile.kind === 'start') {
       fail(
         tile.placeKind === 'start' && !tile.economy,
