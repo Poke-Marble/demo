@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "source": "https://pokeapi.co/docs/v2/",
+  "processing": "pokemon + pokemon-species; names/genera language=ko; types in slot order",
+  "pokemon": [
+    {
+      "id": "pokemon:0001",
+      "speciesId": 1,
+      "slug": "bulbasaur",
+      "nameKo": "이상해씨",
+      "genusKo": "씨앗포켓몬",
+      "types": [
+        "grass",
+        "poison"
+      ],
+      "sources": {
+        "pokemon": {
+          "url": "https://pokeapi.co/api/v2/pokemon/1/",
+          "retrievedAt": "2026-11-18T08:10:47.683Z",
+          "sha256": "23e27fd9f569dd52ed2a4b117e5d8825cb1630837fa76a835d03d49030442183"
+        },
+        "pokemon-species": {
+          "url": "https://pokeapi.co/api/v2/pokemon-species/1/",
+          "retrievedAt": "2026-11-18T08:10:47.732Z",
+          "sha256": "0841398912abb467d9292255f0ab1dc69ad13a59f30c0a1589525ec43a33909f"
+        }
+      }
+    },
+    {
+      "id": "pokemon:0004",
+      "speciesId": 4,
+      "slug": "charmander",
+      "nameKo": "파이리",
+      "genusKo": "도롱뇽포켓몬",
+      "types": [
+        "fire"
+      ],
+      "sources": {
+        "pokemon": {
+          "url": "https://pokeapi.co/api/v2/pokemon/4/",
+          "retrievedAt": "2026-11-18T08:10:47.789Z",
+          "sha256": "ff73e7d0a6c4c7d83771aa334f97ea3d85e1d10f0c02116635900d3a3decfb81"
+        },
+        "pokemon-species": {
+          "url": "https://pokeapi.co/api/v2/pokemon-species/4/",
+          "retrievedAt": "2026-11-18T08:10:47.835Z",
+          "sha256": "a2313515bb25a69e00158dfc53ec265e27d8c4450589ad4645f58906740262de"
+        }
+      }
+    },
+    {
+      "id": "pokemon:0007",
+      "speciesId": 7,
+      "slug": "squirtle",
+      "nameKo": "꼬부기",
+      "genusKo": "꼬마거북포켓몬",
+      "types": [
+        "water"
+      ],
+      "sources": {
+        "pokemon": {
+          "url": "https://pokeapi.co/api/v2/pokemon/7/",
+          "retrievedAt": "2026-11-18T08:10:47.893Z",
+          "sha256": "64e8c77fc125323d439c926776d6dd5ef704964e2e157f284b34748aacd0cf09"
+        },
+        "pokemon-species": {
+          "url": "https://pokeapi.co/api/v2/pokemon-species/7/",
+          "retrievedAt": "2026-11-18T08:10:47.942Z",
+          "sha256": "e6e025716c0b323d1048aab287db084b4f5773ead4dd07e6c2e14ddca7d68985"
+        }
+      }
+    },
+    {
+      "id": "pokemon:0025",
+      "speciesId": 25,
+      "slug": "pikachu",
+      "nameKo": "피카츄",
+      "genusKo": "쥐포켓몬",
+      "types": [
+        "electric"
+      ],
+      "sources": {
+        "pokemon": {
+          "url": "https://pokeapi.co/api/v2/pokemon/25/",
+          "retrievedAt": "2026-11-18T08:10:48.152Z",
+          "sha256": "95104be535677e22df45b41e467f75dca4d85347e6f669784bc5290204599f48"
+        },
+        "pokemon-species": {
+          "url": "https://pokeapi.co/api/v2/pokemon-species/25/",
+          "retrievedAt": "2026-11-18T08:10:48.200Z",
+          "sha256": "a2ed8553154a8436bebdfa8e96df529e9e046b21badbba333ebf0eb860cc3358"
+        }
+      }
+    }
+  ]
+}

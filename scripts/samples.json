@@ -1,0 +1,5 @@
+{
+  "speciesIds": [1, 4, 7, 25],
+  "spriteRevision": "1a294bec85e309d023c0b074617462c6c6b44a31",
+  "animations": ["Idle", "Walk"]
+}

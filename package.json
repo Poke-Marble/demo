@@ -1,0 +1,33 @@
+{
+  "name": "pokemon-board-foundation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.17.0"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "data:fetch": "node scripts/collect-pokemon.mjs --refresh",
+    "data:generate": "node scripts/collect-pokemon.mjs --offline",
+    "assets:sync": "node scripts/sync-sprites.mjs",
+    "assets:verify": "node scripts/sync-sprites.mjs --verify"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.2",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.2.2"
+  }
+}
