@@ -1,0 +1,50 @@
+.ability-presenter {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+.ability-presenter canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.ability-hud {
+  position: absolute;
+  top: 28%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(82%, 350px);
+  box-sizing: border-box;
+  padding: 16px 20px;
+  border: 1px solid var(--ability-color);
+  border-radius: 20px;
+  background: #101c2ff0;
+  color: #f5f8ff;
+  box-shadow: 0 0 35px color-mix(in srgb, var(--ability-color) 28%, transparent);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 14px;
+}
+.ability-hud[hidden] {
+  display: none;
+}
+.ability-hud img {
+  grid-row: span 2;
+  border-radius: 12px;
+  border: 2px solid var(--ability-color);
+  image-rendering: pixelated;
+  box-shadow: 0 0 18px var(--ability-color);
+}
+.ability-hud img[hidden] {
+  display: none;
+}
+.ability-hud strong {
+  color: var(--ability-color);
+  font-size: 1.3rem;
+}
+.ability-hud span {
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
