@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Poke Marble · AI 계약 시뮬레이션</title>
+    <style>
+      body {
+        max-width: 64rem;
+        margin: 3rem auto;
+        padding: 0 1.5rem;
+        font-family: system-ui, sans-serif;
+        background: #101828;
+        color: #f2f4f7;
+      }
+      p {
+        line-height: 1.7;
+        color: #d0d5dd;
+      }
+      button,
+      input {
+        font: inherit;
+        padding: 0.6rem;
+        margin: 0.3rem;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1.5rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.6rem;
+        border-bottom: 1px solid #475467;
+      }
+      caption {
+        text-align: left;
+        padding: 1rem 0;
+      }
+      #result {
+        color: #a6f4c5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Poke Marble · AI 계약 시뮬레이션</h1>
+    <p>
+      사람 1명 + 컴퓨터 3명. 스크립트 권위가 제공하는 후보·견적만 평가합니다.
+      실제 경제·승리·통합 UI와 연결되지 않은 검증용 fixture입니다.
+    </p>
+    <form id="controls">
+      <label
+        >Seed
+        <input
+          id="seed"
+          type="number"
+          min="0"
+          max="4294967295"
+          step="1"
+          value="42"
+          required
+      /></label>
+      <button type="submit">다시 실행</button>
+    </form>
+    <p id="result" role="status">실행 대기</p>
+    <table>
+      <caption>
+        외부 fixture 권위가 확정한 행동과 잔액 (게임 경제 수치가 아님)
+      </caption>
+      <thead>
+        <tr>
+          <th>순서</th>
+          <th>컴퓨터</th>
+          <th>선택 행동</th>
+          <th>확정 잔액</th>
+        </tr>
+      </thead>
+      <tbody id="trace"></tbody>
+    </table>
+    <script type="module" src="./preview.ts"></script>
+  </body>
+</html>
