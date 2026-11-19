@@ -9,6 +9,7 @@ import type {
   TileId,
 } from '../../game/contracts';
 import type { FlightSelection, SpecialEventRequest } from './events/contracts';
+import type { EmotionCue } from './portraits/emotions';
 
 export interface SetupParticipant {
   id: PlayerId;
@@ -57,12 +58,15 @@ export interface UICredit {
   requiredInline?: boolean;
 }
 export interface UIUpdate {
+  /** Stable update identity for serialized event redelivery deduplication. */
+  id?: string;
   view: GameView;
   events: readonly GameEvent[];
   /** Authoritative intermediate positions, including destination. No UI dice math. */
   movement?: { playerId: GameState['activePlayerId']; path: readonly TileId[] };
   /** Ordered, authoritative requests. No rules are resolved by presentation. */
   effects?: readonly SpecialEventRequest[];
+  emotionCues?: readonly EmotionCue[];
 }
 export interface GameUIAdapter {
   readonly demo?: boolean;

@@ -1,0 +1,52 @@
+.pm-game.pm-shell .pm-hud-avatar {
+  width: 48px;
+  height: 48px;
+  left: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pm-portrait {
+  display: inline-block;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  flex: 0 0 40px;
+  overflow: hidden;
+  background: #cedac8;
+  vertical-align: middle;
+}
+.pm-portrait img {
+  display: block;
+  width: 40px;
+  height: 40px;
+  max-width: none;
+  aspect-ratio: 1;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.pm-portrait-fallback::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  top: 8px;
+  left: 8px;
+  border: 2px solid #456073;
+  border-radius: 50%;
+  background: linear-gradient(#9cadb1 0 45%, #456073 46% 54%, #f5f1da 55%);
+  box-sizing: border-box;
+}
+.pm-portrait-fallback::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  top: 16px;
+  left: 16px;
+  border-radius: 50%;
+  background: #f5f1da;
+  border: 2px solid #456073;
+  box-sizing: border-box;
+}

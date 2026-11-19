@@ -1,6 +1,7 @@
 import sprites from '../../../assets/generated/sprites.json';
 import town from '../assets/tiny-town/credits.json';
 import type { UICredit } from '../adapter';
+import { portraitCredits } from '../portraits/catalog';
 
 /** Read existing per-file metadata; never infer a blanket asset license. */
 export function gameCredits(
@@ -32,5 +33,6 @@ export function gameCredits(
         '자체 CSS 도형. 임시 전설 실루엣, 파도·깃털·빛. 외부 전설 이미지·음원 사용 없음.',
     },
     ...extra,
+    ...portraitCredits,
   ];
 }

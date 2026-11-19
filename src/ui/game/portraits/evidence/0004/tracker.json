@@ -1,0 +1,34 @@
+{
+  "sourceUrl": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/1a294bec85e309d023c0b074617462c6c6b44a31/tracker.json",
+  "sourceSha256": "9d2d761272f573ec92eb54865ab7244bb77b8db6c43339684da3198721566da0",
+  "name": "Charmander",
+  "portrait_credit": {
+    "primary": "CHUNSOFT",
+    "secondary": [
+      "<@!544245909639397378>"
+    ],
+    "total": 2
+  },
+  "portrait_files": {
+    "Angry": true,
+    "Crying": true,
+    "Determined": true,
+    "Dizzy": true,
+    "Happy": true,
+    "Inspired": true,
+    "Joyous": true,
+    "Normal": true,
+    "Pain": true,
+    "Sad": true,
+    "Shouting": true,
+    "Sigh": true,
+    "Stunned": true,
+    "Surprised": true,
+    "Teary-Eyed": true,
+    "Worried": true,
+    "Special0": false,
+    "Special1": false,
+    "Special3": false,
+    "Special2": false
+  }
+}

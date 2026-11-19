@@ -33,6 +33,7 @@ export function createDemoAdapter(
     rolled = false;
   let computerStatus = '차례 진행 중…';
   const listeners = new Set<(u: UIUpdate) => void>();
+  let updateSerial = 0;
   const getView = (): GameView => ({
     state,
     map,
@@ -62,8 +63,14 @@ export function createDemoAdapter(
     events: UIUpdate['events'] = [],
     movement?: UIUpdate['movement'],
   ) => {
+    const id = `demo:${++updateSerial}`;
     for (const listener of listeners)
-      listener({ view: getView(), events, ...(movement ? { movement } : {}) });
+      listener({
+        id,
+        view: getView(),
+        events,
+        ...(movement ? { movement } : {}),
+      });
   };
   function movePlayer(playerId: PlayerId) {
     const player = state.players.find((p) => p.id === playerId)!;

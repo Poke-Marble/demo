@@ -45,6 +45,32 @@ test('all result fixtures preserve the 1 human + 3 computer roster and publish f
   assert.match(updates[1].view.notice, /실패 확정/);
   assert.match(updates[2].view.notice, /보상 없이 종료/);
   assert.equal(new Set(updates.map((u) => u.effects[0].id)).size, 3);
+  assert.equal(updates[0].emotionCues[0].reaction, 'joy');
+  assert.equal(updates[1].emotionCues[0].reaction, 'distress');
+  assert.equal(updates[2].emotionCues.length, 0);
+});
+
+test('portrait fixture targets all four or one computer, and named toll event never changes balances', () => {
+  const demo = createSpecialDemoAdapter();
+  const updates = [];
+  demo.adapter.subscribe((update) => updates.push(update));
+  const before = demo.adapter.getView().state;
+  demo.emotion('joy');
+  assert.equal(updates.at(-1).emotionCues.length, 4);
+  const computer = demo.adapter.getView().participants[2].id;
+  demo.emotion('bankrupt', computer);
+  assert.equal(updates.at(-1).emotionCues.length, 1);
+  assert.equal(updates.at(-1).emotionCues[0].playerId, computer);
+  demo.toll();
+  assert.equal(updates.at(-1).events[0].type, 'toll-paid');
+  assert.equal(
+    demo.adapter.getView().state,
+    before,
+    'scripted reactions do not implement economics',
+  );
+  const last = updates.at(-1);
+  demo.replay();
+  assert.equal(updates.at(-1).id, last.id);
 });
 
 test('selection cancellation and stale/duplicate confirmation never move twice', () => {

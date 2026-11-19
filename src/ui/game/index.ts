@@ -11,6 +11,12 @@ import { createWorldScenery } from './scenery';
 import { createSpecialEventPresenter } from './events/presenter';
 import { gameCredits } from './events/credits';
 import './events/shell.css';
+import { createPortrait } from './portraits/portrait';
+import {
+  createEmotionController,
+  eventEmotionCues,
+} from './portraits/emotions';
+export type { EmotionCue, PortraitReaction } from './portraits/emotions';
 export type { SpecialEventRequest, FlightSelection } from './events/contracts';
 import './game.css';
 import './isometric.css';
@@ -78,6 +84,12 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
   let recordsOpen = false;
   let effectsLocked = false;
   let effectFocus: HTMLElement | null = null;
+  const portraits = new Map<string, ReturnType<typeof createPortrait>>();
+  const emotions = createEmotionController((playerId) => {
+    portraits.get(playerId)?.setReaction(emotions.get(playerId));
+  });
+  let seenEventObjects = new WeakSet<GameEvent>();
+  let anonymousUpdate = 0;
   function lockEffects(locked: boolean) {
     if (locked && !effectsLocked) {
       effectFocus =
@@ -364,6 +376,17 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         ? document.activeElement.dataset.focus
         : undefined;
     closeDialog();
+    for (const [playerId, portrait] of portraits) {
+      if (
+        view.state.phase === 'setup' ||
+        !view.state.players.some(
+          (p) => p.id === playerId && p.pokemonId === portrait.pokemonId,
+        )
+      ) {
+        portrait.destroy();
+        portraits.delete(playerId);
+      }
+    }
     spriteFrames = [];
     host.replaceChildren();
     const header = el(
@@ -484,7 +507,17 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         el('span', '', p.bankrupt ? '파산' : money(p.balance)),
       );
       const avatar = el('span', 'pm-hud-avatar');
-      avatar.append(sprite(p.pokemonId));
+      const portrait =
+        portraits.get(p.id) ??
+        createPortrait({
+          pokemonId: p.pokemonId,
+          name:
+            partners.find((partner) => partner.id === p.pokemonId)?.name ??
+            p.name,
+        });
+      portraits.set(p.id, portrait);
+      portrait.setReaction(emotions.get(p.id));
+      avatar.append(portrait.element);
       card.prepend(avatar);
       if (p.id === active?.id)
         card.append(
@@ -711,6 +744,34 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
   async function update(update: UIUpdate) {
     if (disposed) return;
     view = update.view;
+    const cues = [];
+    if (view.state.phase !== 'setup') {
+      emotions.syncState(view.state);
+      // Without update IDs, only identical event object redelivery is deduped.
+      const events = update.id
+        ? update.events
+        : update.events.filter((event) => {
+            if (seenEventObjects.has(event)) return false;
+            seenEventObjects.add(event);
+            return true;
+          });
+      cues.push(
+        ...eventEmotionCues(
+          events,
+          view.state,
+          update.id ?? `local:${++anonymousUpdate}`,
+        ),
+        ...(update.emotionCues ?? []),
+      );
+      for (const effect of update.effects ?? [])
+        emotions.apply({
+          id: `effect:${effect.id}`,
+          playerId: effect.playerId,
+          reaction: 'acting',
+        });
+      for (const cue of cues)
+        if (cue.reaction === 'acting') emotions.apply(cue);
+    }
     if (view.state.phase === 'finished') computerAbort?.abort();
     if (view.state.phase === 'setup') {
       effects.reset();
@@ -762,10 +823,15 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       if (effectsLocked) lockEffects(false);
       animating = false;
     }
+    for (const cue of cues) if (cue.reaction !== 'acting') emotions.apply(cue);
     render();
   }
   const unsubscribe = adapter.subscribe((u) => {
     if (u.view.state.phase === 'setup') {
+      for (const portrait of portraits.values()) portrait.destroy();
+      portraits.clear();
+      emotions.reset();
+      seenEventObjects = new WeakSet<GameEvent>();
       generation++;
       effects.reset();
       for (const [timer, done] of waiters) {
@@ -806,11 +872,15 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     }
     frameId = requestAnimationFrame(animateSprites);
   }
+  emotions.syncState(view.state);
   render();
   frameId = requestAnimationFrame(animateSprites);
   return {
     destroy() {
       disposed = true;
+      emotions.destroy();
+      for (const portrait of portraits.values()) portrait.destroy();
+      portraits.clear();
       effects.destroy();
       computerAbort?.abort();
       cancelAnimationFrame(frameId);

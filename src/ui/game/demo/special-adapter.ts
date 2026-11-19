@@ -1,4 +1,5 @@
-import type { TileId } from '../../../game/contracts';
+import type { TileId, PlayerId } from '../../../game/contracts';
+import type { PortraitReaction } from '../portraits/emotions';
 import type { GameUIAdapter, GameView, UIUpdate } from '../adapter';
 import type { SpecialEventRequest } from '../events/contracts';
 import { createDemoAdapter } from './adapter';
@@ -28,8 +29,18 @@ export function createSpecialDemoAdapter() {
     };
   }
   boot();
-  function publish(effects: readonly SpecialEventRequest[] = []) {
-    lastUpdate = { view, events: [], effects };
+  function publish(
+    effects: readonly SpecialEventRequest[] = [],
+    emotionCues: UIUpdate['emotionCues'] = [],
+    events: UIUpdate['events'] = [],
+  ) {
+    lastUpdate = {
+      id: `special-demo:update:${session}:${++serial}`,
+      view,
+      events,
+      effects,
+      emotionCues,
+    };
     listeners.forEach((listener) => listener(lastUpdate!));
   }
   const trial = (
@@ -107,6 +118,32 @@ export function createSpecialDemoAdapter() {
     replay() {
       if (lastUpdate) listeners.forEach((listener) => listener(lastUpdate!));
     },
+    emotion(reaction: PortraitReaction, playerId?: PlayerId) {
+      publish(
+        [],
+        view.state.players
+          .filter((player) => !playerId || player.id === playerId)
+          .map((player) => ({
+            id: `demo:emotion:${session}:${++serial}`,
+            playerId: player.id,
+            reaction,
+          })),
+      );
+    },
+    toll() {
+      publish(
+        [],
+        [],
+        [
+          {
+            type: 'toll-paid',
+            fromPlayerId: view.state.players[0]!.id,
+            toPlayerId: view.state.players[1]!.id,
+            amount: 100,
+          },
+        ],
+      );
+    },
     scenario(scenario: SpecialScenario) {
       if (view.flightSelection) return;
       if (scenario === 'fly' || scenario === 'fly-trial') {
@@ -139,12 +176,23 @@ export function createSpecialDemoAdapter() {
           rope: '탈출로프 · 보상 없이 종료 · 현재 차례 이동',
         }[scenario],
       };
-      publish([
-        trial(
-          scenario === 'failure' ? 'ho-oh' : 'lugia',
-          view.map.tiles[8]!.id,
-        ),
-      ]);
+      publish(
+        [
+          trial(
+            scenario === 'failure' ? 'ho-oh' : 'lugia',
+            view.map.tiles[8]!.id,
+          ),
+        ],
+        scenario === 'rope'
+          ? []
+          : [
+              {
+                id: `demo:trial-outcome:${session}:${++serial}`,
+                playerId: view.state.activePlayerId,
+                reaction: scenario === 'success' ? 'joy' : 'distress',
+              },
+            ],
+      );
     },
   };
 }
