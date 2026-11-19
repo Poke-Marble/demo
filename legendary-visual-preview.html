@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>전설 시험 · 실제 스프라이트 검증</title>
+    <style>
+      body {
+        background: #0b1328;
+        color: #f5f2df;
+        font: 16px system-ui;
+        padding: 20px;
+      }
+      button {
+        padding: 12px;
+        margin: 5px;
+        font: inherit;
+      }
+      a {
+        color: #acdfff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>전설의 시험</h1>
+    <p>표시 전용 · 게임 규칙·시드·시험 결과와 무관한 독립 프리뷰</p>
+    <button data-legendary="lugia">루기아</button>
+    <button data-legendary="ho-oh">칠색조</button>
+    <button id="flight">공중날기</button>
+    <button id="restart">재시작</button>
+    <button id="unmount">언마운트</button>
+    <p id="preview-status" role="status"></p>
+    <p>
+      원작 추출 스프라이트: CHUNSOFT · Pokémon: Nintendo / Creatures / GAME
+      FREAK.<br />
+      <a
+        href="https://github.com/PMDCollab/SpriteCollab/tree/6735193b9d6f499411171daf8d8b7adf1e2d8883"
+        >PMDCollab SpriteCollab</a
+      >
+      · 비상업 로컬 검토. 원작의 CC 허가를 주장하지 않습니다.
+    </p>
+    <div id="legendary-preview"></div>
+    <script
+      type="module"
+      src="/src/ui/game/events/legendary-visual-preview.ts"
+    ></script>
+  </body>
+</html>

@@ -12,6 +12,10 @@ const queueURL = moduleURL(
 const { createSpecialEventPresenter } = await import(
   moduleURL(
     (await readFile(new URL('./presenter.ts', import.meta.url), 'utf8'))
+      .replace(
+        "import { createLegendarySprite } from './legendary-sprite';",
+        "const createLegendarySprite = () => ({ element: document.createElement('div'), phase() {}, dispose() {} });",
+      )
       .replaceAll("from './queue'", `from '${queueURL}'`)
       .replace("import './special-events.css';", ''),
   )
@@ -229,4 +233,20 @@ test('integration rejection keeps selection retryable and destroy cleans a pendi
   assert.equal(attempts, 2);
   presenter.destroy();
   assert.equal(root.children.length, 0);
+});
+
+test('native trial cancel and live reduced-motion change each finish cleanly', async () => {
+  const { presenter, root, locks, media } = fixture();
+  const cancelled = presenter.enqueue([trial]);
+  await tick();
+  root.children[0].oncancel({ preventDefault() {} });
+  await cancelled;
+  assert.equal(root.children.length, 0);
+  const changed = presenter.enqueue([{ ...trial, id: 'motion-change' }]);
+  await tick();
+  media.dispatchEvent(new globalThis.Event('change'));
+  await changed;
+  assert.equal(root.children.length, 0);
+  assert.deepEqual(locks, [true, false, true, false]);
+  presenter.destroy();
 });
