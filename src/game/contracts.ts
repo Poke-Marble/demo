@@ -28,7 +28,11 @@ export type Tile =
       readonly groupId: CityGroupId;
       readonly side: BoardSide;
     })
-  | (TileBase & { readonly kind: 'landmark' });
+  | (TileBase & { readonly kind: 'landmark' })
+  | (TileBase & {
+      readonly kind: 'special';
+      readonly special: 'lugia-trial' | 'ho-oh-trial' | 'fly';
+    });
 
 export interface CityGroup {
   readonly id: CityGroupId;

@@ -1,12 +1,13 @@
 import type { BoardSide, CityGroupId, TileId } from '../../game/contracts';
 import type { BoardDefinition, BoardTile, Region } from './types.ts';
+import { finalFacilities } from './facilities.ts';
 
 const wiki = (name: string) =>
   `https://pokemon.fandom.com/ko/wiki/${encodeURIComponent(name.replaceAll(' ', '_'))}`;
 const tileId = (slug: string): TileId => `tile:kj:${slug}`;
 const groupId = (slug: string): CityGroupId => `group:kj:${slug}`;
 
-// Group ordering is a board design choice, not a reconstruction of the routes.
+// Travel/story chapters, not geographic reconstruction or ascending prices.
 const groups = [
   {
     slug: 'kanto-origin',
@@ -20,37 +21,36 @@ const groups = [
     ],
   },
   {
-    slug: 'kanto-coast',
-    name: '관동 해안',
+    slug: 'kanto-east',
+    name: '관동 달맞이산·항구 여행',
     side: 'south',
     region: 'kanto',
     places: [
-      ['fuchsia', '연분홍시티'],
-      ['cinnabar', '홍련마을'],
-      ['safari-kanto', '관동 사파리존', 'poi'],
-    ],
-  },
-  {
-    slug: 'kanto-east',
-    name: '관동 동부',
-    side: 'west',
-    region: 'kanto',
-    places: [
+      ['mt-moon', '달맞이산', 'poi'],
       ['cerulean', '블루시티'],
       ['vermilion', '갈색시티'],
-      ['lavender', '보라타운'],
     ],
   },
   {
     slug: 'kanto-central',
-    name: '관동 중심',
+    name: '관동 대도시 사건',
     side: 'west',
     region: 'kanto',
     places: [
+      ['lavender', '보라타운'],
       ['celadon', '무지개시티'],
       ['saffron', '노랑시티'],
-      ['mt-moon', '달맞이산', 'poi'],
-      ['rock-tunnel', '돌산터널', 'poi'],
+    ],
+  },
+  {
+    slug: 'kanto-coast',
+    name: '관동 사파리·남부 해안',
+    side: 'west',
+    region: 'kanto',
+    places: [
+      ['fuchsia', '연분홍시티'],
+      ['safari-kanto', '관동 사파리존', 'poi'],
+      ['cinnabar', '홍련마을'],
     ],
   },
   {
@@ -66,25 +66,24 @@ const groups = [
   },
   {
     slug: 'johto-west',
-    name: '성도 서부',
+    name: '성도 유적·로켓단 단서',
     side: 'north',
     region: 'johto',
     places: [
+      ['ruins-alph', '알프의 유적', 'poi'],
       ['azalea', '고동마을'],
       ['goldenrod', '금빛시티'],
-      ['olivine', '담청시티'],
-      ['cianwood', '진청시티'],
     ],
   },
   {
     slug: 'johto-tradition',
-    name: '성도 전통',
+    name: '성도 전설·등대·황토 사건',
     side: 'east',
     region: 'johto',
     places: [
       ['ecruteak', '인주시티'],
+      ['olivine', '담청시티'],
       ['mahogany', '황토마을'],
-      ['ruins-alph', '알프의 유적', 'poi'],
     ],
   },
   {
@@ -94,17 +93,44 @@ const groups = [
     region: 'johto',
     places: [
       ['blackthorn', '검은먹시티'],
-      ['lake-rage', '분노의 호수', 'poi'],
-      ['mt-silver', '은빛산', 'poi'],
       ['indigo', '석영고원', 'poi'],
+      ['mt-silver', '은빛산', 'poi'],
     ],
   },
 ] as const;
 
-const cities: BoardTile[][] = groups.map((group, rank) =>
+// Preserve v2 place-specific draft prices independently of the new chapters.
+const draftPrices = {
+  pallet: 100,
+  viridian: 100,
+  pewter: 100,
+  fuchsia: 130,
+  cinnabar: 130,
+  'safari-kanto': 130,
+  cerulean: 160,
+  vermilion: 160,
+  lavender: 160,
+  celadon: 190,
+  saffron: 190,
+  'mt-moon': 190,
+  'new-bark': 220,
+  cherrygrove: 220,
+  violet: 220,
+  azalea: 250,
+  goldenrod: 250,
+  olivine: 250,
+  ecruteak: 280,
+  mahogany: 280,
+  'ruins-alph': 280,
+  blackthorn: 310,
+  'mt-silver': 310,
+  indigo: 310,
+} as const satisfies Readonly<Record<keyof typeof finalFacilities, number>>;
+
+const cities: BoardTile[][] = groups.map((group) =>
   group.places.map((place): BoardTile => {
     const [slug, nameKo] = place;
-    const price = 100 + rank * 30;
+    const price = draftPrices[slug];
     return {
       id: tileId(slug),
       kind: 'city',
@@ -114,6 +140,7 @@ const cities: BoardTile[][] = groups.map((group, rank) =>
       region: slug === 'indigo' ? 'shared' : group.region,
       placeKind: place.length === 3 ? 'point-of-interest' : 'settlement',
       sourceUrl: wiki(nameKo),
+      finalFacility: finalFacilities[slug],
       economy: {
         purchasePrice: price,
         upgradeCosts: [price / 2, price / 2, price / 2],
@@ -142,8 +169,31 @@ function landmark(
   };
 }
 
+function special(
+  special: 'lugia-trial' | 'ho-oh-trial' | 'fly',
+  nameKo: string,
+  side: BoardSide,
+): BoardTile {
+  return {
+    id: tileId(special),
+    kind: 'special',
+    special,
+    nameKo,
+    side,
+    region: 'johto',
+    placeKind: 'special',
+    sourceUrl: wiki(
+      special === 'lugia-trial'
+        ? '소용돌이섬'
+        : special === 'ho-oh-trial'
+          ? '방울탑'
+          : '공중날기',
+    ),
+  };
+}
+
 export const kantoJohtoMap: BoardDefinition = {
-  id: 'map:kanto-johto:v1',
+  id: 'map:kanto-johto:v3',
   completeness: 'complete',
   assumptions: {
     tileCount: 32,
@@ -165,17 +215,20 @@ export const kantoJohtoMap: BoardDefinition = {
       sourceUrl: '',
     },
     ...cities.slice(0, 2).flat(),
-    landmark('seafoam', '쌍둥이섬', 'kanto', 'south'),
-    ...cities.slice(2, 4).flat(),
     landmark(
       'power-plant',
       '무인발전소',
       'kanto',
-      'west',
+      'south',
       '무인 발전소 (관동)',
     ),
+    special('lugia-trial', '소용돌이섬 · 루기아 시험', 'west'),
+    ...cities.slice(2, 4).flat(),
+    landmark('seafoam', '쌍둥이섬', 'kanto', 'west'),
+    special('ho-oh-trial', '방울탑 · 칠색조 시험', 'north'),
     ...cities.slice(4, 6).flat(),
     landmark('whirl', '소용돌이섬', 'johto', 'north'),
+    special('fly', '공중날기', 'east'),
     ...cities.slice(6, 8).flat(),
     landmark('bell-tower', '방울탑', 'johto', 'east'),
   ],

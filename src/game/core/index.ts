@@ -8,6 +8,19 @@ import type {
   PokemonId,
   Tile,
 } from '../contracts';
+import {
+  createLegendaryState,
+  enterSpecial,
+  legendaryAction,
+} from '../legendary.ts';
+import type {
+  LegendaryState,
+  LegendaryRules,
+  LegendaryAction,
+  LegendaryError,
+  LegendaryEvent,
+  PresentationRequest,
+} from '../legendary.ts';
 import { nextRandom } from './random.ts';
 
 export interface CoreRules {
@@ -21,6 +34,7 @@ export const defaultRules: CoreRules = Object.freeze({
 });
 
 export interface CoreState extends GameState {
+  readonly legendary?: LegendaryState;
   readonly core: {
     readonly rngState: number;
     readonly turnStage: 'awaiting-roll' | 'awaiting-end';
@@ -36,6 +50,7 @@ export interface PlayerSetup {
 
 export type CoreEvent =
   | GameEvent
+  | LegendaryEvent
   | {
       readonly type: 'start-rewarded';
       readonly playerId: PlayerId;
@@ -67,6 +82,7 @@ export interface CoreHooks {
 }
 
 export type CoreError =
+  | LegendaryError
   | 'game-not-playing'
   | 'invalid-state'
   | 'wrong-player'
@@ -78,6 +94,7 @@ export type CoreError =
 export type Transition =
   | {
       readonly ok: true;
+      readonly presentations?: readonly PresentationRequest[];
       readonly state: CoreState;
       readonly events: readonly CoreEvent[];
     }
@@ -112,7 +129,11 @@ function validPlayers(players: readonly Player[], map: MapDefinition): boolean {
 export function createGame(
   map: MapDefinition,
   players: readonly PlayerSetup[],
-  options: { readonly seed?: number; readonly rules?: Partial<CoreRules> } = {},
+  options: {
+    readonly seed?: number;
+    readonly rules?: Partial<CoreRules>;
+    readonly legendary?: Partial<LegendaryRules>;
+  } = {},
 ): CoreState {
   if (!validMap(map))
     throw new RangeError('Map requires unique tiles and exactly one start.');
@@ -153,6 +174,14 @@ export function createGame(
     turnNumber: 1,
     holdings: [],
     victory: null,
+    ...(options.legendary
+      ? {
+          legendary: createLegendaryState(
+            roster.map((p) => p.id),
+            options.legendary,
+          ),
+        }
+      : {}),
     core: { rngState: seed, turnStage: 'awaiting-roll', rules },
   };
 }
@@ -189,7 +218,7 @@ function applyEffect(
 export function dispatch(
   state: CoreState,
   map: MapDefinition,
-  action: GameAction,
+  action: GameAction | LegendaryAction,
   hooks: CoreHooks = {},
 ): Transition {
   const reject = (error: CoreError): Transition => ({
@@ -222,7 +251,17 @@ export function dispatch(
     return reject('invalid-state');
   }
   if (action.playerId !== active.id) return reject('wrong-player');
+  const land = (snapshot: CoreState, tile: Tile) => {
+    if (!hooks.onLand || tile.kind === 'special')
+      return { state: snapshot, events: [] };
+    const effect = hooks.onLand(snapshot, tile);
+    const applied = applyEffect(snapshot, effect, map);
+    return applied ? { state: applied, events: effect.events ?? [] } : null;
+  };
+  const specialAction = legendaryAction(state, map, action, land);
+  if (specialAction) return specialAction;
   const events: CoreEvent[] = [];
+  let presentations: readonly PresentationRequest[] = [];
   let next: CoreState;
   if (action.type === 'roll-dice') {
     if (state.core.turnStage !== 'awaiting-roll')
@@ -275,13 +314,13 @@ export function dispatch(
         amount,
       });
     events.push({ type: 'tile-landed', playerId: active.id, tileId: tile.id });
-    if (hooks.onLand) {
-      const effect = hooks.onLand(next, tile);
-      const applied = applyEffect(next, effect, map);
-      if (!applied) return reject('invalid-hook-effect');
-      next = applied;
-      events.push(...(effect.events ?? []));
-    }
+    const entered = enterSpecial(next, tile);
+    next = entered.state;
+    presentations = entered.presentations;
+    const landed = land(next, tile);
+    if (!landed) return reject('invalid-hook-effect');
+    next = landed.state;
+    events.push(...landed.events);
   } else if (action.type === 'end-turn') {
     if (state.core.turnStage !== 'awaiting-end') return reject('roll-required');
     next = state;
@@ -322,5 +361,10 @@ export function dispatch(
       }
     }
   } else return reject('unsupported-action');
-  return { ok: true, state: next, events };
+  return {
+    ok: true,
+    state: next,
+    events,
+    ...(state.legendary ? { presentations } : {}),
+  };
 }
