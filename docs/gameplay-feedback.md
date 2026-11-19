@@ -30,26 +30,60 @@
 
 설정은 같은 origin의 localStorage `pm:sfx:v1`에 저장한다. 저장소 오류는 무시하고 메모리 설정으로 동작한다. 다른 포트는 다른 origin이므로 설정을 공유하지 않는다. 여러 열린 탭의 실시간 설정 동기화는 제공하지 않는다.
 
-권장 특성 연결 방식은 **주입 + 설정 구독**이다. 다음은 계약 예시이며 미병합 특성 파일을 런타임에 import하는 코드가 아니다.
+권장 특성 연결 방식은 **게임 버스 주입 + 특성 presenter의 공개 audio에 설정 구독**이다. 아래는 두 모듈을 병합한 뒤 상위 조립부에서 사용하는 예제다. 현재 브랜치가 미병합 특성 파일을 import하거나 실행하는 코드는 아니다. `createAbilityAudio()`를 추가 생성하지 않고 실제 `abilityPresenter.audio`를 사용한다.
 
 ```ts
-// 상위 조립부에서 한 번만 생성하고 게임 UI에 수명을 맡긴다.
 const sfx = createFeedbackAudio();
+const game = mountGameUI(root, adapter, { sfx }); // game.destroy가 sfx를 소유
+const abilityPresenter = createAbilityPresenter(root);
+const abilityAudio = abilityPresenter.audio; // presenter.destroy가 소유
 const release = sfx.subscribe(({ muted, volume }) => {
   abilityAudio.setMuted(muted);
-  abilityAudio.setVolume(volume * 0.35); // 참고 모듈의 상한에 맞춘 변환
+  abilityAudio.setVolume(volume * 0.35); // 공통 0~1 설정을 특성 0~0.35로 변환
 });
-// 아래 핸들러는 실제 사용자 제스처 안에서 호출되어야 한다.
-const unlockBoth = () => {
+
+const unlockBoth = (event: Event) => {
+  if (!event.isTrusted) return;
+  // 둘 다 같은 실제 제스처 안에서 시작한다. 둘 사이에 await하지 않는다.
   void sfx.unlock();
   void abilityAudio.unlock();
 };
-// 상위 stop/reset은 sfx.stop()과 abilityAudio.stop()을 함께 호출한다.
-// 하위 해제: release(), 제스처 리스너 제거, abilityAudio.destroy().
-// 게임 UI destroy만 sfx.destroy()를 담당한다.
+root.addEventListener('pointerdown', unlockBoth, true);
+root.addEventListener('keydown', unlockBoth, true);
+
+// 설정의 단일 기준은 sfx. 위 구독이 현재값과 이후 변경을 특성에도 전달한다.
+const setMuted = (muted: boolean) => sfx.setMuted(muted);
+const setVolume = (volume: number) => sfx.setVolume(volume);
+const stopAll = () => {
+  abilityPresenter.cancel(); // 현재 특성뿐 아니라 대기 큐/다음 rAF도 취소
+  sfx.stop();
+};
+const onVisibility = () => {
+  if (document.hidden) stopAll();
+};
+document.addEventListener('visibilitychange', onVisibility);
+
+const destroyAll = () => {
+  root.removeEventListener('pointerdown', unlockBoth, true);
+  root.removeEventListener('keydown', unlockBoth, true);
+  document.removeEventListener('visibilitychange', onVisibility);
+  release();
+  abilityPresenter.destroy(); // 내부 audio도 destroy
+  game.destroy(); // 주입했던 sfx도 destroy. sfx.destroy를 중복 호출하지 않는다.
+};
 ```
 
-향후 특성 음성까지 같은 AudioContext/동시음 상한에 포함하려면 특성 합성기를 버스의 주입 가능한 voice 공급자로 확장하는 별도 변경이 필요하다. 현재 버스의 `play`에는 특성/전설시험 cue를 임의로 추가하지 않았다. 위 어댑터는 공용 음소거·볼륨을 공유하되 별도 특성 컨텍스트까지 자동으로 소유하거나 종료하지 않는다.
+### 통합 준비 재검토: 실제 공개 API의 제약
+
+`ace3ce0` 완료 후 특성 워크트리의 `abilities/audio.ts`와 `abilities/presenter.ts`를 다시 읽기 전용으로 확인했다. 이번 검토는 소스/API 검토이며 두 브랜치를 실제 병합해 실행한 검증은 아니다.
+
+- **컨텍스트:** 특성 `audio.ts:30`과 피드백 버스는 각자 `new AudioContext()`를 지연 실행한다. `presenter.ts:40`은 `createAbilityAudio()`를 직접 생성하며 options에는 audio/context 주입 항목이 없다. 위 연결은 총 2개 컨텍스트를 사용한다. presenter용과 별도로 특성 audio를 생성하면 잘못된 인스턴스만 설정하거나 세 번째 컨텍스트를 만들 수 있다. 게임 마운트의 자체 unlock과 예제 핸들러가 같은 버스의 unlock을 다시 호출해도 버스 내부 `context ??=` 때문에 추가 컨텍스트는 생성하지 않는다.
+- **설정:** 특성 audio에는 저장/구독/getSettings가 없다. 기본 volume은 0.18이고 상한은 0.35다. sfx의 저장된 0~1 설정을 초기 구독에서 즉시 전달하고 이후에도 sfx만 변경해야 불일치를 막는다. `volume * 0.35`는 같은 정규화된 사용자 설정을 공유하기 위한 변환이며, 두 합성음의 청감상 크기가 같다는 보장은 아니다. 특성 UI에서 `abilityAudio.setMuted/setVolume`을 직접 호출하면 이 단방향 연결을 벗어나므로 상위 공용 설정 함수로 연결해야 한다.
+- **동시재생:** 피드백의 최대 4음성과 특성 audio의 최대 1음성은 별도 제한이다. 합쳐서 최대 5음성/10 source가 가능하며 공통 믹서/리미터는 없다. 설정 공유만으로 주사위·발소리·특성의 겹침이 차단되지는 않는다. 현재 `mountGameUI`의 반환 API는 destroy뿐이어서 호출자가 기다릴 수 있는 이동 완료 Promise도 없다. 주사위→이동→특성의 완전한 직렬화는 상위 통합 스케줄러/완료 계약이 마련된 뒤 연결해야 하며, 현 공개 API로 이미 보장된다고 간주하면 안 된다.
+- **중지/취소:** `presenter.ts:158`은 첫 rAF에서 audio.play를 호출하고, 항목 종료 뒤 다음 큐를 시작한다. 따라서 `abilityAudio.stop()`만으로 presenter의 향후 재생을 막을 수 없다. 상위 stop/reset/숨김에는 위 `stopAll`처럼 `abilityPresenter.cancel()`을 함께 호출한다. `sfx.stop()`도 현재 음성만 중지하므로 이후 전달되는 게임 update까지 취소하는 API는 아니다. 영구 종료에는 각 소유자의 destroy를 사용한다.
+- **숨김/모션:** 특성 presenter에는 visibilitychange 처리나 오디오의 document.hidden 검사가 없다. 피드백의 숨김 처리만으로 특성까지 정리되지는 않으므로 위 상위 리스너가 필요하다. 특성의 reduced motion은 그리기 형태를 줄이지만 1.1초 소리 자체를 생략하지 않는다. 두 모듈의 모션 정책까지 같게 만들려면 별도 상위 정책이 필요하다.
+
+이 제약은 피드백 내부에 중계 객체를 하나 추가하는 것만으로 해결되지 않는다. 특성 음성까지 하나의 AudioContext/동시음 상한으로 묶으려면 특성 측에 외부 오디오/voice 공급자 주입 계약을 허용하는 별도 통합 변경이 필요하다. 이번에는 타 담당 파일이나 게임 index를 수정하지 않고 문서만 보완했다. 특성·전설시험 cue도 버스에 추가하지 않았다.
 
 주사위는 저역 필터를 거친 절차적 noise와 sine/envelope로 5회의 감쇠 타격을 합성한다. 걸음은 75ms의 작은 sine/noise 타격이며 좌우 느낌을 위해 두 주파수를 번갈아 쓴다. noise는 자체 고정 수열로 한 번 생성해 재사용한다. 최대 4음성/8 source이며 초과 시 가장 오래된 음성을 중지한다. 최대 사용자 볼륨에서도 envelope peak는 주사위 0.085, 걸음 0.045로 제한한다. 실제 기기의 청감상 크기까지 보장하는 수치는 아니다.
 
