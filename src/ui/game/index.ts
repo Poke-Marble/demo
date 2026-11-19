@@ -2,6 +2,11 @@ import { findSprite } from '../../assets/sprites';
 import type { GameEvent, PokemonId, TileId } from '../../game/contracts';
 import type { GameUIAdapter, UIChoice, UIUpdate } from './adapter';
 import { createProjectedBoard } from './board';
+import { ownerTheme } from './art/ownership';
+import {
+  constructionFromHolding,
+  type ConstructionVisual,
+} from './art/construction';
 import {
   startingPartners as partners,
   createInitialRoster,
@@ -51,6 +56,7 @@ function button(text: string, run: () => void, className = '') {
 
 /** Mounts only inside root. Call destroy before replacing the host screen. */
 export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
+  let previousConstruction = new Map<TileId, ConstructionVisual>();
   const host = el('section', 'pm-game pm-shell');
   host.tabIndex = -1;
   host.addEventListener('keydown', (event) => {
@@ -397,7 +403,9 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       header.append(el('strong', 'pm-brand', 'Poke Marble'));
     const tools = el('div', 'pm-header-tools');
     if (adapter.demo)
-      tools.append(el('span', 'pm-badge', 'DEMO · 규칙·AI 미연결'));
+      tools.append(
+        el('span', 'pm-badge', adapter.demoLabel ?? 'DEMO · 규칙·AI 미연결'),
+      );
     tools.append(
       button(
         '크레딧',
@@ -451,6 +459,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       view,
       dice,
       animating,
+      previousConstruction,
       positions: offsets,
       from: movementFrom,
       sprite,
@@ -468,6 +477,12 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         );
       },
     });
+    previousConstruction = new Map(
+      view.state.holdings.map((holding) => [
+        holding.tileId,
+        constructionFromHolding(holding),
+      ]),
+    );
     boardArea.append(board);
     layout.append(boardArea);
     const rail = el('aside', 'pm-rail');
@@ -496,6 +511,13 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         'div',
         `pm-player-card pm-player-${i} ${p.id === active?.id ? 'is-active' : ''}`,
       );
+      const theme = ownerTheme({
+        id: p.id,
+        name: p.name,
+        pokemonId: p.pokemonId,
+      });
+      card.style.setProperty('--player', theme.color);
+      card.style.setProperty('--player-soft', theme.light);
       card.append(
         el('span', 'pm-trainer-number', `P${i + 1}`),
         el(

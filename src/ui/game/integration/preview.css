@@ -1,0 +1,23 @@
+html,
+body {
+  margin: 0;
+  background: #152738;
+}
+.pm-integrated-tools {
+  margin: 8px 20px 24px;
+  padding: 12px;
+  color: #e7edd9;
+  font: 13px/1.5 sans-serif;
+}
+.pm-integrated-tools summary {
+  cursor: pointer;
+}
+.pm-integrated-tools button {
+  margin: 4px;
+  padding: 10px 14px;
+  border: 1px solid #779987;
+  background: #25423f;
+  color: #fffbe1;
+  cursor: pointer;
+  min-height: 44px;
+}

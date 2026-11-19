@@ -11,7 +11,7 @@
   isolation: isolate;
   overflow: visible;
   container-type: inline-size;
-  min-width: 640px;
+  min-width: 0;
 }
 .pm-board-area:has(.pm-board-iso) {
   overflow-x: auto;

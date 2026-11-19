@@ -1,13 +1,6 @@
-import { mountGameUI } from '../index';
-import { createDemoAdapter } from './adapter';
+import { mountIntegratedPreview } from '../integration/main';
 const root = document.querySelector<HTMLElement>('#game-preview');
-const params = new URLSearchParams(location.search);
-if (root)
-  mountGameUI(
-    root,
-    createDemoAdapter({
-      boardSize: params.get('board') === '4' ? 4 : 32,
-      showcase: params.get('showcase') === '1',
-      movementSteps: 3,
-    }),
-  );
+if (root) {
+  const dispose = mountIntegratedPreview(root);
+  if (import.meta.hot) import.meta.hot.dispose(dispose);
+}

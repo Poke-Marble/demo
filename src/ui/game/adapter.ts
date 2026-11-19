@@ -70,6 +70,7 @@ export interface UIUpdate {
 }
 export interface GameUIAdapter {
   readonly demo?: boolean;
+  readonly demoLabel?: string;
   getView(): GameView;
   subscribe(listener: (update: UIUpdate) => void): () => void;
   dispatch(action: GameAction): void | Promise<void>;

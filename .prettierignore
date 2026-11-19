@@ -6,3 +6,5 @@ src/data/generated/
 src/assets/vendor/
 src/assets/generated/
 package-lock.json
+src/ui/game/portraits/evidence/
+src/ui/game/portraits/manifest.json
