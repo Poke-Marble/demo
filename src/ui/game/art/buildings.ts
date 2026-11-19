@@ -2,11 +2,16 @@
 import {
   builtComponents,
   finalFacility,
-  ownerColors,
   type BuildingTile,
   type ConstructionVisual,
   type FinalFacility,
 } from './construction';
+import {
+  ownerTheme,
+  ownerMark,
+  applyConstructionOwner,
+  type OwnerVisual,
+} from './ownership';
 const NS = 'http://www.w3.org/2000/svg';
 const wall = ['#ede4c9', '#d1c6a8', '#9faeaa'] as const;
 const teal = ['#80b5b1', '#557e89', '#3c6275'] as const;
@@ -74,12 +79,30 @@ function emblem(u: number, v: number, z: number, color: string) {
   const p = modelPoint(u, v, z);
   return `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}" stroke="#f8edd0" stroke-width="1.5"/>`;
 }
-function flag(color: string) {
+function flag(owner?: OwnerVisual | null) {
   const p = modelPoint(-17, 14, 0);
+  const theme = ownerTheme(owner);
   return (
     box(-19, 12, 4, 4, 1, teal) +
-    `<path d="M${p.x} ${p.y}v-31" stroke="#e9e2bd" stroke-width="2"/><path d="M${p.x + 1} ${p.y - 31}l14 4-14 6z" fill="${color}" stroke="#354e59" stroke-width=".7"/>`
+    `<g class="pm-owner-flag"><path d="M${p.x} ${p.y}v-31" stroke="${theme.dark}" stroke-width="2"/><path d="M${p.x + 1} ${p.y - 31}h19v13l-19-2z" fill="${theme.color}" stroke="${theme.dark}" stroke-width="1.2"/>${ownerMark(owner, p.x + 4, p.y - 30, 10)}</g>`
   );
+}
+function ownershipTrim(state: ConstructionVisual, kind: FinalFacility) {
+  if (!state.owner) return '';
+  const t = ownerTheme(state.owner);
+  const u = state.stage === 'final' && kind === 'lighthouse' ? -9 : -15;
+  const front = state.stage === 'final' && kind === 'lighthouse' ? 9 : 12;
+  const width = state.stage === 'final' && kind === 'lighthouse' ? 17 : 26;
+  const sign = modelPoint(u + width * 0.55, front, 12);
+  return `<g class="pm-owner-trim">${polygon(
+    [
+      [u, front, 11],
+      [u + width, front, 11],
+      [u + width, front, 14],
+      [u, front, 14],
+    ],
+    t.color,
+  )}<g transform="matrix(1 .575 0 1 ${sign.x - 4} ${sign.y - 4})">${ownerMark(state.owner, 0, 0, 8)}</g></g>`;
 }
 function signature(kind: FinalFacility) {
   switch (kind) {
@@ -164,11 +187,16 @@ export function createConstructionArt(
   tile: BuildingTile,
   state: ConstructionVisual,
 ) {
+  state = applyConstructionOwner(state);
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 100 120');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('class', 'pm-construction-model');
   svg.dataset.stage = state.stage;
+  svg.dataset.ownerType =
+    state.stage === 'unowned' ? 'neutral' : ownerTheme(state.owner).key;
+  svg.dataset.ownerId =
+    state.stage === 'unowned' ? '' : (state.owner?.id ?? '');
   const built = builtComponents(state),
     kind = finalFacility(tile);
   svg.dataset.model = built.signature ? kind : state.stage;
@@ -177,9 +205,7 @@ export function createConstructionArt(
     .map(([key]) => key)
     .join(' ');
   if (state.stage === 'unowned') return svg;
-  const color = ownerColors.includes(state.ownerColor!)
-    ? state.ownerColor!
-    : ownerColors[0];
+  const theme = ownerTheme(state.owner);
   let art = polygon(
     [
       [-20, -17, 0],
@@ -191,17 +217,20 @@ export function createConstructionArt(
     0.22,
   );
   if (built.shop)
-    art += box(-21, -18, 42, 36, 2, ['#e0d7b7', '#bcb79e', '#a4ab9b'], -2);
-  if (built.signature) art += signature(kind);
+    art += `<g class="pm-owner-plinth">${box(-21, -18, 42, 36, 2, [theme.light, theme.color, theme.dark], -2)}</g>`;
+  let core = '';
+  if (built.signature) core += signature(kind);
   else if (built.center)
-    art += building(-16, -13, 28, 25, 23, red) + emblem(-2, 12, 18, '#f3ecd2');
+    core += building(-16, -13, 28, 25, 23, red) + emblem(-2, 12, 18, '#f3ecd2');
   else if (built.shop)
-    art +=
+    core +=
       building(-15, -12, 26, 24, 16, blue) + box(-16, 10, 28, 3, 3, blue, 12);
-  if (built.center) art += building(9, -13, 9, 12, 10, blue);
+  if (built.center) core += building(9, -13, 9, 12, 10, blue);
   if (built.signature)
-    art += building(9, 1, 9, 12, 12, red) + emblem(14, 13, 8, '#f6ebcd');
-  art += flag(color);
+    core += building(9, 1, 9, 12, 12, red) + emblem(14, 13, 8, '#f6ebcd');
+  art += `<g class="pm-architecture-core">${core}</g>`;
+  if (built.shop) art += ownershipTrim(state, kind);
+  art += flag(state.owner);
   svg.innerHTML = art;
   return svg;
 }

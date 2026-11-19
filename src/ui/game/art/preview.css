@@ -18,12 +18,35 @@ h1 {
 p {
   margin: 8px 0;
 }
-.art-controls { padding:8px 0; }
-.art-controls button { margin:4px; padding:8px 12px; border:1px solid #7da09f; background:#244b5c; color:#f3e9cb; border-radius:6px; cursor:pointer; }
-.art-controls button[aria-pressed="true"] { background:#e6c68b; color:#234657; }
-.art-controls button:focus-visible { outline:3px solid #f5d490; }
-.stage-status { display:inline-block; }
-a { color:#ead094; }
+.art-controls {
+  padding: 8px 0;
+}
+.art-controls button,
+.art-owner-controls button,
+.art-owner-controls select {
+  margin: 4px;
+  padding: 8px 12px;
+  border: 1px solid #7da09f;
+  background: #244b5c;
+  color: #f3e9cb;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.art-controls button[aria-pressed='true'],
+.art-owner-controls button[aria-pressed='true'] {
+  background: #e6c68b;
+  color: #234657;
+}
+.art-controls button:focus-visible,
+.art-owner-controls :focus-visible {
+  outline: 3px solid #f5d490;
+}
+.stage-status {
+  display: inline-block;
+}
+a {
+  color: #ead094;
+}
 output {
   display: block;
   padding: 8px 12px;
@@ -61,4 +84,23 @@ output {
   h1 {
     font-size: 22px;
   }
+}
+
+.art-owner-controls {
+  padding: 8px 0;
+}
+.art-owner-controls button svg {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+.art-owner-controls select {
+  max-width: 100%;
+}
+.ownership-status {
+  margin: 4px;
+}
+.ownership-status:empty {
+  display: none;
 }

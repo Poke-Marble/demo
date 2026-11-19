@@ -53,12 +53,21 @@ test('every source/crop matches recorded SHA-256 and records authors and terms',
     }
   }
 });
+const ownershipURL = moduleURL(await read('./ownership.ts'));
+const {
+  ownerTheme,
+  ownerFromInput,
+  ownerDescription,
+  ownerMark,
+  applyConstructionOwner,
+} = await import(ownershipURL);
 const geometryURL = moduleURL(await read('./model-geometry.ts'));
 const constructionURL = moduleURL(await read('./construction.ts'));
 const buildingsURL = moduleURL(
   (await read('./buildings.ts'))
     .replace("'./model-geometry'", JSON.stringify(geometryURL))
-    .replace("'./construction'", JSON.stringify(constructionURL)),
+    .replace("'./construction'", JSON.stringify(constructionURL))
+    .replace("'./ownership'", JSON.stringify(ownershipURL)),
 );
 const {
   constructionFromHolding,
@@ -231,4 +240,139 @@ test('construction appearance runs only on increases, finishes in 320ms and resp
   } finally {
     globalThis.matchMedia = previous;
   }
+});
+
+const ownerFixtures = [
+  { id: 'human', name: 'Human', pokemonId: 'pokemon:0001' },
+  { id: 'computer-fire', name: 'COMPUTER FIRE', pokemonId: 'pokemon:0004' },
+  { id: 'computer-water', name: 'COMPUTER WATER', pokemonId: 'pokemon:0007' },
+  {
+    id: 'computer-electric',
+    name: 'COMPUTER ELECTRIC',
+    pokemonId: 'pokemon:0025',
+  },
+];
+test('owner themes follow authoritative pokemon/type metadata, never roster order or controller', () => {
+  const expected = ['grass', 'fire', 'water', 'electric'];
+  for (const roster of [
+    ownerFixtures,
+    [...ownerFixtures].reverse(),
+    [...ownerFixtures.slice(2), ...ownerFixtures.slice(0, 2)],
+  ]) {
+    for (const [i, owner] of ownerFixtures.entries()) {
+      const resolved = ownerFromInput(undefined, owner.id, roster);
+      assert.equal(resolved.id, owner.id);
+      assert.equal(ownerTheme(resolved).key, expected[i]);
+      assert.ok(ownerDescription(resolved).includes(owner.name));
+    }
+  }
+  assert.equal(
+    ownerTheme({ id: 'x', name: 'External', type: 'electric' }).key,
+    'electric',
+  );
+  assert.equal(ownerTheme({ ...ownerFixtures[0], type: 'water' }).key, 'water');
+  assert.equal(
+    ownerTheme({ id: 'x', name: 'Unknown', pokemonId: 'pokemon:unknown' }).key,
+    'neutral',
+  );
+  assert.equal(ownerTheme(null).key, 'neutral');
+  assert.equal(ownerFromInput(null, 'human', ownerFixtures), null);
+  assert.equal(
+    ownerFromInput(ownerFixtures[3], 'human', ownerFixtures).id,
+    'computer-electric',
+  );
+  assert.ok(!('ownerColor' in constructionFromHolding({ facilityLevel: 2 })));
+});
+test('unowned clears ownership, four owned types have distinct code glyphs and no owner-name HTML', () => {
+  assert.equal(new Set(ownerFixtures.map((o) => ownerMark(o, 0, 0))).size, 4);
+  assert.equal(ownerMark(null, 0, 0), '');
+  assert.ok(
+    !ownerMark(
+      { ...ownerFixtures[0], name: '<img src=x onerror=alert(1)>' },
+      0,
+      0,
+    ).includes('<img'),
+  );
+  withSVG(() => {
+    const tile = { id: 'tile:kj:goldenrod', kind: 'city' };
+    for (const owner of ownerFixtures) {
+      const empty = createConstructionArt(tile, { stage: 'unowned', owner });
+      assert.equal(empty.innerHTML, '');
+      assert.equal(empty.dataset.ownerType, 'neutral');
+      const camp = createConstructionArt(tile, { stage: 'camp', owner });
+      assert.equal(camp.dataset.ownerType, ownerTheme(owner).key);
+      assert.equal(camp.dataset.components, 'flag');
+      assert.match(camp.innerHTML, /pm-owner-flag/);
+      assert.ok(
+        camp.innerHTML.includes(`data-owner-mark="${ownerTheme(owner).key}"`),
+      );
+    }
+    const released = createConstructionArt(tile, {
+      stage: 'final',
+      owner: null,
+    });
+    assert.equal(released.dataset.stage, 'unowned');
+    assert.equal(released.innerHTML, '');
+  });
+});
+test('ownership transfers immediately replace trim/identity while preserving center roof and city architecture', () => {
+  withSVG(() => {
+    for (const stage of ['center', 'final'])
+      for (const slug of ['pallet', 'saffron', 'goldenrod', 'olivine']) {
+        const cores = [];
+        for (const owner of ownerFixtures) {
+          const node = createConstructionArt(
+            { id: `tile:kj:${slug}`, kind: 'city' },
+            { stage, owner },
+          );
+          assert.equal(node.dataset.ownerId, owner.id);
+          assert.equal(node.dataset.ownerType, ownerTheme(owner).key);
+          assert.match(node.innerHTML, /pm-owner-plinth/);
+          assert.match(node.innerHTML, /pm-owner-trim/);
+          const core = node.innerHTML.match(
+            /<g class="pm-architecture-core">([\s\S]*?)<\/g>/,
+          )[1];
+          cores.push(core);
+          assert.ok(core.includes('#d8957c')); // center or center annex stays red for every owner
+        }
+        assert.equal(new Set(cores).size, 1);
+      }
+  });
+});
+test('electric badge retains strong luminance contrast on light board terrain', () => {
+  const lum = (hex) => {
+    const rgb = hex
+      .slice(1)
+      .match(/../g)
+      .map((v) => parseInt(v, 16) / 255)
+      .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
+  };
+  const ratio = (a, b) => {
+    const x = lum(a),
+      y = lum(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  };
+  for (const owner of ownerFixtures) {
+    const t = ownerTheme(owner);
+    assert.ok(ratio(t.light, t.dark) >= 4.5);
+  }
+  const electric = ownerTheme(ownerFixtures[3]);
+  assert.ok(ratio(electric.color, electric.dark) >= 4.5);
+  assert.ok(ratio('#e4e7ca', electric.dark) >= 4.5);
+});
+
+test('explicit release differs from absent owner metadata and does not mutate construction input', () => {
+  const state = Object.freeze({ stage: 'final' });
+  assert.equal(applyConstructionOwner(state).stage, 'final');
+  assert.equal(applyConstructionOwner(state).owner, undefined);
+  assert.equal(applyConstructionOwner(state, null).stage, 'unowned');
+  const inherited = Object.freeze({ stage: 'center', owner: ownerFixtures[0] });
+  const transferred = applyConstructionOwner(inherited, ownerFixtures[3]);
+  assert.equal(transferred.owner.id, 'computer-electric');
+  assert.equal(inherited.owner.id, 'human');
+  assert.equal(
+    applyConstructionOwner({ stage: 'unowned' }, ownerFixtures[0]).owner,
+    null,
+  );
 });

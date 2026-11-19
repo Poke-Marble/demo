@@ -1,4 +1,5 @@
 import type { ArtTile, RegionalScene } from './places';
+import type { OwnerVisual } from './ownership';
 
 export const constructionStages = [
   'unowned',
@@ -8,13 +9,6 @@ export const constructionStages = [
   'final',
 ] as const;
 export type ConstructionStage = (typeof constructionStages)[number];
-export const ownerColors = [
-  '#e29860',
-  '#69a6c8',
-  '#b18cca',
-  '#80af77',
-] as const;
-export type OwnerColor = (typeof ownerColors)[number];
 export type FinalFacility =
   | 'lab'
   | 'department-store'
@@ -31,7 +25,9 @@ export type FinalFacility =
 /** Render-only input: supplied by the integration, no purchase or economy decisions. */
 export interface ConstructionVisual {
   stage: ConstructionStage;
-  ownerColor?: OwnerColor;
+  owner?: OwnerVisual | null;
+  /** @deprecated Ignored. Supply owner pokemonId/type instead of a color. */
+  ownerColor?: string;
 }
 export interface BuildingMetadata {
   finalFacility?: FinalFacility;
@@ -74,17 +70,15 @@ export function finalFacility(tile: BuildingTile): FinalFacility {
 }
 /** Temporary compatibility mapping: owner + 0/1/2/3 => camp/shop/center/final.
  * This mapping is visual only; economy owners may instead pass explicit stages. */
-export function constructionFromHolding(
-  holding?: { facilityLevel: number },
-  seat = 0,
-): ConstructionVisual {
+export function constructionFromHolding(holding?: {
+  facilityLevel: number;
+}): ConstructionVisual {
   if (!holding) return { stage: 'unowned' };
   const level = Number.isFinite(holding.facilityLevel)
     ? Math.max(0, Math.min(3, Math.trunc(holding.facilityLevel)))
     : 0;
   return {
     stage: constructionStages[level + 1]!,
-    ownerColor: ownerColors[((seat % 4) + 4) % 4]!,
   };
 }
 export function builtComponents(state: ConstructionVisual) {

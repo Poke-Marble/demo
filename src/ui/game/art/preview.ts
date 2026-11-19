@@ -4,10 +4,16 @@ import { createProjectedBoard } from '../board';
 import { createConstructionArt } from './buildings';
 import {
   constructionStages,
-  ownerColors,
   type ConstructionStage,
   type ConstructionVisual,
 } from './construction';
+import {
+  ownerTheme,
+  ownerDescription,
+  ownerMark,
+  type OwnerVisual,
+  type OwnerType,
+} from './ownership';
 import type { TileId } from '../../../game/contracts';
 import { kantoJohtoMap } from '../../../data/maps/kanto-johto';
 import { sampleState } from '../../../data/sample-map';
@@ -98,11 +104,42 @@ let stage: ConstructionStage = constructionStages.includes(
 )
   ? (requested as ConstructionStage)
   : 'unowned';
+const previewOwners: readonly OwnerVisual[] = participants.map((p) => ({
+  id: p.id,
+  name: p.name,
+  pokemonId: p.pokemonId,
+}));
+const requestedOwner = new URLSearchParams(location.search).get('owner');
+let ownerMode: OwnerType | 'mixed' | 'none' = [
+  'grass',
+  'fire',
+  'water',
+  'electric',
+  'none',
+].includes(requestedOwner ?? '')
+  ? (requestedOwner as OwnerType | 'none')
+  : 'mixed';
+const ownerOverrides = new Map<TileId, OwnerVisual | null>();
 const makeState = () =>
-  new Map(
+  new Map<TileId, ConstructionVisual>(
     map.tiles
       .filter((t) => t.kind === 'city')
-      .map((t, i) => [t.id, { stage, ownerColor: ownerColors[i % 4]! }]),
+      .map((tile, i) => {
+        const owner = ownerOverrides.has(tile.id)
+          ? ownerOverrides.get(tile.id)
+          : ownerMode === 'mixed'
+            ? previewOwners[i % previewOwners.length]
+            : ownerMode === 'none'
+              ? null
+              : previewOwners.find((p) => ownerTheme(p).key === ownerMode);
+        return [
+          tile.id,
+          {
+            stage: stage === 'unowned' || !owner ? 'unowned' : stage,
+            owner: stage === 'unowned' ? null : (owner ?? null),
+          },
+        ];
+      }),
   );
 let construction: ReadonlyMap<TileId, ConstructionVisual> = makeState();
 const controls = document.createElement('section');
@@ -137,12 +174,90 @@ skip.onclick = () =>
   viewport.getAnimations({ subtree: true }).forEach((a) => a.finish());
 controls.append(skip, stageStatus);
 root.append(controls);
+const ownershipControls = document.createElement('section');
+ownershipControls.className = 'art-owner-controls';
+ownershipControls.setAttribute('aria-label', '소유자 타입 및 소유권 교체 시연');
+const ownershipStatus = document.createElement('output');
+ownershipStatus.className = 'ownership-status';
+ownershipStatus.setAttribute('aria-live', 'polite');
+const ownerButtons = new Map<string, HTMLButtonElement>();
+for (const value of [
+  'mixed',
+  'none',
+  'grass',
+  'fire',
+  'water',
+  'electric',
+] as const) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.ownerMode = value;
+  const owner = previewOwners.find((p) => ownerTheme(p).key === value);
+  if (owner) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 18 18');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.innerHTML = ownerMark(owner, 0, 0, 18);
+    button.append(
+      svg,
+      `${ownerTheme(owner).label} · ${ownerTheme(owner).symbol}`,
+    );
+  } else button.textContent = value === 'mixed' ? '네 타입 혼합' : '미소유';
+  button.onclick = () => {
+    ownerMode = value;
+    ownerOverrides.clear();
+    construction = makeState();
+    renderBoard();
+    ownershipStatus.textContent = `시연 소유자: ${button.textContent}`;
+  };
+  ownerButtons.set(value, button);
+  ownershipControls.append(button);
+}
+const target = document.createElement('select');
+target.dataset.ownerTarget = 'true';
+target.setAttribute('aria-label', '소유권 교체 대상 도시');
+for (const tile of map.tiles.filter((t) => t.kind === 'city')) {
+  const option = document.createElement('option');
+  option.value = tile.id;
+  option.textContent = tile.nameKo;
+  target.append(option);
+}
+const successor = document.createElement('select');
+successor.dataset.ownerSuccessor = 'true';
+successor.setAttribute('aria-label', '새 소유자');
+for (const owner of [null, ...previewOwners]) {
+  const option = document.createElement('option');
+  option.value = owner?.id ?? '';
+  option.textContent = ownerDescription(owner);
+  successor.append(option);
+}
+successor.value = previewOwners[1]!.id;
+const transfer = document.createElement('button');
+transfer.type = 'button';
+transfer.textContent = '선택도시 소유권 교체';
+transfer.dataset.transfer = 'apply';
+transfer.onclick = () => {
+  const owner = previewOwners.find((p) => p.id === successor.value) ?? null;
+  ownerOverrides.set(target.value as TileId, owner);
+  construction = makeState();
+  renderBoard();
+  ownershipStatus.textContent = `${target.selectedOptions[0]!.textContent} · ${ownerDescription(owner)}`;
+};
+ownershipControls.append(
+  document.createElement('br'),
+  target,
+  successor,
+  transfer,
+  ownershipStatus,
+);
+root.append(ownershipControls);
 function renderBoard(
   previousConstruction?: ReadonlyMap<TileId, ConstructionVisual>,
 ) {
   const board = createProjectedBoard({
     view,
     construction,
+    ownership: ownerOverrides,
     ...(previousConstruction ? { previousConstruction } : {}),
     dice: '⚄',
     animating: false,
@@ -167,6 +282,8 @@ function renderBoard(
   viewport.replaceChildren(board);
   for (const [value, button] of buttons)
     button.setAttribute('aria-pressed', String(value === stage));
+  for (const [value, button] of ownerButtons)
+    button.setAttribute('aria-pressed', String(value === ownerMode));
   stageStatus.textContent = stageNames[stage];
 }
 const viewport = document.createElement('div');
@@ -198,12 +315,15 @@ function renderGallery() {
     ['ecruteak', '인주 · 문화회관 (가정)', 'final'],
     ['cerulean', '블루 · 체육관', 'final'],
   ];
-  for (const [slug, name, value] of samples) {
+  for (const [sampleIndex, [slug, name, value]] of samples.entries()) {
     const card = document.createElement('figure');
     card.append(
       createConstructionArt(
         { id: `tile:kj:${slug}`, kind: 'city' },
-        { stage: value },
+        {
+          stage: value,
+          owner: value === 'unowned' ? null : previewOwners[sampleIndex % 4]!,
+        },
       ),
     );
     const caption = document.createElement('figcaption');

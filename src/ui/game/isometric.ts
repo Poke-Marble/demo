@@ -3,6 +3,7 @@ import type { ConstructionVisual } from './art/construction';
 import { billboard } from './art/billboard';
 import { createRegionalFacility } from './art/regional';
 import type { ArtTile } from './art/places';
+import { ownerTheme, ownerMark, type OwnerVisual } from './art/ownership';
 import type { Tile } from '../../game/contracts';
 import {
   depthOrder,
@@ -28,6 +29,7 @@ export function atPoint(
 export function createTileFaces(
   kind: Tile['kind'],
   g: ReturnType<typeof tileGeometry>,
+  owner?: OwnerVisual | null,
 ) {
   const svg = document.createElementNS(NS, 'svg');
   const { width: w, height: h, thickness: t } = g;
@@ -35,7 +37,9 @@ export function createTileFaces(
   svg.setAttribute('aria-hidden', 'true');
   const top =
     kind === 'start' ? '#eed391' : kind === 'landmark' ? '#cbbce5' : '#e4e7ca';
-  svg.innerHTML = `<path d="M0 ${h / 2} ${w / 2} ${h} ${w / 2} ${h + t} 0 ${h / 2 + t}Z" fill="#859786"/><path d="M${w / 2} ${h} ${w} ${h / 2} ${w} ${h / 2 + t} ${w / 2} ${h + t}Z" fill="#667f78"/><path class="pm-face-top" d="M${w / 2} 0 ${w} ${h / 2} ${w / 2} ${h} 0 ${h / 2}Z" fill="${top}" stroke="#faf4d9" stroke-width="2"/>`;
+  const theme = ownerTheme(owner);
+  svg.dataset.ownerType = theme.key;
+  svg.innerHTML = `<path d="M0 ${h / 2} ${w / 2} ${h} ${w / 2} ${h + t} 0 ${h / 2 + t}Z" fill="${owner ? theme.color : '#859786'}"/><path d="M${w / 2} ${h} ${w} ${h / 2} ${w} ${h / 2 + t} ${w / 2} ${h + t}Z" fill="${owner ? theme.dark : '#667f78'}"/><path class="pm-face-top" d="M${w / 2} 0 ${w} ${h / 2} ${w / 2} ${h} 0 ${h / 2}Z" fill="${top}" stroke="${owner ? theme.dark : '#faf4d9'}" stroke-width="${owner ? 4 : 2}"/>${owner ? `<path d="M${w / 2} 3 ${w - 5} ${h / 2} ${w / 2} ${h - 3} 5 ${h / 2}Z" fill="none" stroke="${theme.color}" stroke-width="2"/>${ownerMark(owner, w / 2 - 6, h - 15, 12)}` : ''}`;
   return svg;
 }
 export function placeTile(

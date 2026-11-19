@@ -74,6 +74,17 @@
   pointer-events: none;
   text-shadow: 0 1px #0a293b;
 }
+.pm-group-marker {
+  display: inline-block;
+  margin-right: 3px;
+  padding: 0 2px;
+  color: #ebeddc;
+  background: #536770;
+  border: 1px solid #a8b8b0;
+  font-size: 0.8em;
+  line-height: 1.1;
+  border-radius: 2px;
+}
 .pm-iso-facility {
   position: absolute;
   transform: translate(-50%, -90%);

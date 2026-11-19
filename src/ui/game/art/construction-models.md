@@ -2,6 +2,8 @@
 
 2026-11-18, feat/board-art. 최신 사용자 확정 방향을 반영하며 이전 평면 시설/수목 렌더를 대체한다. 앞선 완료 커밋 9a2377e, 790b9bc는 보존했다. index/adapter/demo/contracts/실제맵/경제 규칙은 변경하지 않았다.
 
+2026-11-19 후속: 소유자 입력·타입 색상·문양 계약은 [ownership.md](./ownership.md)가 최신이다. ownerColor는 폐기 예정이며 owner pokemonId/type 입력을 사용한다. 건설 단계와 공통 투영 계약은 그대로다.
+
 ## 그래픽 채택 판단
 
 외부 후보 [Kenney Isometric Tiles Buildings](https://kenney.nl/assets/isometric-tiles-buildings)는 검색 결과에 CC0로 표기되어 있었으나 원출처 페이지/파일 접근이 제한됐다(직접 요청 403 및 웹 도구 restricted URL). 패키지 내 파일별 조건·대표 시설 구성·투영 각도를 검증하지 못했으므로 다운로드/채택하지 않았다. 앞선 Foxowl 평면 PNG는 이번 빌드에서 import하지 않는다. 과거 크롭·권리·해시 기록은 `../assets/regional/`에 보존한다. 새 외부 에셋이나 AI 비트맵은 없다.
@@ -18,7 +20,7 @@
 type ConstructionStage = 'unowned' | 'camp' | 'shop' | 'center' | 'final';
 interface ConstructionVisual {
   stage: ConstructionStage;
-  ownerColor?: OwnerColor; // 제공된 네 소유색 중 하나
+  owner?: OwnerVisual | null; // 실제 id/name 및 pokemonId 또는 type
 }
 interface BuildingMetadata {
   finalFacility?: FinalFacility;
@@ -34,8 +36,20 @@ interface BuildingMetadata {
 createProjectedBoard({
   ...existingOptions,
   construction: new Map([
-    ['tile:kj:pallet', { stage: 'camp', ownerColor: '#e29860' }],
-    ['tile:kj:saffron', { stage: 'final', ownerColor: '#69a6c8' }],
+    [
+      'tile:kj:pallet',
+      {
+        stage: 'camp',
+        owner: { id: 'player:1', name: '나', pokemonId: 'pokemon:0001' },
+      },
+    ],
+    [
+      'tile:kj:saffron',
+      {
+        stage: 'final',
+        owner: { id: 'player:2', name: 'COMPUTER 1', type: 'fire' },
+      },
+    ],
   ]),
   previousConstruction, // 이전 시각 상태. 단계 상승만 320ms 등장 연출
   visualMetadata: new Map([

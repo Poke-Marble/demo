@@ -16,20 +16,20 @@ const browser = await chromium.launch({
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
   headless: true,
 });
-const folder = 'artifacts/construction-qa';
+const folder = 'artifacts/ownership-qa';
 await mkdir(folder, { recursive: true });
 await Promise.all(
   [1200, 390].map((width) =>
     copyFile(
-      `artifacts/board-art-qa/dev-${width}.png`,
-      `${folder}/before-flat-${width}.png`,
+      `artifacts/construction-qa/dev-${width}-final.png`,
+      `${folder}/before-neutral-model-${width}.png`,
     ).catch(() => {}),
   ),
 );
 const reports = [];
 try {
   for (const [mode, origin] of [
-    ['dev', 'http://127.0.0.1:5194'],
+    ['dev', 'http://127.0.0.1:5184'],
     ['production', 'http://127.0.0.1:5195'],
     ['subpath', 'http://127.0.0.1:5196/board-art'],
   ]) {
@@ -97,6 +97,145 @@ try {
         });
         transitions.push({ stage, animated, components });
       }
+      const groupMarkers = await page
+        .locator('.pm-group-marker')
+        .allTextContents();
+      const targetId = 'tile:kj:pallet';
+      const targetTile = () =>
+        page.locator(`.pm-iso-tile[data-tile-id="${targetId}"]`);
+      const targetModel = () =>
+        page.locator(
+          `.pm-iso-facility[data-tile-id="${targetId}"] .pm-construction-model`,
+        );
+      const originalCore = await targetModel()
+        .locator('.pm-architecture-core')
+        .innerHTML();
+      const ownerSelections = [];
+      for (const type of ['grass', 'fire', 'water', 'electric']) {
+        await page.locator(`button[data-owner-mode="${type}"]`).click();
+        assert.ok(
+          (
+            await page
+              .locator('.pm-iso-tile.pm-city')
+              .evaluateAll((nodes) => nodes.map((n) => n.dataset.ownerType))
+          ).every((x) => x === type),
+        );
+        assert.equal(
+          await page
+            .locator(`.pm-iso-tile.pm-city [data-owner-mark="${type}"]`)
+            .count(),
+          27,
+        );
+        assert.equal(
+          await targetModel().locator('.pm-architecture-core').innerHTML(),
+          originalCore,
+        );
+        assert.deepEqual(
+          await page.locator('.pm-group-marker').allTextContents(),
+          groupMarkers,
+        );
+        assert.equal(
+          await page
+            .locator('.pm-board')
+            .evaluate(
+              (n) =>
+                n
+                  .getAnimations({ subtree: true })
+                  .filter((a) => a.playState === 'running').length,
+            ),
+          0,
+        );
+        await page.screenshot({
+          path: `${folder}/${mode}-${width}-owner-${type}.png`,
+          fullPage: true,
+        });
+        ownerSelections.push(type);
+      }
+      await page.locator('button[data-owner-mode="mixed"]').click();
+      const othersBefore = await page
+        .locator(`.pm-iso-tile.pm-city:not([data-tile-id="${targetId}"])`)
+        .evaluateAll((nodes) =>
+          nodes.map((n) => [
+            n.dataset.tileId,
+            n.dataset.ownerId,
+            n.dataset.ownerType,
+          ]),
+        );
+      await page.locator('select[data-owner-target]').selectOption(targetId);
+      const recipients = await page
+        .locator('select[data-owner-successor] option')
+        .evaluateAll((nodes) =>
+          nodes
+            .filter((n) => n.value)
+            .map((n) => ({ id: n.value, text: n.textContent })),
+        );
+      const transfers = [];
+      for (const [i, recipient] of recipients.entries()) {
+        const type = ['grass', 'fire', 'water', 'electric'][i];
+        await page
+          .locator('select[data-owner-successor]')
+          .selectOption(recipient.id);
+        await page.locator('button[data-transfer="apply"]').click();
+        assert.equal(await targetTile().getAttribute('data-owner-type'), type);
+        assert.equal(
+          await targetTile().getAttribute('data-owner-id'),
+          recipient.id,
+        );
+        assert.ok(
+          (await targetTile().getAttribute('aria-label')).includes(
+            recipient.text.split(' ? ')[0],
+          ),
+        );
+        assert.equal(
+          await targetModel().locator('.pm-architecture-core').innerHTML(),
+          originalCore,
+        );
+        assert.deepEqual(
+          await page
+            .locator(`.pm-iso-tile.pm-city:not([data-tile-id="${targetId}"])`)
+            .evaluateAll((nodes) =>
+              nodes.map((n) => [
+                n.dataset.tileId,
+                n.dataset.ownerId,
+                n.dataset.ownerType,
+              ]),
+            ),
+          othersBefore,
+        );
+        transfers.push({ id: recipient.id, type });
+      }
+      await page.screenshot({
+        path: `${folder}/${mode}-${width}-transfer-electric.png`,
+        fullPage: true,
+      });
+      await page.locator('select[data-owner-successor]').selectOption('');
+      await page.locator('button[data-transfer="apply"]').click();
+      assert.equal(
+        await targetTile().getAttribute('data-owner-type'),
+        'neutral',
+      );
+      assert.equal(await targetTile().getAttribute('data-owner-id'), '');
+      assert.equal(await targetModel().getAttribute('data-stage'), 'unowned');
+      assert.equal(await targetModel().innerHTML(), '');
+      assert.deepEqual(
+        await page.locator('.pm-group-marker').allTextContents(),
+        groupMarkers,
+      );
+      await page.screenshot({
+        path: `${folder}/${mode}-${width}-transfer-unowned.png`,
+        fullPage: true,
+      });
+      await page.locator('button[data-owner-mode="none"]').click();
+      assert.ok(
+        (
+          await cityModels.evaluateAll((nodes) => nodes.map((n) => n.innerHTML))
+        ).every((x) => x === ''),
+      );
+      assert.equal(
+        await page.locator('.pm-iso-tile [data-owner-mark]').count(),
+        0,
+      );
+      await page.locator('button[data-owner-mode="mixed"]').click();
       assert.equal(
         await page.locator('.pm-board image[href*="regional"]').count(),
         0,
@@ -183,6 +322,8 @@ try {
         mode,
         width,
         transitions,
+        ownerSelections,
+        transfers,
         decoded,
         clicks: 32,
         keyboard: true,
@@ -195,7 +336,7 @@ try {
     }
   }
   const reduced = await browser.newPage({ reducedMotion: 'reduce' });
-  await reduced.goto('http://127.0.0.1:5194/board-art-preview.html', {
+  await reduced.goto('http://127.0.0.1:5184/board-art-preview.html', {
     waitUntil: 'networkidle',
   });
   await reduced.locator('button[data-stage="shop"]').click();
@@ -208,7 +349,7 @@ try {
   await reduced.close();
   // Read-only existing game demo, with existing setup and holdings fixture.
   for (const [mode, origin] of [
-    ['dev', 'http://127.0.0.1:5194'],
+    ['dev', 'http://127.0.0.1:5184'],
     ['production', 'http://127.0.0.1:5195'],
     ['subpath', 'http://127.0.0.1:5196/board-art'],
   ]) {
@@ -218,6 +359,7 @@ try {
         waitUntil: 'networkidle',
       });
       await page.locator('.pm-setup-title .pm-primary').click();
+      await page.locator('[data-focus="starter-pokemon:0025"]').click();
       await page.locator('.pm-setup-starter .pm-primary').click();
       await page.locator('.pm-setup-map .pm-primary').click();
       await page.locator('.pm-board-iso').waitFor();
@@ -230,6 +372,24 @@ try {
           stages.includes('center') &&
           stages.includes('final'),
       );
+      const authoritativeOwners = {
+        'player:1': 'electric',
+        'player:2': 'grass',
+        'player:3': 'fire',
+        'player:4': 'water',
+      };
+      const actualOwners = await page
+        .locator('.pm-iso-tile[data-owner-id]:not([data-owner-id=""])')
+        .evaluateAll((nodes) =>
+          nodes.map((n) => ({
+            id: n.dataset.ownerId,
+            type: n.dataset.ownerType,
+            label: n.getAttribute('aria-label'),
+          })),
+        );
+      assert.equal(actualOwners.length, 5);
+      for (const owner of actualOwners)
+        assert.equal(owner.type, authoritativeOwners[owner.id]);
       await page.screenshot({
         path: `${folder}/existing-demo-${mode}-${width}.png`,
         fullPage: true,
@@ -243,6 +403,7 @@ try {
         width,
         stages,
         tileDialog: true,
+        actualOwners,
       });
       await page.close();
     }
@@ -256,6 +417,8 @@ try {
         stages: r.transitions?.length,
         decoded: r.decoded?.length,
         clicks: r.clicks,
+        owners: r.ownerSelections,
+        transfers: r.transfers?.length,
         existingDemo: r.existingDemo,
       })),
       null,

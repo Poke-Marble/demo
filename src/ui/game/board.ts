@@ -7,6 +7,13 @@ import {
 import { alignPawnFoot } from './art/pawn-foot';
 import { createArtCredits } from './art/credits';
 import {
+  ownerFromInput,
+  ownerTheme,
+  ownerDescription,
+  applyConstructionOwner,
+  type OwnerVisual,
+} from './art/ownership';
+import {
   animateConstruction,
   shouldAnimateConstruction,
 } from './art/buildings';
@@ -34,6 +41,7 @@ export function createProjectedBoard(options: {
   construction?: ReadonlyMap<TileId, ConstructionVisual>;
   previousConstruction?: ReadonlyMap<TileId, ConstructionVisual>;
   visualMetadata?: ReadonlyMap<TileId, BuildingMetadata>;
+  ownership?: ReadonlyMap<TileId, OwnerVisual | null>;
 }) {
   const { view, positions, from } = options;
   const board = document.createElement('div');
@@ -60,22 +68,51 @@ export function createProjectedBoard(options: {
     tileButton.dataset.focus = tile.id;
     tileButton.dataset.tileId = tile.id;
     const holding = view.state.holdings.find((h) => h.tileId === tile.id);
-    const visual =
-      options.construction?.get(tile.id) ??
-      constructionFromHolding(
-        holding,
-        view.state.players.findIndex((p) => p.id === holding?.ownerId),
-      );
-    const info = tile.kind === 'city' ? ` · ${visual.stage}` : '';
+    const requested = options.construction?.get(tile.id);
+    const base = requested ?? constructionFromHolding(holding);
+    const explicit =
+      options.ownership?.has(tile.id) || requested?.owner !== undefined;
+    const resolved = ownerFromInput(
+      options.ownership?.has(tile.id)
+        ? (options.ownership.get(tile.id) ?? null)
+        : requested?.owner,
+      holding?.ownerId,
+      view.state.players,
+    );
+    const visual = applyConstructionOwner(
+      base,
+      explicit ? resolved : (resolved ?? undefined),
+    );
+    const owner = visual.stage === 'unowned' ? null : resolved;
+    tileButton.dataset.ownerId = owner?.id ?? '';
+    tileButton.dataset.ownerType = ownerTheme(owner).key;
+    const group =
+      tile.kind === 'city'
+        ? view.map.cityGroups.find((g) => g.id === tile.groupId)
+        : undefined;
+    const groupIndex = group
+      ? view.map.cityGroups.findIndex((g) => g.id === group.id) + 1
+      : 0;
+    if (group) tileButton.dataset.groupId = group.id;
+    const info =
+      (tile.kind === 'city' ? ` · ${visual.stage}` : '') +
+      ` · ${owner ? ownerDescription(owner) : visual.stage === 'unowned' ? '미소유' : '소유자 미지정 · 중립'}` +
+      (group ? ` · 그룹 ${group.nameKo}` : '');
     tileButton.setAttribute('aria-label', tile.nameKo + info);
     tileButton.title = tile.nameKo + info;
     tileButton.onclick = () => options.openTile(tile.id);
     placeTile(tileButton, g);
-    tileButton.append(createTileFaces(tile.kind, g));
+    tileButton.append(createTileFaces(tile.kind, g, owner));
     board.append(tileButton);
     const label = document.createElement('span');
     label.className = 'pm-iso-label';
-    label.textContent = tile.nameKo;
+    if (group) {
+      const marker = document.createElement('small');
+      marker.className = 'pm-group-marker';
+      marker.textContent = `G${groupIndex}`;
+      label.append(marker);
+    }
+    label.append(tile.nameKo);
     label.setAttribute('aria-hidden', 'true');
     atPoint(label, { x: g.x, y: g.y + g.height / 2 + g.thickness + 8 }, 20000);
     label.style.maxWidth = `${(g.width / sceneSize.width) * 100}%`;
