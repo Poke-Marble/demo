@@ -1,0 +1,64 @@
+{
+  "assets": [
+    {
+      "file": "center.png",
+      "sha256": "8bec1f5ec6da8df08ce4cb4bad0295d9d203cc34751b763d427adcbc1e267817",
+      "authors": ["Foxowl", "TheDeadHeroAlistair", "Game Freak"],
+      "crop": [96, 2432, 256, 2528],
+      "source": "https://eeveeexpo.com/resources/565/",
+      "download": "https://i.imgur.com/eL2B8ix.png",
+      "terms": "Free to use with credit to Foxowl and specified people. Not CC0; underlying Game Freak rights remain.",
+      "checked": "2026-11-18"
+    },
+    {
+      "file": "gym.png",
+      "sha256": "64579dbb86d963f2f81c13a54a2be2855ed6e42b7fdb4c8ea3b88b39e8d9b2a0",
+      "authors": ["Foxowl", "TheDeadHeroAlistair", "Game Freak"],
+      "crop": [32, 3152, 192, 3232],
+      "source": "https://eeveeexpo.com/resources/565/",
+      "download": "https://i.imgur.com/eL2B8ix.png",
+      "terms": "Free to use with credit to Foxowl and specified people. Not CC0; underlying Game Freak rights remain.",
+      "checked": "2026-11-18"
+    },
+    {
+      "file": "port.png",
+      "sha256": "16b8bddd6b95fe9c74435d4a1f8e90229f138c8e592b186fdb64f8963e62ad43",
+      "authors": [
+        "Foxowl",
+        "TheDeadHeroAlistair",
+        "Game Freak",
+        "Vurtax",
+        "Acanthite Team",
+        "Palladium Forums"
+      ],
+      "crop": [96, 720, 192, 800],
+      "source": "https://eeveeexpo.com/resources/565/",
+      "download": "https://i.imgur.com/eL2B8ix.png",
+      "terms": "Free to use with credit to Foxowl and specified people. Not CC0; underlying Game Freak rights remain.",
+      "checked": "2026-11-18"
+    },
+    {
+      "file": "tree.png",
+      "sha256": "22e21c26614e75d23a93cdec67485d1ef978b1edb524e12ead84142dfbf8fa68",
+      "authors": ["Foxowl", "TheDeadHeroAlistair", "Game Freak"],
+      "crop": [112, 1472, 256, 1696],
+      "source": "https://eeveeexpo.com/resources/565/",
+      "download": "https://i.imgur.com/eL2B8ix.png",
+      "terms": "Free to use with credit to Foxowl and specified people. Not CC0; underlying Game Freak rights remain.",
+      "checked": "2026-11-18"
+    },
+    {
+      "file": "townhouse.png",
+      "sha256": "ab4c13a67d8606adda751c318695888853e56ba40a9bfcfad4f11748f1cb61cc",
+      "authors": ["Foxowl", "TheDeadHeroAlistair", "Game Freak"],
+      "crop": [0, 1106, 160, 1280],
+      "source": "https://eeveeexpo.com/resources/565/",
+      "download": "https://i.imgur.com/eL2B8ix.png",
+      "terms": "Free to use with credit to Foxowl and specified people. Not CC0; underlying Game Freak rights remain.",
+      "checked": "2026-11-18"
+    }
+  ],
+  "originalSheetSha256": "15ebbaaeb19574a2004e4521147f3e680947852b7bd1568ef01b3b3f40cada81",
+  "originalSheetSize": [256, 3904],
+  "permissionQuote": "Enjoy, they're free to use (with credit to me and the people I specified)."
+}

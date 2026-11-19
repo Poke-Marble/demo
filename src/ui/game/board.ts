@@ -1,3 +1,22 @@
+import { modelPlacement } from './art/model-geometry';
+import {
+  constructionFromHolding,
+  type ConstructionVisual,
+  type BuildingMetadata,
+} from './art/construction';
+import { alignPawnFoot } from './art/pawn-foot';
+import { createArtCredits } from './art/credits';
+import {
+  ownerFromInput,
+  ownerTheme,
+  ownerDescription,
+  applyConstructionOwner,
+  type OwnerVisual,
+} from './art/ownership';
+import {
+  animateConstruction,
+  shouldAnimateConstruction,
+} from './art/buildings';
 import type { PokemonId, TileId } from '../../game/contracts';
 import type { GameView } from './adapter';
 import { boardCells } from './presentation';
@@ -9,13 +28,7 @@ import {
   createTileFaces,
   placeTile,
 } from './isometric';
-import {
-  depthOrder,
-  pawnFoot,
-  projectWorld,
-  sceneSize,
-  tileGeometry,
-} from './projection';
+import { depthOrder, pawnFoot, sceneSize, tileGeometry } from './projection';
 
 export function createProjectedBoard(options: {
   view: GameView;
@@ -25,6 +38,10 @@ export function createProjectedBoard(options: {
   from: ReadonlyMap<string, TileId>;
   sprite(id: PokemonId, walk?: boolean): HTMLElement;
   openTile(id: TileId): void;
+  construction?: ReadonlyMap<TileId, ConstructionVisual>;
+  previousConstruction?: ReadonlyMap<TileId, ConstructionVisual>;
+  visualMetadata?: ReadonlyMap<TileId, BuildingMetadata>;
+  ownership?: ReadonlyMap<TileId, OwnerVisual | null>;
 }) {
   const { view, positions, from } = options;
   const board = document.createElement('div');
@@ -36,16 +53,11 @@ export function createProjectedBoard(options: {
   center.className = 'pm-iso-center';
   const turn = document.createElement('small');
   turn.textContent = `TURN ${view.state.turnNumber}`;
-  const title = document.createElement('strong');
-  title.textContent = '관동 · 성도';
   const dice = document.createElement('span');
   dice.className = 'pm-dice';
   dice.textContent = options.dice;
-  const hint = document.createElement('small');
-  hint.textContent = options.animating
-    ? '다음 마을로 이동 중'
-    : 'Tiny Town · Kenney · CC0';
-  center.append(turn, title, dice, hint);
+  center.append(turn, dice);
+  board.append(createArtCredits());
   board.append(center);
   view.map.tiles.forEach((tile, index) => {
     const cell = cells[index]!,
@@ -56,49 +68,83 @@ export function createProjectedBoard(options: {
     tileButton.dataset.focus = tile.id;
     tileButton.dataset.tileId = tile.id;
     const holding = view.state.holdings.find((h) => h.tileId === tile.id);
-    const info = holding ? ` · 시설 ${holding.facilityLevel}단계` : '';
+    const requested = options.construction?.get(tile.id);
+    const base = requested ?? constructionFromHolding(holding);
+    const explicit =
+      options.ownership?.has(tile.id) || requested?.owner !== undefined;
+    const resolved = ownerFromInput(
+      options.ownership?.has(tile.id)
+        ? (options.ownership.get(tile.id) ?? null)
+        : requested?.owner,
+      holding?.ownerId,
+      view.state.players,
+    );
+    const visual = applyConstructionOwner(
+      base,
+      explicit ? resolved : (resolved ?? undefined),
+    );
+    const owner = visual.stage === 'unowned' ? null : resolved;
+    tileButton.dataset.ownerId = owner?.id ?? '';
+    tileButton.dataset.ownerType = ownerTheme(owner).key;
+    const group =
+      tile.kind === 'city'
+        ? view.map.cityGroups.find((g) => g.id === tile.groupId)
+        : undefined;
+    const groupIndex = group
+      ? view.map.cityGroups.findIndex((g) => g.id === group.id) + 1
+      : 0;
+    if (group) tileButton.dataset.groupId = group.id;
+    const info =
+      (tile.kind === 'city' ? ` · ${visual.stage}` : '') +
+      ` · ${owner ? ownerDescription(owner) : visual.stage === 'unowned' ? '미소유' : '소유자 미지정 · 중립'}` +
+      (group ? ` · 그룹 ${group.nameKo}` : '');
     tileButton.setAttribute('aria-label', tile.nameKo + info);
     tileButton.title = tile.nameKo + info;
     tileButton.onclick = () => options.openTile(tile.id);
     placeTile(tileButton, g);
-    tileButton.append(createTileFaces(tile.kind, g));
+    tileButton.append(createTileFaces(tile.kind, g, owner));
     board.append(tileButton);
     const label = document.createElement('span');
     label.className = 'pm-iso-label';
-    label.textContent = tile.nameKo;
+    if (group) {
+      const marker = document.createElement('small');
+      marker.className = 'pm-group-marker';
+      marker.textContent = `G${groupIndex}`;
+      label.append(marker);
+    }
+    label.append(tile.nameKo);
     label.setAttribute('aria-hidden', 'true');
     atPoint(label, { x: g.x, y: g.y + g.height / 2 + g.thickness + 8 }, 20000);
     label.style.maxWidth = `${(g.width / sceneSize.width) * 100}%`;
     board.append(label);
-    if (tile.kind !== 'start') {
-      const building = document.createElement('button');
-      building.type = 'button';
-      building.tabIndex = -1;
+    {
+      const building = document.createElement('span');
       building.setAttribute('aria-hidden', 'true');
       building.className = `pm-iso-facility ${tile.kind === 'landmark' ? 'is-landmark' : ''}`;
       building.title = tile.nameKo + info;
-      building.onclick = () => {
-        tileButton.focus();
-        options.openTile(tile.id);
-      };
-      const base = projectWorld(
-        cell.row - 1 - 0.18,
-        cell.column - 1 - 0.12,
-        side,
-      );
-      atPoint(building, base);
-      building.style.width = `${(Math.min(70, g.width * 0.57) / sceneSize.width) * 100}%`;
-      building.style.height = `${(Math.min(100, g.width * (tile.kind === 'landmark' ? 1.15 : 0.78) + Math.min(3, holding?.facilityLevel ?? 0) * 9) / sceneSize.height) * 100}%`;
+      const placement = modelPlacement(g);
+      atPoint(building, placement, depthOrder({ x: g.x, y: placement.depthY }));
+      building.style.width = `${(placement.width / sceneSize.width) * 100}%`;
+      building.style.height = `${(placement.height / sceneSize.height) * 100}%`;
+      building.dataset.tileId = tile.id;
       building.append(
-        createFacility(tile.kind, holding?.facilityLevel ?? 0, index),
+        createFacility(
+          tile.kind,
+          holding?.facilityLevel ?? 0,
+          index,
+          { ...tile, ...options.visualMetadata?.get(tile.id) },
+          visual,
+        ),
       );
+      if (
+        tile.kind === 'city' &&
+        shouldAnimateConstruction(
+          options.previousConstruction?.get(tile.id),
+          visual,
+        )
+      )
+        animateConstruction(building.firstElementChild!);
       board.append(building);
-    } else {
-      const start = document.createElement('span');
-      start.className = 'pm-iso-start';
-      start.textContent = 'START';
-      atPoint(start, g, 20001);
-      board.append(start);
     }
   });
   view.state.players.forEach((player, seat) => {
@@ -116,6 +162,7 @@ export function createProjectedBoard(options: {
     shadow.className = 'pm-pawn-shadow';
     const figure = options.sprite(player.pokemonId, positions.has(player.id));
     figure.classList.add('pm-pawn-figure');
+    alignPawnFoot(figure);
     pawn.append(shadow, figure);
     atPoint(pawn, point);
     board.append(pawn);
