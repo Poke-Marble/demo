@@ -1,0 +1,51 @@
+body {
+  margin: 0;
+  background: #eaf1eb;
+  color: #294d49;
+  font-family: system-ui, sans-serif;
+}
+#app {
+  max-width: 900px;
+  margin: 10vh auto;
+  padding: 24px;
+}
+h1 {
+  font-size: clamp(26px, 5vw, 42px);
+}
+nav {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+nav button {
+  border: 1px solid #749387;
+  background: #fffbef;
+  color: inherit;
+  border-radius: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+.feedback-stage {
+  margin: 50px 0 24px;
+  position: relative;
+  height: 100px;
+  border-radius: 16px;
+  background: repeating-linear-gradient(90deg, #b6cfbd 0 11%, #a3bfae 11% 12%);
+}
+.feedback-pawn {
+  position: absolute;
+  left: 2%;
+  bottom: 30px;
+  font-size: 36px;
+  color: #d06d46;
+  transition: left 210ms ease-out;
+}
+output {
+  display: block;
+  font-weight: bold;
+}
+@media (prefers-reduced-motion: reduce) {
+  .feedback-pawn {
+    transition: none;
+  }
+}

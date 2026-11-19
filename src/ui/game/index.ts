@@ -1,3 +1,6 @@
+import { createGameplayFeedback } from './feedback/controller';
+import { createUpdateGate, walkingPath } from './feedback/policy';
+import type { SfxBus } from './feedback/audio';
 import { findSprite } from '../../assets/sprites';
 import type { GameEvent, PokemonId, TileId } from '../../game/contracts';
 import type { GameUIAdapter, UIChoice, UIUpdate } from './adapter';
@@ -55,7 +58,11 @@ function button(text: string, run: () => void, className = '') {
 }
 
 /** Mounts only inside root. Call destroy before replacing the host screen. */
-export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
+export function mountGameUI(
+  root: HTMLElement,
+  adapter: GameUIAdapter,
+  options: { sfx?: SfxBus } = {},
+) {
   let previousConstruction = new Map<TileId, ConstructionVisual>();
   const host = el('section', 'pm-game pm-shell');
   host.tabIndex = -1;
@@ -72,6 +79,11 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     }
   });
   root.append(host);
+  const feedback = createGameplayFeedback(root, options.sfx);
+  root.append(feedback.controls);
+  const feedbackGate = createUpdateGate();
+  let feedbackLocked = false;
+  let pendingFeedback = 0;
   let view = adapter.getView();
   let disposed = false,
     busy = false,
@@ -104,10 +116,10 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
           : null;
     }
     effectsLocked = locked;
-    host.inert = locked;
+    host.inert = locked || feedbackLocked;
     if (!locked)
       requestAnimationFrame(() => {
-        if (disposed || effectsLocked) return;
+        if (disposed || effectsLocked || feedbackLocked) return;
         if (effectFocus?.isConnected) effectFocus.focus();
         else
           host
@@ -179,7 +191,8 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     if (status) status.textContent = message;
   };
   async function invoke(fn: () => void | Promise<void>) {
-    if (busy || animating || effectsLocked || disposed) return;
+    if (busy || animating || effectsLocked || feedbackLocked || disposed)
+      return;
     busy = true;
     render();
     errorMessage = '';
@@ -214,6 +227,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       busy ||
       animating ||
       effectsLocked ||
+      feedbackLocked ||
       !humanTurn() ||
       (!promptId &&
         (!choice.action ||
@@ -652,7 +666,12 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       Array.from(host.querySelectorAll<HTMLElement>('[data-focus]'))
         .find((n) => n.dataset.focus === focused)
         ?.focus();
-    if (!animating && !effectsLocked && view.state.phase === 'finished') {
+    if (
+      !animating &&
+      !effectsLocked &&
+      !feedbackLocked &&
+      view.state.phase === 'finished'
+    ) {
       const winner = view.state.players.find(
         (p) => p.id === view.state.victory?.winnerId,
       );
@@ -673,6 +692,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     } else if (
       !animating &&
       !effectsLocked &&
+      !feedbackLocked &&
       view.prompt &&
       humanTurn() &&
       !view.flightSelection
@@ -685,7 +705,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         !!p.dismissible,
       );
     }
-    if (!animating && !effectsLocked)
+    if (!animating && !effectsLocked && !feedbackLocked)
       effects.select(
         view.flightSelection,
         adapter.selectFlightDestination?.bind(adapter),
@@ -698,6 +718,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       busy ||
       animating ||
       effectsLocked ||
+      feedbackLocked ||
       !!view.flightSelection ||
       computerRunning ||
       humanTurn() ||
@@ -745,8 +766,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         : '';
     switch (event.type) {
       case 'dice-rolled':
-        dice = event.values.join(' · ');
-        return `${name}: 주사위 ${dice}`;
+        return `${name}: 주사위 ${event.values.join(' · ')}`;
       case 'player-moved':
         return `${name}: ${view.map.tiles.find((t) => t.id === event.to)?.nameKo ?? event.to} 도착`;
       case 'city-acquired':
@@ -765,6 +785,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
   }
   async function update(update: UIUpdate) {
     if (disposed) return;
+    const beforeView = view;
     view = update.view;
     const cues = [];
     if (view.state.phase !== 'setup') {
@@ -806,36 +827,53 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       log = [];
       dice = '—';
     }
-    log = [...log, ...update.events.map(eventText)].slice(-30);
     const current = generation;
-    if (
-      update.movement &&
-      !matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      animating = true;
-      const previous = update.events.find(
+    feedback.begin();
+    const movement = update.movement;
+    const previous =
+      movement &&
+      update.events.find(
         (event) =>
-          event.type === 'player-moved' &&
-          event.playerId === update.movement?.playerId,
+          event.type === 'player-moved' && event.playerId === movement.playerId,
       );
-      let previousTile =
-        previous?.type === 'player-moved'
-          ? previous.from
-          : update.movement.path[0];
-      for (const tile of update.movement.path) {
-        if (disposed || current !== generation) break;
-        if (previousTile)
-          movementFrom.set(update.movement.playerId, previousTile);
-        offsets.set(update.movement.playerId, tile);
+    let previousTile =
+      previous?.type === 'player-moved'
+        ? previous.from
+        : beforeView.state.players.find((p) => p.id === movement?.playerId)
+            ?.position;
+    const roll = update.events.find((event) => event.type === 'dice-rolled');
+    if (movement && previousTile) offsets.set(movement.playerId, previousTile);
+    if (roll?.type === 'dice-rolled') {
+      animating = true;
+      dice = '굴리는 중…';
+      closeDialog();
+      render();
+      await feedback.roll(roll.values);
+      if (current !== generation || disposed) return;
+      dice = roll.values.join(' · ');
+    }
+    // Confirmed numbers enter text and records only after the dice have settled.
+    log = [...log, ...update.events.map(eventText)].slice(-30);
+    if (movement && !feedback.suppressed) {
+      animating = true;
+      const flying = update.effects?.some((effect) => effect.type === 'fly');
+      const steps = flying
+        ? []
+        : walkingPath(movement.path, previousTile, view.map.tiles);
+      for (const tile of steps) {
+        if (disposed || current !== generation || feedback.suppressed) break;
+        if (previousTile) movementFrom.set(movement.playerId, previousTile);
+        offsets.set(movement.playerId, tile);
         render();
+        feedback.step();
         await sleep(230);
         previousTile = tile;
       }
-      offsets.clear();
-      movementFrom.clear();
-      animating = false;
     }
     if (current !== generation || disposed) return;
+    offsets.clear();
+    movementFrom.clear();
+    animating = false;
     if (update.effects?.length) {
       closeDialog();
       animating = true;
@@ -846,10 +884,29 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       animating = false;
     }
     for (const cue of cues) if (cue.reaction !== 'acting') emotions.apply(cue);
+    if (roll || movement) pendingFeedback = Math.max(0, pendingFeedback - 1);
+    feedbackLocked = pendingFeedback > 0;
+    host.inert = effectsLocked || feedbackLocked;
     render();
   }
-  const unsubscribe = adapter.subscribe((u) => {
+  const unsubscribe = adapter.subscribe((received) => {
+    if (disposed) return;
+    const u = feedbackGate.accept(received);
+    if (!u) return;
+    if (u.events.some((event) => event.type === 'dice-rolled') || u.movement) {
+      // Synchronous input lock, including computer updates before queue delivery.
+      feedbackLocked = true;
+      pendingFeedback++;
+      host.inert = true;
+      animating = true;
+    }
     if (u.view.state.phase === 'setup') {
+      feedbackGate.reset();
+      feedbackGate.accept(u);
+      feedback.reset();
+      feedbackLocked = false;
+      pendingFeedback = 0;
+      host.inert = false;
       for (const portrait of portraits.values()) portrait.destroy();
       portraits.clear();
       emotions.reset();
@@ -874,6 +931,11 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         if (receivedGeneration === generation) return update(u);
       })
       .catch(() => {
+        feedback.reset();
+        feedbackLocked = false;
+        pendingFeedback = 0;
+        offsets.clear();
+        movementFrom.clear();
         lockEffects(false);
         animating = false;
         tell('화면을 갱신하지 못했습니다.');
@@ -903,6 +965,8 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       emotions.destroy();
       for (const portrait of portraits.values()) portrait.destroy();
       portraits.clear();
+      feedback.destroy();
+      feedbackGate.reset();
       effects.destroy();
       computerAbort?.abort();
       cancelAnimationFrame(frameId);
