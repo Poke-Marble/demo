@@ -31,16 +31,16 @@ export function createDemoAdapter(
   let prompt: GameView['prompt'];
   let step = 0,
     rolled = false;
-  let computerStatus = '데모 컴퓨터가 순서대로 진행합니다';
+  let computerStatus = '차례 진행 중…';
   const listeners = new Set<(u: UIUpdate) => void>();
+  let updateSerial = 0;
   const getView = (): GameView => ({
     state,
     map,
-    mapName: `관동 · 성도 / ${map.tiles.length}칸 UI 샘플`,
+    mapName: '관동 · 성도',
     participants,
     computer: { connected: true, status: computerStatus },
     ...(prompt ? { prompt } : {}),
-    notice: `DEMO · ${map.tiles.length}칸 UI 샘플 · 컴퓨터 고정 행동 / 실제 AI·게임 규칙 미연결${options.showcase ? ' · 높이/겹침 QA 배치' : ''}`,
     actions:
       state.phase === 'playing' && !prompt
         ? [
@@ -63,8 +63,14 @@ export function createDemoAdapter(
     events: UIUpdate['events'] = [],
     movement?: UIUpdate['movement'],
   ) => {
+    const id = `demo:${++updateSerial}`;
     for (const listener of listeners)
-      listener({ view: getView(), events, ...(movement ? { movement } : {}) });
+      listener({
+        id,
+        view: getView(),
+        events,
+        ...(movement ? { movement } : {}),
+      });
   };
   function movePlayer(playerId: PlayerId) {
     const player = state.players.find((p) => p.id === playerId)!;
@@ -102,7 +108,7 @@ export function createDemoAdapter(
       turnNumber: state.turnNumber + 1,
     };
     rolled = false;
-    computerStatus = '다음 행동을 준비하고 있습니다';
+    computerStatus = '준비 중…';
     emit([{ type: 'turn-ended', playerId }]);
   }
   function offer(kind: 'purchase' | 'upgrade' | 'liquidate') {
@@ -269,11 +275,11 @@ export function createDemoAdapter(
         state.activePlayerId === playerId &&
         participants.find((p) => p.id === playerId)?.controller === 'computer';
       if (!valid()) return;
-      computerStatus = '주사위를 준비하고 있습니다 · DEMO';
+      computerStatus = '주사위 준비 중…';
       emit();
       await delay(options.computerDelayMs ?? 600, signal);
       if (!valid()) return;
-      computerStatus = '다음 마을로 이동하고 있습니다 · DEMO';
+      computerStatus = '이동 중…';
       const result = movePlayer(playerId);
       emit(result.events, result.movement);
       await delay(options.computerDelayMs ?? 650, signal);

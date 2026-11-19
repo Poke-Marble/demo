@@ -8,6 +8,16 @@ import {
   isHumanTurn,
 } from './setup';
 import { createWorldScenery } from './scenery';
+import { createSpecialEventPresenter } from './events/presenter';
+import { gameCredits } from './events/credits';
+import './events/shell.css';
+import { createPortrait } from './portraits/portrait';
+import {
+  createEmotionController,
+  eventEmotionCues,
+} from './portraits/emotions';
+export type { EmotionCue, PortraitReaction } from './portraits/emotions';
+export type { SpecialEventRequest, FlightSelection } from './events/contracts';
 import './game.css';
 import './isometric.css';
 export type {
@@ -18,6 +28,7 @@ export type {
   UIChoice,
   GameSetup,
   SetupParticipant,
+  UICredit,
 } from './adapter';
 const money = (value: number) =>
   new Intl.NumberFormat('ko-KR').format(value) + ' ₽';
@@ -40,7 +51,7 @@ function button(text: string, run: () => void, className = '') {
 
 /** Mounts only inside root. Call destroy before replacing the host screen. */
 export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
-  const host = el('section', 'pm-game');
+  const host = el('section', 'pm-game pm-shell');
   host.tabIndex = -1;
   host.addEventListener('keydown', (event) => {
     if (
@@ -71,6 +82,57 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
   let computerRunning = false;
   let computerError = false;
   let recordsOpen = false;
+  let effectsLocked = false;
+  let effectFocus: HTMLElement | null = null;
+  const portraits = new Map<string, ReturnType<typeof createPortrait>>();
+  const emotions = createEmotionController((playerId) => {
+    portraits.get(playerId)?.setReaction(emotions.get(playerId));
+  });
+  let seenEventObjects = new WeakSet<GameEvent>();
+  let anonymousUpdate = 0;
+  function lockEffects(locked: boolean) {
+    if (locked && !effectsLocked) {
+      effectFocus =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+    }
+    effectsLocked = locked;
+    host.inert = locked;
+    if (!locked)
+      requestAnimationFrame(() => {
+        if (disposed || effectsLocked) return;
+        if (effectFocus?.isConnected) effectFocus.focus();
+        else
+          host
+            .querySelector<HTMLButtonElement>('button:not(:disabled)')
+            ?.focus();
+        effectFocus = null;
+      });
+  }
+  const effects = createSpecialEventPresenter({
+    root,
+    lock: lockEffects,
+    partnerVisual(request) {
+      const player = view.state.players.find((p) => p.id === request.playerId);
+      return player ? sprite(player.pokemonId) : undefined;
+    },
+    describe(request) {
+      const player = view.state.players.find((p) => p.id === request.playerId);
+      return {
+        playerName: player?.name ?? '트레이너',
+        partnerName:
+          partners.find((p) => p.id === player?.pokemonId)?.name ?? '내 포켓몬',
+        ...(request.type === 'fly'
+          ? {
+              destinationName:
+                view.map.tiles.find((t) => t.id === request.to)?.nameKo ??
+                request.to,
+            }
+          : {}),
+      };
+    },
+  });
   const humanTurn = () => isHumanTurn(view.state, view.participants);
   let queue = Promise.resolve();
   let frameId = 0;
@@ -111,7 +173,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     if (status) status.textContent = message;
   };
   async function invoke(fn: () => void | Promise<void>) {
-    if (busy || animating || disposed) return;
+    if (busy || animating || effectsLocked || disposed) return;
     busy = true;
     render();
     errorMessage = '';
@@ -145,6 +207,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       !!choice.disabled ||
       busy ||
       animating ||
+      effectsLocked ||
       !humanTurn() ||
       (!promptId &&
         (!choice.action ||
@@ -190,11 +253,9 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
   function renderSetup(content: HTMLElement) {
     content.classList.add('pm-setup-' + setupScreen);
     const intro = el('div', 'pm-lobby-intro');
-    intro.append(
-      el('p', 'pm-eyebrow', 'KANTO & JOHTO'),
-      el('h1', 'pm-title', 'Poké Marble'),
-    );
-    content.append(intro);
+    if (setupScreen === 'title')
+      intro.append(el('h1', 'pm-title', 'Poke Marble'));
+    if (setupScreen === 'title') content.append(intro);
     const navigate = (screen: typeof setupScreen) => {
       setupScreen = screen;
       errorMessage = '';
@@ -215,35 +276,18 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       });
       content.append(
         titleScene,
-        el(
-          'p',
-          'pm-muted',
-          '하나의 보드, 네 마리의 포켓몬. 새로운 모험을 시작하세요.',
-        ),
         button('NEW GAME', () => navigate('starter'), 'pm-primary'),
-      );
-      content.append(
-        el('p', 'pm-key-hint', '나 + COMPUTER 3명  ·  결정 Enter  ·  선택 Tab'),
       );
       return;
     }
     const steps = el(
       'p',
       'pm-setup-steps',
-      setupScreen === 'starter'
-        ? '01 파트너 선택   /   02 맵 선택'
-        : '01 파트너 선택 ✓   /   02 맵 선택',
+      setupScreen === 'starter' ? '1 / 2' : '2 / 2',
     );
     content.append(steps);
     if (setupScreen === 'starter') {
-      content.append(
-        el('h2', '', '어떤 포켓몬과 함께할까요?'),
-        el(
-          'p',
-          'pm-muted',
-          '내 파트너 한 마리를 고르면, 나머지 세 마리는 컴퓨터와 함께합니다.',
-        ),
-      );
+      content.append(el('h2', '', '파트너 선택'));
       const choices = el('div', 'pm-starter-choices');
       partners.forEach((partner) => {
         const b = button(
@@ -263,11 +307,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
           el('span', 'pm-starter-type', partner.type),
           portrait,
           el('strong', '', partner.name),
-          el(
-            'small',
-            '',
-            selectedPartner === partner.id ? '내 파트너 ✓' : '파트너로 선택',
-          ),
+          el('small', '', selectedPartner === partner.id ? '선택됨 ✓' : '선택'),
         );
         choices.append(b);
       });
@@ -284,22 +324,14 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         button('타이틀로', () => navigate('title'), 'pm-back'),
       );
     } else {
-      content.append(el('h2', '', '모험할 지방을 선택하세요'));
+      content.append(el('h2', '', '맵 선택'));
       const maps = el('div', 'pm-map-choices');
       for (const [i, name] of ['관동 · 성도', '호연', '신오'].entries()) {
         const b = button('', () => {}, 'pm-map-choice pm-map-theme-' + i);
         b.disabled = i !== 0;
         b.setAttribute('aria-pressed', String(i === 0));
         b.append(
-          el(
-            'span',
-            'pm-map-vignette',
-            [
-              '산과 숲을 잇는 두 지방',
-              '바다 너머 새로운 여정',
-              '눈 덮인 전설의 땅',
-            ][i],
-          ),
+          el('span', 'pm-map-vignette'),
           el('strong', '', name),
           el('small', '', i === 0 ? '선택됨 ✓' : '준비중'),
         );
@@ -310,9 +342,8 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         el(
           'p',
           'pm-muted',
-          '나의 파트너: ' +
-            partners.find((p) => p.id === selectedPartner)?.name +
-            '  ·  COMPUTER 3명 자동 참가',
+          partners.find((p) => p.id === selectedPartner)?.name +
+            ' · COMPUTER 3',
         ),
       );
       const start = button(
@@ -345,18 +376,59 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         ? document.activeElement.dataset.focus
         : undefined;
     closeDialog();
+    for (const [playerId, portrait] of portraits) {
+      if (
+        view.state.phase === 'setup' ||
+        !view.state.players.some(
+          (p) => p.id === playerId && p.pokemonId === portrait.pokemonId,
+        )
+      ) {
+        portrait.destroy();
+        portraits.delete(playerId);
+      }
+    }
     spriteFrames = [];
     host.replaceChildren();
-    const header = el('header', 'pm-header');
-    header.append(
-      el('strong', 'pm-brand', '◓ POKÉ MARBLE'),
-      el(
-        'span',
-        'pm-badge',
-        adapter.demo ? 'DEMO · AI 시연' : '1 PLAYER + 3 COMPUTER',
+    const header = el(
+      'header',
+      `pm-header${view.state.phase === 'setup' ? ' pm-header-setup' : ''}`,
+    );
+    if (view.state.phase !== 'setup')
+      header.append(el('strong', 'pm-brand', 'Poke Marble'));
+    const tools = el('div', 'pm-header-tools');
+    if (adapter.demo)
+      tools.append(el('span', 'pm-badge', 'DEMO · 규칙·AI 미연결'));
+    tools.append(
+      button(
+        '크레딧',
+        () => {
+          const content = el('div', 'pm-credits-content');
+          for (const credit of gameCredits(view.credits)) {
+            const entry = el('section', 'pm-credit-entry');
+            entry.append(
+              el('strong', '', credit.label),
+              el('p', '', credit.attribution),
+            );
+            if (credit.sourceUrl) {
+              const link = el('a', '', '원본 출처');
+              link.href = credit.sourceUrl;
+              link.target = '_blank';
+              link.rel = 'noreferrer';
+              entry.append(link);
+            }
+            content.append(entry);
+          }
+          modal('크레딧', '', [content], true);
+        },
+        'pm-credits-button',
       ),
     );
+    header.append(tools);
     host.append(header);
+    for (const credit of view.credits ?? []) {
+      if (credit.requiredInline)
+        host.append(el('p', 'pm-required-credit', credit.attribution));
+    }
     const status = el('p', 'pm-status');
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
@@ -374,8 +446,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     }
     const layout = el('main', 'pm-layout');
     const boardArea = el('section', 'pm-board-area');
-    const mapLabel = el('p', 'pm-map-label', view.mapName);
-    boardArea.append(mapLabel);
+    boardArea.setAttribute('aria-label', view.mapName);
     const board = createProjectedBoard({
       view,
       dice,
@@ -436,7 +507,17 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         el('span', '', p.bankrupt ? '파산' : money(p.balance)),
       );
       const avatar = el('span', 'pm-hud-avatar');
-      avatar.append(sprite(p.pokemonId));
+      const portrait =
+        portraits.get(p.id) ??
+        createPortrait({
+          pokemonId: p.pokemonId,
+          name:
+            partners.find((partner) => partner.id === p.pokemonId)?.name ??
+            p.name,
+        });
+      portraits.set(p.id, portrait);
+      portrait.setReaction(emotions.get(p.id));
+      avatar.append(portrait.element);
       card.prepend(avatar);
       if (p.id === active?.id)
         card.append(
@@ -477,7 +558,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
             ? '컴퓨터 실행 오류 · 다시 시도해 주세요'
             : connected
               ? view.computer.status
-              : '컴퓨터 AI 연결 대기 중',
+              : '컴퓨터 연결 대기',
         ),
       );
       if (computerError)
@@ -533,14 +614,14 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         'span',
         '',
         view.state.phase === 'finished' && !animating
-          ? '모험을 마쳤다! 결과를 확인하고 새로운 여행을 시작하자.'
+          ? '여행 완료'
           : !humanTurn() && view.state.phase === 'playing'
-            ? `${active?.name ?? 'COMPUTER'} 진행 중 · ${view.computer.status}`
+            ? '진행 중…'
             : animating
-              ? '다음 마을로 이동하고 있다…'
+              ? '이동 중…'
               : view.prompt
                 ? view.prompt.title
-                : '무엇을 할까? 주사위를 굴리거나 자산을 확인하자!',
+                : '내 차례',
       ),
       el('small', '', '▼'),
     );
@@ -549,7 +630,7 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       Array.from(host.querySelectorAll<HTMLElement>('[data-focus]'))
         .find((n) => n.dataset.focus === focused)
         ?.focus();
-    if (!animating && view.state.phase === 'finished') {
+    if (!animating && !effectsLocked && view.state.phase === 'finished') {
       const winner = view.state.players.find(
         (p) => p.id === view.state.victory?.winnerId,
       );
@@ -567,7 +648,13 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         ],
         false,
       );
-    } else if (!animating && view.prompt && humanTurn()) {
+    } else if (
+      !animating &&
+      !effectsLocked &&
+      view.prompt &&
+      humanTurn() &&
+      !view.flightSelection
+    ) {
       const p = view.prompt;
       modal(
         p.title,
@@ -576,6 +663,11 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
         !!p.dismissible,
       );
     }
+    if (!animating && !effectsLocked)
+      effects.select(
+        view.flightSelection,
+        adapter.selectFlightDestination?.bind(adapter),
+      );
     scheduleComputerTurn();
   }
   function scheduleComputerTurn() {
@@ -583,6 +675,8 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       disposed ||
       busy ||
       animating ||
+      effectsLocked ||
+      !!view.flightSelection ||
       computerRunning ||
       humanTurn() ||
       view.state.phase !== 'playing' ||
@@ -650,15 +744,43 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
   async function update(update: UIUpdate) {
     if (disposed) return;
     view = update.view;
+    const cues = [];
+    if (view.state.phase !== 'setup') {
+      emotions.syncState(view.state);
+      // Without update IDs, only identical event object redelivery is deduped.
+      const events = update.id
+        ? update.events
+        : update.events.filter((event) => {
+            if (seenEventObjects.has(event)) return false;
+            seenEventObjects.add(event);
+            return true;
+          });
+      cues.push(
+        ...eventEmotionCues(
+          events,
+          view.state,
+          update.id ?? `local:${++anonymousUpdate}`,
+        ),
+        ...(update.emotionCues ?? []),
+      );
+      for (const effect of update.effects ?? [])
+        emotions.apply({
+          id: `effect:${effect.id}`,
+          playerId: effect.playerId,
+          reaction: 'acting',
+        });
+      for (const cue of cues)
+        if (cue.reaction === 'acting') emotions.apply(cue);
+    }
     if (view.state.phase === 'finished') computerAbort?.abort();
     if (view.state.phase === 'setup') {
+      effects.reset();
       computerAbort?.abort();
       computerAbort = null;
       computerRunning = false;
       computerRunKey = '';
       computerError = false;
       setupScreen = 'title';
-      generation++;
       log = [];
       dice = '—';
     }
@@ -691,12 +813,46 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
       movementFrom.clear();
       animating = false;
     }
+    if (current !== generation || disposed) return;
+    if (update.effects?.length) {
+      closeDialog();
+      animating = true;
+      render();
+      await effects.enqueue(update.effects);
+      if (current !== generation || disposed) return;
+      if (effectsLocked) lockEffects(false);
+      animating = false;
+    }
+    for (const cue of cues) if (cue.reaction !== 'acting') emotions.apply(cue);
     render();
   }
   const unsubscribe = adapter.subscribe((u) => {
+    if (u.view.state.phase === 'setup') {
+      for (const portrait of portraits.values()) portrait.destroy();
+      portraits.clear();
+      emotions.reset();
+      seenEventObjects = new WeakSet<GameEvent>();
+      generation++;
+      effects.reset();
+      for (const [timer, done] of waiters) {
+        clearTimeout(timer);
+        done();
+      }
+      waiters.clear();
+      offsets.clear();
+      movementFrom.clear();
+      animating = false;
+    } else if (u.effects?.length) {
+      // Lock synchronously, before promise delivery or a second input event.
+      lockEffects(true);
+    }
+    const receivedGeneration = generation;
     queue = queue
-      .then(() => update(u))
+      .then(() => {
+        if (receivedGeneration === generation) return update(u);
+      })
       .catch(() => {
+        lockEffects(false);
         animating = false;
         tell('화면을 갱신하지 못했습니다.');
       });
@@ -716,11 +872,16 @@ export function mountGameUI(root: HTMLElement, adapter: GameUIAdapter) {
     }
     frameId = requestAnimationFrame(animateSprites);
   }
+  emotions.syncState(view.state);
   render();
   frameId = requestAnimationFrame(animateSprites);
   return {
     destroy() {
       disposed = true;
+      emotions.destroy();
+      for (const portrait of portraits.values()) portrait.destroy();
+      portraits.clear();
+      effects.destroy();
       computerAbort?.abort();
       cancelAnimationFrame(frameId);
       spriteFrames = [];
