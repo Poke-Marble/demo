@@ -28,9 +28,11 @@ export function gameCredits(
     })),
     {
       id: 'events-art',
+      sourceUrl:
+        'https://github.com/PMDCollab/SpriteCollab/tree/6735193b9d6f499411171daf8d8b7adf1e2d8883',
       label: '전설·비행 연출',
       attribution:
-        '자체 CSS 도형. 임시 전설 실루엣, 파도·깃털·빛. 외부 전설 이미지·음원 사용 없음.',
+        '루기아·칠색조 Idle/Attack/Hover: CHUNSOFT 원작 추출. PMDCollab SpriteCollab revision 6735193b9d6f499411171daf8d8b7adf1e2d8883. 개별 credits: Unspecified; 원작 CC 허가 미확인. 저장소 비상업·출처표시 정책. 픽셀 크롭·확대. CSS 파도·깃털·기존 비행 도형은 자체 작성.',
     },
     ...extra,
     ...portraitCredits,

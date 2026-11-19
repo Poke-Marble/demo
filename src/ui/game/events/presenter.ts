@@ -4,6 +4,7 @@ import type {
   FlightSelection,
   SpecialEventRequest,
 } from './contracts';
+import { createLegendarySprite } from './legendary-sprite';
 import { createEffectQueue } from './queue';
 import './special-events.css';
 
@@ -72,15 +73,23 @@ export function createSpecialEventPresenter(options: {
           'pm-event-eyebrow',
           request.type === 'fly'
             ? 'SKY PASSAGE / 공중날기'
-            : 'LEGENDARY TRIAL / 전설의 시험',
+            : request.legendary === 'lugia'
+              ? '루기아의 시험'
+              : '칠색조의 시험',
         );
         const graphic = node('div', 'pm-event-graphic');
+        const legendarySprite =
+          request.type === 'trial-intro'
+            ? createLegendarySprite(request.legendary, media.matches)
+            : undefined;
         graphic.setAttribute('aria-hidden', 'true');
-        graphic.append(
-          node('span', 'pm-event-wing left'),
-          node('span', 'pm-event-body'),
-          node('span', 'pm-event-wing right'),
-        );
+        if (!legendarySprite)
+          graphic.append(
+            node('span', 'pm-event-wing left'),
+            node('span', 'pm-event-body'),
+            node('span', 'pm-event-wing right'),
+          );
+        if (legendarySprite) graphic.append(legendarySprite.element);
         const shadow = node('div', 'pm-event-shadow');
         shadow.setAttribute('aria-hidden', 'true');
         const title = node(
@@ -98,11 +107,9 @@ export function createSpecialEventPresenter(options: {
           const visual = options.partnerVisual?.(request);
           if (visual) partner.append(visual);
           partner.append(node('span', '', description.partnerName));
-          versus.append(
-            partner,
-            node('strong', '', 'VS'),
-            node('span', '', title.textContent ?? '전설'),
-          );
+          const opponent = node('div', 'pm-event-opponent');
+          opponent.append(graphic, title);
+          versus.append(partner, node('strong', '', 'VS'), opponent);
         }
         const feathers = node('div', 'pm-event-feathers');
         feathers.setAttribute('aria-hidden', 'true');
@@ -114,13 +121,24 @@ export function createSpecialEventPresenter(options: {
         const status = node('p', 'pm-event-caption');
         status.setAttribute('role', 'status');
         const skip = action('연출 스킵 · Enter / Space / Esc', finish);
-        stage.append(eyebrow, feathers, graphic, shadow, title, versus, status);
+        if (legendarySprite) stage.append(eyebrow, feathers, versus, status);
+        else
+          stage.append(
+            eyebrow,
+            feathers,
+            graphic,
+            shadow,
+            title,
+            versus,
+            status,
+          );
         dialog.append(stage, skip);
         const timers: ReturnType<typeof setTimeout>[] = [];
         let done = false;
         function finish() {
           if (done) return;
           done = true;
+          legendarySprite?.dispose();
           timers.forEach(clearTimeout);
           signal.removeEventListener('abort', finish);
           media.removeEventListener('change', finish);
@@ -142,6 +160,7 @@ export function createSpecialEventPresenter(options: {
               ];
         function phase(index: number) {
           dialog.dataset.phase = String(index);
+          legendarySprite?.phase(index);
           status.textContent = `${description.playerName} · ${phases[index]}`;
         }
         dialog.oncancel = (event) => {

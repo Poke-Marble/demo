@@ -1,0 +1,220 @@
+{
+  "repository": "https://github.com/PMDCollab/SpriteCollab",
+  "revision": "6735193b9d6f499411171daf8d8b7adf1e2d8883",
+  "files": [
+    {
+      "path": "README.md",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/README.md",
+      "sha256": "a3da413054b0cf19427bf87a1ab1401f153fce9aaa9e27e865b91ef589d37b92"
+    },
+    {
+      "path": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/LICENSE.md",
+      "sha256": "284233a8bc62ac54d878552845ef66ab94b25112e6fc8f902fcdfa6149748c31"
+    },
+    {
+      "path": "credit_names.txt",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/credit_names.txt",
+      "sha256": "3fb38a81fb5db6bdde699598f9092e86c37c315889dff4adf74b2a97a56a0dc6"
+    },
+    {
+      "path": "tracker.json",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/tracker.json",
+      "sha256": "89af6618e9d7d0be50d1649a097dc86aff2f1be815a91e5b6e88d1d7acef9734"
+    },
+    {
+      "path": "sprite/0249/credits.txt",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0249/credits.txt",
+      "sha256": "321164db81f3ace1428e3ac027e7007144131864a441b7cbd21d9def434077e2"
+    },
+    {
+      "path": "sprite/0249/AnimData.xml",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0249/AnimData.xml",
+      "sha256": "01ded02a5e1a75aa4b96f447ecc8620deaca1ed2ea25200bd3aa29aca79bafd5"
+    },
+    {
+      "path": "sprite/0249/Idle-Anim.png",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0249/Idle-Anim.png",
+      "sha256": "6e054b0bbba42fa28b21c51df7007746a5ec06cd57aaa5afbca88e326b2dfc63"
+    },
+    {
+      "path": "sprite/0249/Attack-Anim.png",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0249/Attack-Anim.png",
+      "sha256": "7db570ce07132a8d9a5a95e3c1530eccd9fca1ee913248f2b48f1cebfebcc418"
+    },
+    {
+      "path": "sprite/0249/Hover-Anim.png",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0249/Hover-Anim.png",
+      "sha256": "c80eefa7ac11e53ff3a50e6bb033fc1cc8c90b8d6b1bdc82c1d876a11eadc65a"
+    },
+    {
+      "path": "sprite/0250/credits.txt",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0250/credits.txt",
+      "sha256": "9343695062fc101443466591755289f26714065f4ab01748f5063bc51431b5eb"
+    },
+    {
+      "path": "sprite/0250/AnimData.xml",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0250/AnimData.xml",
+      "sha256": "fc9548ab16cd98fdb404154146f587a0fd79e92a3e0ec48dea92c6942b62f8a1"
+    },
+    {
+      "path": "sprite/0250/Idle-Anim.png",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0250/Idle-Anim.png",
+      "sha256": "893312471073c27947fd51aca7ec24ac6c78b99b2dc9bf00cd6000cb2a63a0a2"
+    },
+    {
+      "path": "sprite/0250/Attack-Anim.png",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0250/Attack-Anim.png",
+      "sha256": "451ad93635a361806112bc28680311420df2e7b2b11b9764093ff6fc0fe13f1c"
+    },
+    {
+      "path": "sprite/0250/Hover-Anim.png",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0250/Hover-Anim.png",
+      "sha256": "a4ff505c08e2cd25de89e4c027c8519f75b9dd32a065fd4bc0ec4ebd0b3c1534"
+    }
+  ],
+  "entries": [
+    {
+      "species": "0249",
+      "creator": {
+        "primary": "CHUNSOFT",
+        "secondary": [],
+        "total": 1
+      },
+      "provenance": "original-game-extraction",
+      "licenseStatus": "CHUNSOFT original; no individual CC grant established",
+      "animations": [
+        {
+          "name": "Attack",
+          "frameWidth": 104,
+          "frameHeight": 112,
+          "sheetWidth": 1040,
+          "sheetHeight": 896,
+          "durations": [
+            2,
+            4,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        {
+          "name": "Hover",
+          "frameWidth": 80,
+          "frameHeight": 96,
+          "sheetWidth": 960,
+          "sheetHeight": 768,
+          "durations": [
+            2,
+            3,
+            2,
+            3,
+            2,
+            3,
+            2,
+            3,
+            2,
+            3,
+            2,
+            3
+          ]
+        },
+        {
+          "name": "Idle",
+          "frameWidth": 72,
+          "frameHeight": 96,
+          "sheetWidth": 144,
+          "sheetHeight": 768,
+          "durations": [
+            30,
+            30
+          ]
+        }
+      ]
+    },
+    {
+      "species": "0250",
+      "creator": {
+        "primary": "CHUNSOFT",
+        "secondary": [],
+        "total": 1
+      },
+      "provenance": "original-game-extraction",
+      "licenseStatus": "CHUNSOFT original; no individual CC grant established",
+      "animations": [
+        {
+          "name": "Attack",
+          "frameWidth": 88,
+          "frameHeight": 120,
+          "sheetWidth": 1320,
+          "sheetHeight": 960,
+          "durations": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        {
+          "name": "Hover",
+          "frameWidth": 72,
+          "frameHeight": 112,
+          "sheetWidth": 1440,
+          "sheetHeight": 896,
+          "durations": [
+            2,
+            1,
+            2,
+            1,
+            2,
+            2,
+            1,
+            2,
+            1,
+            2,
+            2,
+            1,
+            2,
+            1,
+            2,
+            2,
+            1,
+            2,
+            1,
+            2
+          ]
+        },
+        {
+          "name": "Idle",
+          "frameWidth": 72,
+          "frameHeight": 112,
+          "sheetWidth": 360,
+          "sheetHeight": 896,
+          "durations": [
+            12,
+            10,
+            12,
+            10,
+            12
+          ]
+        }
+      ]
+    }
+  ]
+}
