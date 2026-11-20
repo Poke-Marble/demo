@@ -29,6 +29,8 @@ export type { EmotionCue, PortraitReaction } from './portraits/emotions';
 export type { SpecialEventRequest, FlightSelection } from './events/contracts';
 import './game.css';
 import './isometric.css';
+import './theme/theme.css';
+import { diceLabel } from './theme/dice';
 export type {
   GameUIAdapter,
   GameView,
@@ -81,7 +83,6 @@ export function mountGameUI(
   });
   root.append(host);
   const feedback = createGameplayFeedback(root, options.sfx);
-  root.append(feedback.controls);
   const abilityWaiters = new Map<string, () => void>();
   const ability = createAbilityPresenter(root, {
     onEnd: (activation) => {
@@ -97,12 +98,30 @@ export function mountGameUI(
     void ability.audio.unlock();
   };
   const cancelAbility = () => ability.cancel();
-  const skipPresentation = button('연출 건너뛰기', () => {
-    feedback.skip();
-    ability.cancel();
-    effects.skip();
-  });
-  feedback.controls.append(skipPresentation);
+  // This transient sibling stays usable while game input is inert.
+  const skipFeedback = button(
+    '?? ?? ? Esc',
+    () => {
+      feedback.skip();
+      ability.cancel();
+      effects.skip();
+      for (const [timer, done] of waiters) {
+        clearTimeout(timer);
+        done();
+      }
+      waiters.clear();
+    },
+    'pm-feedback-skip',
+  );
+  skipFeedback.hidden = true;
+  root.append(skipFeedback);
+  const skipOnEscape = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && !skipFeedback.hidden) {
+      event.preventDefault();
+      skipFeedback.click();
+    }
+  };
+  document.addEventListener('keydown', skipOnEscape);
   const visibilityAbility = () => {
     if (document.hidden) cancelAbility();
   };
@@ -119,7 +138,7 @@ export function mountGameUI(
   let generation = 0;
   let dialog: HTMLDialogElement | null = null;
   let log: string[] = [],
-    dice = '—',
+    dice = diceLabel(null),
     errorMessage = '';
   let setupScreen: 'title' | 'starter' | 'map' = 'title';
   let selectedPartner: PokemonId = partners[0]!.id;
@@ -421,6 +440,8 @@ export function mountGameUI(
   }
   function render() {
     if (disposed) return;
+    skipFeedback.hidden =
+      !feedbackLocked || effectsLocked || feedback.suppressed;
     const focused =
       document.activeElement instanceof HTMLElement
         ? document.activeElement.dataset.focus
@@ -546,7 +567,7 @@ export function mountGameUI(
     const diceResult = el(
       'p',
       animating ? 'pm-dice-result is-moving' : 'pm-dice-result',
-      `주사위  ${dice}${animating ? ' · 이동 중…' : ''}`,
+      dice,
     );
     diceResult.setAttribute('role', 'status');
     rail.append(diceResult);
@@ -610,7 +631,7 @@ export function mountGameUI(
       const connected = view.computer.connected && !!adapter.runComputerTurn;
       const progress = diceResult;
       progress.classList.add('pm-computer-progress');
-      progress.replaceChildren();
+      progress.replaceChildren(el('span', 'pm-computer-dice', dice));
       progress.append(
         el(
           'span',
@@ -855,7 +876,7 @@ export function mountGameUI(
       computerError = false;
       setupScreen = 'title';
       log = [];
-      dice = '—';
+      dice = diceLabel(null);
     }
     const current = generation;
     feedback.begin();
@@ -875,12 +896,12 @@ export function mountGameUI(
     if (movement && previousTile) offsets.set(movement.playerId, previousTile);
     if (roll?.type === 'dice-rolled') {
       animating = true;
-      dice = '굴리는 중…';
+      dice = diceLabel(null, 'rolling');
       closeDialog();
       render();
       await feedback.roll(roll.values);
       if (current !== generation || disposed) return;
-      dice = roll.values.join(' · ');
+      dice = diceLabel(roll.values, movement ? 'moving' : 'complete');
     }
     // Confirmed numbers enter text and records only after the dice have settled.
     log = [...log, ...update.events.map(eventText)].slice(-30);
@@ -904,6 +925,7 @@ export function mountGameUI(
     offsets.clear();
     movementFrom.clear();
     animating = false;
+    if (roll?.type === 'dice-rolled') dice = diceLabel(roll.values);
     if (update.effects?.length) {
       closeDialog();
       animating = true;
@@ -1025,6 +1047,8 @@ export function mountGameUI(
       for (const portrait of portraits.values()) portrait.destroy();
       portraits.clear();
       feedback.destroy();
+      document.removeEventListener('keydown', skipOnEscape);
+      skipFeedback.remove();
       feedbackGate.reset();
       effects.destroy();
       computerAbort?.abort();
