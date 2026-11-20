@@ -20,7 +20,21 @@ export interface FlightSelection {
     tileId: TileId;
     label: string;
     description?: string;
+    metadata?: {
+      kind: 'city' | 'landmark' | 'trial' | 'start' | 'fly';
+      ownership?: 'unowned' | 'self' | 'opponent';
+      ownerName?: string;
+      ownerType?: string;
+      ownerColor?: string;
+      facilityStage?: number;
+      facilityName?: string;
+      /** Read-only authority quotes, never a promise of settlement. */
+      toll?: number;
+      purchase?: number;
+    };
   }[];
+  /** Presentation only; switching axis never changes legal destinations. */
+  layout?: 'vertical' | 'horizontal';
   cancellable: boolean;
 }
 

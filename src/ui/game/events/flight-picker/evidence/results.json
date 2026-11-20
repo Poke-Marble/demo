@@ -1,0 +1,42 @@
+{
+  "setup": {
+    "steps": 19,
+    "destinations": 31,
+    "ownership": [null, "unowned", "opponent", "self"],
+    "canvas": true
+  },
+  "checks": [
+    {
+      "width": 1280,
+      "dialogWidth": 760,
+      "inside": true,
+      "scrollable": true,
+      "cards": 31,
+      "text": "출발출발가격 미리보기 정보 없음",
+      "unchanged": true
+    },
+    {
+      "width": 390,
+      "dialogWidth": 352,
+      "inside": true,
+      "scrollable": true,
+      "cards": 31,
+      "text": "출발출발가격 미리보기 정보 없음",
+      "unchanged": true
+    }
+  ],
+  "touch": true,
+  "keyboard": {
+    "last": true,
+    "scroll": true
+  },
+  "selected": {
+    "pressed": true,
+    "unchanged": true
+  },
+  "tab": true,
+  "commit": {
+    "changed": true,
+    "event": "game:1:human:1:37:0"
+  }
+}

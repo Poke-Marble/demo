@@ -187,15 +187,90 @@ export function createIntegratedPreview(
               id: identity(),
               playerId: state.activePlayerId,
               cancellable: false,
-              destinations: flights.map((a) => ({
-                tileId: (a.intent as Extract<EconomyIntent, { type: 'fly' }>)
-                  .to,
-                label: map.tiles.find(
-                  (t) =>
-                    t.id ===
-                    (a.intent as Extract<EconomyIntent, { type: 'fly' }>).to,
-                )!.nameKo,
-              })),
+              destinations: flights.map((a) => {
+                const tileId = (
+                  a.intent as Extract<EconomyIntent, { type: 'fly' }>
+                ).to;
+                const tile = map.tiles.find((t) => t.id === tileId)!;
+                const content = kantoJohtoMap.tiles.find(
+                  (t) => t.id === tileId,
+                )!;
+                const holding = state.holdings.find((h) => h.tileId === tileId);
+                const owner = state.players.find(
+                  (p) => p.id === holding?.ownerId,
+                );
+                const ownerVisual = owner
+                  ? (
+                      {
+                        'pokemon:0001': {
+                          ownerType: '풀',
+                          ownerColor: 'grass',
+                        },
+                        'pokemon:0004': {
+                          ownerType: '불꽃',
+                          ownerColor: 'fire',
+                        },
+                        'pokemon:0007': {
+                          ownerType: '물',
+                          ownerColor: 'water',
+                        },
+                        'pokemon:0025': {
+                          ownerType: '전기',
+                          ownerColor: 'electric',
+                        },
+                      } as Record<
+                        string,
+                        { ownerType: string; ownerColor: string }
+                      >
+                    )[owner.pokemonId]
+                  : undefined;
+                return {
+                  tileId,
+                  label: tile.nameKo,
+                  metadata: {
+                    kind:
+                      tile.kind === 'special'
+                        ? tile.special === 'fly'
+                          ? ('fly' as const)
+                          : ('trial' as const)
+                        : tile.kind,
+                    ...(tile.kind === 'city' || tile.kind === 'landmark'
+                      ? {
+                          ownership: !holding
+                            ? ('unowned' as const)
+                            : holding.ownerId === state.activePlayerId
+                              ? ('self' as const)
+                              : ('opponent' as const),
+                          ...(owner
+                            ? { ownerName: owner.name, ...ownerVisual }
+                            : {}),
+                          ...(tile.kind === 'city'
+                            ? holding
+                              ? {
+                                  facilityStage: holding.facilityLevel,
+                                  facilityName:
+                                    holding.facilityLevel === 3
+                                      ? (content.finalFacility?.nameKo ??
+                                        '최종시설')
+                                      : (['캠프', '숍', '포켓몬센터'][
+                                          holding.facilityLevel
+                                        ] ?? '시설명 정보 없음'),
+                                }
+                              : { facilityName: '미개발 · 시설 없음' }
+                            : {
+                                facilityName: '관광명소 · 도시 시설 단계 없음',
+                              }),
+                          toll: quoteToll(
+                            state,
+                            context,
+                            state.activePlayerId,
+                            tileId,
+                          ).total,
+                        }
+                      : {}),
+                  },
+                };
+              }),
             },
           }
         : {}),

@@ -7,6 +7,8 @@ import type {
 import { createLegendarySprite } from './legendary-sprite';
 import { createEffectQueue } from './queue';
 import './special-events.css';
+import { decorateDestination } from './flight-picker/card';
+import './flight-picker/picker.css';
 
 function node<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -36,6 +38,7 @@ export function createSpecialEventPresenter(options: {
   const media = matchMedia('(prefers-reduced-motion: reduce)');
   let picker: HTMLDialogElement | undefined;
   let pickerId: string | undefined;
+  let pickerVersion: string | undefined;
   let pickerCleanup: (() => void) | undefined;
   const closePicker = () => {
     picker?.close();
@@ -44,6 +47,7 @@ export function createSpecialEventPresenter(options: {
     pickerCleanup = undefined;
     picker = undefined;
     pickerId = undefined;
+    pickerVersion = undefined;
   };
   const queue = createEffectQueue(
     (request, signal) =>
@@ -205,7 +209,8 @@ export function createSpecialEventPresenter(options: {
         closePicker();
         return;
       }
-      if (pickerId === selection.id) return;
+      const version = JSON.stringify(selection);
+      if (pickerId === selection.id && pickerVersion === version) return;
       closePicker();
       const previous =
         document.activeElement instanceof HTMLElement
@@ -214,21 +219,30 @@ export function createSpecialEventPresenter(options: {
       const dialog = node('dialog', 'pm-event-picker');
       picker = dialog;
       pickerId = selection.id;
+      pickerVersion = version;
+      dialog.classList.toggle('pm-flight-picker', true);
+      dialog.dataset.layout = selection.layout ?? 'vertical';
       const heading = node('h2', '', selection.title ?? '어디로 날아갈까요?');
       heading.id = `flight-${crypto.randomUUID()}`;
       dialog.setAttribute('aria-labelledby', heading.id);
       const list = node('div', 'pm-event-destinations');
+      list.setAttribute('aria-label', '비행 목적지 목록');
       const status = node('p', '', '목적지를 선택한 뒤 확정하세요.');
       status.setAttribute('role', 'status');
       let selected: TileId | undefined;
       let submitting = false;
       let live = true;
       const confirm = action('목적지 확정', () => {
-        if (selected) void submit(selected);
+        if (selected !== undefined) void submit(selected);
       });
       confirm.disabled = true;
       async function submit(tile: TileId | null) {
-        if (submitting || !live) return;
+        if (submitting || !live || pickerId !== selection!.id) return;
+        if (
+          tile !== null &&
+          !selection!.destinations.some((d) => d.tileId === tile)
+        )
+          return;
         submitting = true;
         dialog.querySelectorAll('button').forEach((button) => {
           button.disabled = true;
@@ -251,7 +265,7 @@ export function createSpecialEventPresenter(options: {
       }
       selection.destinations.forEach((destination) => {
         const button = action(destination.label, () => {
-          if (submitting) return;
+          if (submitting || !live) return;
           selected = destination.tileId;
           list
             .querySelectorAll('button')
@@ -262,13 +276,41 @@ export function createSpecialEventPresenter(options: {
           status.textContent = `${destination.label} 선택됨 · 확정하면 이동합니다.`;
         });
         button.setAttribute('aria-pressed', 'false');
+        decorateDestination(button, destination);
+        button.onkeydown = (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            button.click();
+            return;
+          }
+          const directions: Record<string, number> = {
+            ArrowDown: 1,
+            ArrowRight: 1,
+            ArrowUp: -1,
+            ArrowLeft: -1,
+          };
+          const step = directions[event.key];
+          if (step === undefined && event.key !== 'Home' && event.key !== 'End')
+            return;
+          event.preventDefault();
+          const cards = [...list.querySelectorAll<HTMLButtonElement>('button')];
+          const index =
+            event.key === 'Home'
+              ? 0
+              : event.key === 'End'
+                ? cards.length - 1
+                : (cards.indexOf(button) + step! + cards.length) % cards.length;
+          const next = cards[index];
+          next?.focus();
+          next?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+        };
         if (destination.description)
           button.append(node('small', '', destination.description));
         list.append(button);
       });
       dialog.append(
         heading,
-        node('p', '', '선택 후 확정'),
+        node('p', '', '목록 스크롤 · 방향키로 탐색 · 선택 후 별도 확정'),
         list,
         status,
         confirm,
