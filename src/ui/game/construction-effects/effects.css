@@ -1,0 +1,47 @@
+.pm-construction-effects {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  overflow: hidden;
+  contain: layout paint;
+}
+.pm-construction-effects[hidden] {
+  display: none;
+}
+.pm-construction-effects canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pm-construction-caption {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(88%, 420px);
+  padding: 10px 16px;
+  border: 1px solid var(--construction-color);
+  border-radius: 16px;
+  background: #102438ed;
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 6px 24px #07152455;
+  font:
+    600 14px/1.5 system-ui,
+    sans-serif;
+}
+.pm-construction-caption strong {
+  display: block;
+  font-size: clamp(19px, 3vw, 27px);
+  color: var(--construction-color);
+}
+.pm-construction-caption small {
+  display: block;
+  font-size: 11px;
+  color: #d5e5ed;
+}
+.pm-integrated-board:has(> .pm-construction-effects) {
+  position: relative;
+}

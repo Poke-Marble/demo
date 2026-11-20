@@ -1,4 +1,6 @@
 import { createAbilityPresenter } from './abilities/presenter';
+import { createConstructionPresenter } from './construction-effects/presenter';
+import { createConstructionGate } from './construction-effects/model';
 import { createGameplayFeedback } from './feedback/controller';
 import { createUpdateGate } from './feedback/policy';
 import type { SfxBus } from './feedback/audio';
@@ -93,13 +95,16 @@ export function mountGameUI(
   const unlockAbility = () => {
     void ability.audio.unlock();
   };
-  const cancelAbility = () => ability.cancel();
+  const cancelAbility = () => {
+    ability.cancel();
+    construction.cancel();
+  };
   // This transient sibling stays usable while game input is inert.
   const skipFeedback = button(
     '연출 스킵 · Esc',
     () => {
       feedback.skip();
-      ability.cancel();
+      cancelAbility();
       effects.skip();
       void board?.skip();
     },
@@ -205,6 +210,10 @@ export function mountGameUI(
   let boardTask: Promise<PhaserBoardRenderer | undefined> | undefined;
   let boardRetirement = Promise.resolve();
   const boardHost = el('div', 'pm-integrated-board');
+  const construction = createConstructionPresenter(boardHost, {
+    audio: feedback.audio,
+  });
+  const constructionGate = createConstructionGate();
   function openTile(tileId: TileId) {
     const tile = view.map.tiles.find((t) => t.id === tileId);
     if (!tile) return;
@@ -802,6 +811,7 @@ export function mountGameUI(
   async function update(update: UIUpdate) {
     if (disposed) return;
     const beforeView = view;
+    const constructionCues = constructionGate.accept(beforeView, update);
     view = update.view;
     if (view.state.phase !== 'setup') {
       hud ??= mountPlayerHud(hudHost, view, { emotions });
@@ -891,6 +901,13 @@ export function mountGameUI(
     if (effectsLocked) lockEffects(false);
     animating = false;
     if (roll?.type === 'dice-rolled') dice = diceLabel(roll.values);
+    if (constructionCues.length && !feedback.suppressed) {
+      animating = true;
+      render();
+      await construction.present(constructionCues);
+      if (current !== generation || disposed) return;
+      animating = false;
+    }
     for (const activation of update.abilityActivations ?? []) {
       if (feedback.suppressed) continue;
       animating = true;
@@ -906,12 +923,23 @@ export function mountGameUI(
       animating = false;
     }
     for (const cue of cues) if (cue.reaction !== 'acting') emotions.apply(cue);
-    if (roll || movement) pendingFeedback = Math.max(0, pendingFeedback - 1);
+    if (
+      roll ||
+      movement ||
+      hasConstruction(update) ||
+      update.abilityActivations?.length
+    )
+      pendingFeedback = Math.max(0, pendingFeedback - 1);
     feedbackLocked = pendingFeedback > 0;
     host.inert = effectsLocked || feedbackLocked;
     render();
   }
   const completedPresentations = new WeakSet<() => void>();
+  const hasConstruction = (u: UIUpdate) =>
+    !!u.id &&
+    u.events.some(
+      (e) => e.type === 'city-acquired' || e.type === 'facility-upgraded',
+    );
   const inFlightPresentations = new WeakSet<() => void>();
   function acknowledge(update: UIUpdate) {
     const complete = update.presentationComplete;
@@ -935,7 +963,12 @@ export function mountGameUI(
         acknowledge(received);
       return;
     }
-    if (u.events.some((event) => event.type === 'dice-rolled') || u.movement) {
+    if (
+      u.events.some((event) => event.type === 'dice-rolled') ||
+      u.movement ||
+      hasConstruction(u) ||
+      u.abilityActivations?.length
+    ) {
       // Synchronous input lock, including computer updates before queue delivery.
       feedbackLocked = true;
       pendingFeedback++;
@@ -943,7 +976,8 @@ export function mountGameUI(
       animating = true;
     }
     if (u.view.state.phase === 'setup') {
-      ability.cancel();
+      cancelAbility();
+      constructionGate.reset();
       feedbackGate.reset();
       feedbackGate.accept(u);
       feedback.reset();
@@ -976,7 +1010,7 @@ export function mountGameUI(
         board?.cancel();
         lockEffects(false);
         animating = false;
-        ability.cancel();
+        cancelAbility();
         tell('화면을 갱신하지 못했습니다.');
       })
       .finally(() => {
@@ -1008,6 +1042,8 @@ export function mountGameUI(
       if (disposed) return;
       disposed = true;
       ability.destroy();
+      construction.destroy();
+      constructionGate.reset();
       releaseAudio();
       root.removeEventListener('pointerdown', unlockAbility, true);
       root.removeEventListener('keydown', unlockAbility, true);
