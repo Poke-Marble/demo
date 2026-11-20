@@ -1,0 +1,79 @@
+.phaser-board {
+  width: 100%;
+  color: #233f48;
+  font-family: var(--pm-font-game, system-ui, sans-serif);
+}
+.phaser-board-surface {
+  width: 100%;
+  aspect-ratio: 1000/720;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #e8f0e4;
+  touch-action: pan-y;
+}
+.phaser-board-surface canvas {
+  display: block;
+}
+.phaser-board-controls {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.phaser-board button {
+  font: inherit;
+  border: 1px solid #8baba6;
+  border-radius: 8px;
+  background: #f8fbf2;
+  color: #233f48;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.phaser-board button:focus-visible,
+.phaser-board summary:focus-visible {
+  outline: 3px solid #965ed1;
+  outline-offset: 2px;
+}
+.phaser-board button:disabled,
+.phaser-board button[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: wait;
+}
+.phaser-board-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 6px;
+  padding: 12px 0;
+}
+.phaser-board-credits {
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.phaser-board-credits .pm-art-credits {
+  position: static;
+  display: block;
+  max-width: none;
+  background: transparent;
+  color: inherit;
+}
+.phaser-board-credits .pm-art-credits summary {
+  background: transparent;
+  padding: 0;
+}
+.phaser-board-credits .pm-art-credits > p {
+  position: static;
+  width: auto;
+  background: transparent;
+  padding: 0;
+  border: 0;
+  color: inherit;
+}
+.phaser-board-credits .pm-art-credits a {
+  color: #32677a;
+}
+.phaser-board details {
+  padding: 8px;
+}
+.phaser-board summary {
+  cursor: pointer;
+}
