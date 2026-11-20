@@ -21,6 +21,7 @@ import {
 import { applyConstructionOwner, ownerFromInput } from '../art/ownership';
 import { createArtCredits } from '../art/credits';
 import { gameCredits } from '../events/credits';
+import { pawnDepth, standingFoot } from './occlusion';
 import './style.css';
 
 export interface BoardVisuals {
@@ -547,8 +548,9 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
     anchor(pawn);
   }
   function placePawn(pawn: Pawn, p: { x: number; y: number }, lift = 0) {
-    pawn.sprite.setPosition(p.x, p.y - lift).setDepth(depthOrder(p) + 1);
-    pawn.shadow.setPosition(p.x, p.y + 1).setDepth(depthOrder(p));
+    const depth = pawnDepth(p);
+    pawn.sprite.setPosition(p.x, p.y - lift).setDepth(depth.sprite);
+    pawn.shadow.setPosition(p.x, p.y + 1).setDepth(depth.shadow);
     pawn.shadow.setScale(1 - lift / 160);
   }
   function foot(index: number, seat: number) {
@@ -557,10 +559,10 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
     const p = pawnFoot(cell, side, seat),
       center = tileGeometry(cell, side);
     // Keep the shared projection, spreading its four seats for opaque sprite silhouettes.
-    return {
+    return standingFoot(view.map.tiles[index]!, center, seat, {
       x: center.x + (p.x - center.x) * 1.55,
       y: center.y + (p.y - center.y) * 1.55,
-    };
+    });
   }
   function tween(
     config: Phaser.Types.Tweens.TweenBuilderConfig,
