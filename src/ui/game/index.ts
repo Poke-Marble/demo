@@ -1,16 +1,13 @@
 import { createAbilityPresenter } from './abilities/presenter';
 import { createGameplayFeedback } from './feedback/controller';
-import { createUpdateGate, walkingPath } from './feedback/policy';
+import { createUpdateGate } from './feedback/policy';
 import type { SfxBus } from './feedback/audio';
 import { findSprite } from '../../assets/sprites';
 import type { GameEvent, PokemonId, TileId } from '../../game/contracts';
 import type { GameUIAdapter, UIChoice, UIUpdate } from './adapter';
-import { createProjectedBoard } from './board';
+import type { GameView } from './adapter';
+import type { PhaserBoardRenderer } from './phaser';
 import { mountPlayerHud, cashEventsFromGameEvents } from './hud';
-import {
-  constructionFromHolding,
-  type ConstructionVisual,
-} from './art/construction';
 import {
   startingPartners as partners,
   createInitialRoster,
@@ -66,7 +63,6 @@ export function mountGameUI(
   adapter: GameUIAdapter,
   options: { sfx?: SfxBus } = {},
 ) {
-  let previousConstruction = new Map<TileId, ConstructionVisual>();
   const host = el('section', 'pm-game pm-shell');
   host.tabIndex = -1;
   host.addEventListener('keydown', (event) => {
@@ -105,11 +101,7 @@ export function mountGameUI(
       feedback.skip();
       ability.cancel();
       effects.skip();
-      for (const [timer, done] of waiters) {
-        clearTimeout(timer);
-        done();
-      }
-      waiters.clear();
+      void board?.skip();
     },
     'pm-feedback-skip',
   );
@@ -123,7 +115,11 @@ export function mountGameUI(
   };
   document.addEventListener('keydown', skipOnEscape);
   const visibilityAbility = () => {
-    if (document.hidden) cancelAbility();
+    if (document.hidden) {
+      cancelAbility();
+      effects.skip();
+      void board?.skip();
+    }
   };
   root.addEventListener('pointerdown', unlockAbility, true);
   root.addEventListener('keydown', unlockAbility, true);
@@ -205,17 +201,68 @@ export function mountGameUI(
     width: number;
     durations: readonly number[];
   }[] = [];
-  const offsets = new Map<string, TileId>();
-  const movementFrom = new Map<string, TileId>();
-  const waiters = new Map<ReturnType<typeof setTimeout>, () => void>();
-  const sleep = (ms: number) =>
-    new Promise<void>((resolve) => {
-      const timer = setTimeout(() => {
-        waiters.delete(timer);
-        resolve();
-      }, ms);
-      waiters.set(timer, resolve);
-    });
+  let board: PhaserBoardRenderer | undefined;
+  let boardTask: Promise<PhaserBoardRenderer | undefined> | undefined;
+  let boardRetirement = Promise.resolve();
+  const boardHost = el('div', 'pm-integrated-board');
+  function openTile(tileId: TileId) {
+    const tile = view.map.tiles.find((t) => t.id === tileId);
+    if (!tile) return;
+    const holding = view.state.holdings.find((h) => h.tileId === tileId);
+    const owner = view.state.players.find((p) => p.id === holding?.ownerId);
+    modal(
+      tile.nameKo,
+      holding
+        ? `${owner?.name ?? ''} / Lv.${holding.facilityLevel}`
+        : tile.nameKo,
+      [],
+      true,
+    );
+  }
+  function ensureBoard(initial: GameView = view) {
+    if (boardTask) return boardTask;
+    const epoch = generation;
+    boardTask = (async () => {
+      await boardRetirement;
+      await document.fonts.load('14px "PM Galmuri"');
+      const { createPhaserBoard } = await import('./phaser');
+      if (disposed || epoch !== generation) return;
+      const next = createPhaserBoard({
+        view: initial,
+        onSelect: openTile,
+        onStep: () => feedback.step(),
+        presentEffect: async (request, signal) => {
+          if (signal.aborted) return;
+          const abort = () => effects.skip();
+          signal.addEventListener('abort', abort, { once: true });
+          try {
+            await effects.enqueue([request]);
+          } finally {
+            signal.removeEventListener('abort', abort);
+          }
+        },
+      });
+      board = next;
+      next.mount(boardHost);
+      await next.ready;
+      return next;
+    })();
+    return boardTask;
+  }
+  function retireBoard() {
+    board?.cancel();
+    const pending = boardTask;
+    board = undefined;
+    boardTask = undefined;
+    boardRetirement = pending
+      ? pending
+          .then((old) => old?.destroy())
+          .then(
+            () => {},
+            () => {},
+          )
+      : boardRetirement;
+  }
   const sprite = (id: PokemonId, walk = false) => {
     const node = el('span', 'pm-sprite');
     node.setAttribute('aria-hidden', 'true');
@@ -508,35 +555,11 @@ export function mountGameUI(
     const layout = el('main', 'pm-layout');
     const boardArea = el('section', 'pm-board-area');
     boardArea.setAttribute('aria-label', view.mapName);
-    const board = createProjectedBoard({
-      view,
-      dice,
-      animating,
-      previousConstruction,
-      positions: offsets,
-      from: movementFrom,
-      sprite,
-      openTile(tileId) {
-        const tile = view.map.tiles.find((t) => t.id === tileId)!;
-        const holding = view.state.holdings.find((h) => h.tileId === tileId);
-        const owner = view.state.players.find((p) => p.id === holding?.ownerId);
-        modal(
-          tile.nameKo,
-          holding
-            ? (owner?.name ?? '') + ' / Lv.' + holding.facilityLevel
-            : tile.nameKo,
-          [],
-          true,
-        );
-      },
-    });
-    previousConstruction = new Map(
-      view.state.holdings.map((holding) => [
-        holding.tileId,
-        constructionFromHolding(holding),
-      ]),
+    boardArea.append(boardHost, el('p', 'pm-integrated-dice pm-dice', dice));
+    board?.setInputLocked(
+      busy || animating || effectsLocked || feedbackLocked || !humanTurn(),
     );
-    boardArea.append(board);
+    void ensureBoard().catch(() => tell('보드를 불러오지 못했습니다.'));
     layout.append(boardArea);
     const rail = el('aside', 'pm-rail');
     const active = view.state.players.find(
@@ -783,10 +806,9 @@ export function mountGameUI(
     if (view.state.phase !== 'setup') {
       hud ??= mountPlayerHud(hudHost, view, { emotions });
       hud.update(view, {
-        cashEvents: cashEventsFromGameEvents(
-          update.id ?? `local:${anonymousUpdate + 1}`,
-          update.events,
-        ),
+        cashEvents: update.id
+          ? cashEventsFromGameEvents(update.id, update.events)
+          : [],
       });
     }
     const cues = [];
@@ -832,19 +854,14 @@ export function mountGameUI(
     const current = generation;
     feedback.begin();
     const movement = update.movement;
-    const previous =
-      movement &&
-      update.events.find(
-        (event) =>
-          event.type === 'player-moved' && event.playerId === movement.playerId,
-      );
-    let previousTile =
-      previous?.type === 'player-moved'
-        ? previous.from
-        : beforeView.state.players.find((p) => p.id === movement?.playerId)
-            ?.position;
     const roll = update.events.find((event) => event.type === 'dice-rolled');
-    if (movement && previousTile) offsets.set(movement.playerId, previousTile);
+    const renderer =
+      view.state.phase === 'setup'
+        ? undefined
+        : await ensureBoard(
+            beforeView.state.phase === 'setup' ? view : beforeView,
+          );
+    if (current !== generation || disposed) return;
     if (roll?.type === 'dice-rolled') {
       animating = true;
       dice = diceLabel(null, 'rolling');
@@ -856,36 +873,24 @@ export function mountGameUI(
     }
     // Confirmed numbers enter text and records only after the dice have settled.
     log = [...log, ...update.events.map(eventText)].slice(-30);
-    if (movement && !feedback.suppressed) {
+    if (renderer) {
       animating = true;
-      const flying = update.effects?.some((effect) => effect.type === 'fly');
-      const steps = flying
-        ? []
-        : walkingPath(movement.path, previousTile, view.map.tiles);
-      for (const tile of steps) {
-        if (disposed || current !== generation || feedback.suppressed) break;
-        if (previousTile) movementFrom.set(movement.playerId, previousTile);
-        offsets.set(movement.playerId, tile);
-        render();
-        feedback.step();
-        await sleep(230);
-        previousTile = tile;
+      closeDialog();
+      render();
+      // Phaser owns movement/construction and delegates each effect once to HTML.
+      const presentation = renderer.present(update);
+      if (feedback.suppressed) {
+        effects.skip();
+        await renderer.skip();
       }
+      await presentation;
+      if (current !== generation || disposed) return;
     }
-    if (current !== generation || disposed) return;
-    offsets.clear();
-    movementFrom.clear();
+    // A suppressed/aborted board job may never enter the HTML effect queue.
+    // Release the synchronous receipt lock after both presenters have settled.
+    if (effectsLocked) lockEffects(false);
     animating = false;
     if (roll?.type === 'dice-rolled') dice = diceLabel(roll.values);
-    if (update.effects?.length) {
-      closeDialog();
-      animating = true;
-      render();
-      await effects.enqueue(update.effects);
-      if (current !== generation || disposed) return;
-      if (effectsLocked) lockEffects(false);
-      animating = false;
-    }
     for (const activation of update.abilityActivations ?? []) {
       if (feedback.suppressed) continue;
       animating = true;
@@ -906,14 +911,28 @@ export function mountGameUI(
     host.inert = effectsLocked || feedbackLocked;
     render();
   }
+  const completedPresentations = new WeakSet<() => void>();
+  const inFlightPresentations = new WeakSet<() => void>();
+  function acknowledge(update: UIUpdate) {
+    const complete = update.presentationComplete;
+    if (!complete || completedPresentations.has(complete)) return;
+    completedPresentations.add(complete);
+    complete();
+  }
   const unsubscribe = adapter.subscribe((received) => {
     if (disposed) {
-      received.presentationComplete?.();
+      acknowledge(received);
       return;
     }
     const u = feedbackGate.accept(received);
     if (!u) {
-      received.presentationComplete?.();
+      // A repeated callback belongs to the original in-flight presentation.
+      // A distinct subscription receipt must still be released independently.
+      if (
+        received.presentationComplete !== undefined &&
+        !inFlightPresentations.has(received.presentationComplete)
+      )
+        acknowledge(received);
       return;
     }
     if (u.events.some((event) => event.type === 'dice-rolled') || u.movement) {
@@ -936,20 +955,16 @@ export function mountGameUI(
       emotions.reset();
       seenEventObjects = new WeakSet<GameEvent>();
       generation++;
+      retireBoard();
       effects.reset();
-      for (const [timer, done] of waiters) {
-        clearTimeout(timer);
-        done();
-      }
-      waiters.clear();
-      offsets.clear();
-      movementFrom.clear();
       animating = false;
     } else if (u.effects?.length) {
       // Lock synchronously, before promise delivery or a second input event.
       lockEffects(true);
     }
     const receivedGeneration = generation;
+    if (u.presentationComplete)
+      inFlightPresentations.add(u.presentationComplete);
     queue = queue
       .then(() => {
         if (receivedGeneration === generation) return update(u);
@@ -958,14 +973,17 @@ export function mountGameUI(
         feedback.reset();
         feedbackLocked = false;
         pendingFeedback = 0;
-        offsets.clear();
-        movementFrom.clear();
+        board?.cancel();
         lockEffects(false);
         animating = false;
         ability.cancel();
         tell('화면을 갱신하지 못했습니다.');
       })
-      .finally(() => u.presentationComplete?.());
+      .finally(() => {
+        if (u.presentationComplete)
+          inFlightPresentations.delete(u.presentationComplete);
+        acknowledge(u);
+      });
   });
   function animateSprites(now: number) {
     if (disposed) return;
@@ -1006,13 +1024,9 @@ export function mountGameUI(
       cancelAnimationFrame(frameId);
       spriteFrames = [];
       generation++;
+      retireBoard();
       unsubscribe();
       closeDialog();
-      for (const [timer, done] of waiters) {
-        clearTimeout(timer);
-        done();
-      }
-      waiters.clear();
       host.remove();
     },
   };

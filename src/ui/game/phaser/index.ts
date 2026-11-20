@@ -31,6 +31,8 @@ export type Completion = { status: 'completed' | 'cancelled' | 'destroyed' };
 export interface PhaserBoardOptions extends BoardVisuals {
   view: GameView;
   onSelect(tileId: TileId): void;
+  /** Shared external SFX; Phaser never creates an audio bus. */
+  onStep?(): void;
   onLockChange?(locked: boolean): void;
   /** Bridge to the existing HTML VS/flight presenter. Must honor AbortSignal. */
   presentEffect?(
@@ -601,6 +603,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
       const angle = Math.atan2(to.y - from.y, to.x - from.x);
       const row = (((2 - Math.round(angle / (Math.PI / 4))) % 8) + 8) % 8;
       animatePawn(pawn, 'Walk', row);
+      if (!fly && !reduced() && !signal.aborted) options.onStep?.();
       const cursor = { ...from, t: 0 };
       await tween(
         {
@@ -700,7 +703,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
         !!update.movement || !!update.effects?.some((e) => e.type === 'fly'),
       );
       if (signal.aborted || destroyed) return;
-      if (update.movement)
+      if (update.movement && !update.effects?.some((e) => e.type === 'fly'))
         await walk(update.movement.playerId, update.movement.path, signal);
       for (const event of update.events) {
         if (signal.aborted || destroyed) break;
@@ -716,9 +719,9 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
         effectsSeen.add(request.id);
         if (options.presentEffect)
           await abortable(options.presentEffect(request, signal), signal);
-        else if (request.type === 'fly')
+        if (request.type === 'fly')
           await walk(request.playerId, [request.to], signal, true);
-        else await pulse(request.tileId, signal);
+        else if (!options.presentEffect) await pulse(request.tileId, signal);
       }
       if (!destroyed) await render(view, settings);
     }, presentationOptions.signal);

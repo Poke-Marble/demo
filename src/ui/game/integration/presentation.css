@@ -11,3 +11,24 @@
 .pm-integrated-hud .pm-player-hud {
   margin-bottom: 16px;
 }
+
+.pm-integrated-board {
+  min-width: 0;
+}
+.pm-integrated-board .phaser-board {
+  color: #cce1d9;
+}
+.pm-integrated-board .phaser-board-credits .pm-art-credits a {
+  color: #a6d6e7;
+}
+.pm-integrated-dice {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90%;
+  width: max-content;
+  font-size: 14px;
+  pointer-events: none;
+  text-align: center;
+}
