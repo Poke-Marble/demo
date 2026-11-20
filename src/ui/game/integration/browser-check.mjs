@@ -198,7 +198,10 @@ try {
         family: getComputedStyle(document.querySelector('.pm-game')).fontFamily,
       };
     });
-    assert.deepEqual(font.status, ['loaded']);
+    // The standalone label chunk also imports the shared font declaration.
+    assert.ok(
+      font.status.length > 0 && font.status.every((s) => s === 'loaded'),
+    );
     assert.ok(font.family.includes('PM Galmuri'));
     assert.equal(await page.locator('.pm-sfx-controls').count(), 0);
     assert.equal(await page.locator('.pm-feedback-skip').isVisible(), false);

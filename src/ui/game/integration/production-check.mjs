@@ -160,7 +160,9 @@ try {
           const name = kantoJohtoMap.tiles.find(
             (t) => t.id === choice.action.to,
           ).nameKo;
-          const destination = page.getByRole('button', { name, exact: true });
+          const destination = page
+            .locator('.pm-flight-picker .pm-flight-card')
+            .filter({ has: page.getByText(name, { exact: true }) });
           if ((await destination.count()) && (await destination.isEnabled())) {
             await destination.click();
             await page

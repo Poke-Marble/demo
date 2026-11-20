@@ -235,15 +235,41 @@ try {
     `document.activeElement.textContent==='목적지 확정'`,
   );
   assert.equal(tab, true);
+  await evaluate(`window.flightPlayer = runtime.getState().activePlayerId`);
   const commit = await evaluate(
     `(async()=>{const d=document.querySelector('.pm-flight-picker');const b=[...d.querySelectorAll('button')].find(b=>b.textContent==='목적지 확정');b.click();b.click();await new Promise(r=>setTimeout(r,20));return {changed:beforeState!==JSON.stringify(runtime.getState()),event:document.querySelector('.pm-event-fly')?.dataset.eventId};})()`,
   );
   assert.equal(commit.changed, true);
   assert.ok(commit.event);
+  let arrival;
+  for (let i = 0; i < 120; i++) {
+    arrival = await evaluate(`({
+      position: runtime.getState().players.find(p=>p.id===flightPlayer).position,
+      expected: flight.destinations.at(-1).tileId,
+      settled: !host.querySelector('.pm-game').inert && !document.querySelector('.pm-event-fly') && host.querySelector('.phaser-board')?.dataset.locked === 'false'
+    })`);
+    if (arrival.settled) break;
+    await pause(100);
+  }
+  assert.equal(arrival.position, arrival.expected);
+  assert.equal(
+    arrival.settled,
+    true,
+    'HTML flight and Phaser arrival release input',
+  );
   await writeFile(
     join(evidence, 'results.json'),
     await format(
-      JSON.stringify({ setup, checks, touch, keyboard, selected, tab, commit }),
+      JSON.stringify({
+        setup,
+        checks,
+        touch,
+        keyboard,
+        selected,
+        tab,
+        commit,
+        arrival,
+      }),
       { parser: 'json' },
     ),
   );
