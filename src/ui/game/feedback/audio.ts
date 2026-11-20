@@ -10,6 +10,10 @@ export interface SfxBus {
   getSettings(): Readonly<SfxSettings>;
   subscribe(listener: (settings: Readonly<SfxSettings>) => void): () => void;
   play(cue: 'dice' | 'step'): void;
+  playConstruction?(
+    type: 'grass' | 'fire' | 'water' | 'electric',
+    final: boolean,
+  ): void;
   stop(): void;
   destroy(): void;
 }
@@ -90,7 +94,7 @@ export function createFeedbackAudio(): SfxBus {
         document.hidden
       )
         return;
-      // At most four voices (eight sources); oldest voice is released immediately.
+      // At most four voices; oldest voice is released immediately.
       if (voices.size >= 4) voices.values().next().value?.();
       const ctx = context;
       const nodes: AudioNode[] = [];
@@ -166,6 +170,64 @@ export function createFeedbackAudio(): SfxBus {
         osc.start(start);
         source.stop(start + duration);
         osc.stop(start + duration);
+      } catch {
+        end();
+      }
+    },
+    playConstruction(type, final) {
+      if (
+        destroyed ||
+        settings.muted ||
+        !settings.volume ||
+        context?.state !== 'running' ||
+        document.hidden
+      )
+        return;
+      const ctx = context;
+      const base = { grass: 330, fire: 262, water: 294, electric: 440 }[type];
+      // Original ascending chord, on the existing unlocked context and gain policy.
+      if (voices.size >= 4) voices.values().next().value?.();
+      const sources: OscillatorNode[] = [];
+      const gains: GainNode[] = [];
+      const end = () => {
+        for (const source of sources) {
+          source.onended = null;
+          try {
+            source.stop();
+          } catch {
+            /* Ended. */
+          }
+          source.disconnect();
+        }
+        for (const gain of gains) gain.disconnect();
+        voices.delete(end);
+      };
+      voices.add(end);
+      try {
+        const notes = final ? [1, 1.25, 1.5, 2] : [1, 1.5];
+        notes.forEach((ratio, index) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          sources.push(osc);
+          gains.push(gain);
+          osc.type = type === 'fire' ? 'triangle' : 'sine';
+          osc.frequency.value = base * ratio;
+          const at = ctx.currentTime + index * (final ? 0.12 : 0.08);
+          gain.gain.setValueAtTime(0.0001, at);
+          gain.gain.exponentialRampToValueAtTime(
+            Math.max(0.0001, settings.volume * 0.065),
+            at + 0.025,
+          );
+          gain.gain.exponentialRampToValueAtTime(
+            0.0001,
+            at + (final ? 0.65 : 0.22),
+          );
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          if (index === notes.length - 1) osc.onended = end;
+          osc.start(at);
+          osc.stop(at + (final ? 0.7 : 0.25));
+        });
       } catch {
         end();
       }
