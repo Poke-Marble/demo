@@ -21,6 +21,7 @@ import {
 import { applyConstructionOwner, ownerFromInput } from '../art/ownership';
 import { createArtCredits } from '../art/credits';
 import { gameCredits } from '../events/credits';
+import { createMapLabels } from './labels';
 import './style.css';
 
 export interface BoardVisuals {
@@ -107,8 +108,10 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
     options.onLockChange?.(locked());
   }
   function select(id: TileId) {
+    labels.focus(id);
     if (!locked()) options.onSelect(id);
   }
+  const labels = createMapLabels(surface, (id) => select(id as TileId));
 
   class BoardScene extends Phaser.Scene {
     constructor() {
@@ -137,6 +140,11 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
         return;
       }
       this.game.canvas.setAttribute('aria-hidden', 'true');
+      const syncLabels = () => labels.sync(this, this.game.canvas, locked());
+      this.game.events.on(Phaser.Core.Events.POST_RENDER, syncLabels);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+        this.game.events.off(Phaser.Core.Events.POST_RENDER, syncLabels),
+      );
       for (const id of [
         'pokemon:0001',
         'pokemon:0004',
@@ -327,6 +335,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
       if (!snapshot.map.tiles.some((t) => t.id === id)) {
         removeTile(tile);
         tile.button.remove();
+        labels.remove(id);
         tiles.delete(id);
       }
     const fontFamily =
@@ -414,19 +423,15 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
           .setOrigin(0.5, 0.9)
           .setDisplaySize(p.width, p.height)
           .setDepth(depthOrder({ x: g.x, y: p.depthY }));
-        const label = scene.add
-          .text(g.x, g.y + g.height / 2 + 16, tile.nameKo, {
-            fontFamily,
-            fontSize: '10px',
-            color: tile.kind === 'special' ? '#674483' : '#203f49',
-            backgroundColor: '#f5f4df',
-            padding: { x: 3, y: 2 },
-          })
-          .setOrigin(0.5, 0)
-          .setDepth(20000);
-        // Text labels are board data only; menus and HUD remain HTML.
+        labels.set({
+          id: tile.id,
+          order: i,
+          name: tile.nameKo,
+          x: g.x,
+          y: g.y + g.height / 2 + 16,
+          special: tile.kind === 'special',
+        });
         entry.images = [face, model];
-        model.once('destroy', () => label.destroy());
       }),
     );
     if (destroyed || token !== revision) return;
@@ -826,6 +831,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
       revision++;
       readyDone();
       observer.disconnect();
+      labels.destroy();
       media.removeEventListener('change', onMotion);
       controls.querySelectorAll('button').forEach((b) => (b.onclick = null));
       tileList.querySelectorAll('button').forEach((b) => (b.onclick = null));
