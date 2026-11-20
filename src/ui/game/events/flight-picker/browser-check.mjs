@@ -13,7 +13,7 @@ import { format } from 'prettier';
 // Isolated headless Chrome only; never attaches to another pane or profile.
 const profile = await mkdtemp(join(tmpdir(), 'flight-picker-chrome-'));
 const here = fileURLToPath(new URL('.', import.meta.url));
-const evidence = join(here, 'evidence');
+const evidence = process.env.FLIGHT_EVIDENCE ?? join(here, 'evidence');
 await mkdir(evidence, { recursive: true });
 const baselinePath = join(here, 'baseline.ts');
 const baseline = execFileSync(
@@ -93,7 +93,9 @@ try {
     deviceScaleFactor: 1,
     mobile: false,
   });
-  await send('Page.navigate', { url: 'http://127.0.0.1:5190/?fast' });
+  await send('Page.navigate', {
+    url: `${process.env.FLIGHT_URL ?? 'http://127.0.0.1:5190'}/?fast`,
+  });
   await pause(2500);
   const setup = await evaluate(`(async () => {
     const { createIntegratedPreview } = await import('/src/ui/game/integration/adapter.ts');

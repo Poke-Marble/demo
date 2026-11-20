@@ -28,7 +28,7 @@ try {
   for (const width of [1280, 390]) {
     const page = await browser.newPage({ viewport: { width, height: 1100 } });
     page.on('pageerror', (e) => report.errors.push(e.message));
-    await page.goto('http://127.0.0.1:5189/');
+    await page.goto(process.env.OCCLUSION_URL ?? 'http://127.0.0.1:5189/');
     await page.evaluate(async () => {
       await import('/src/ui/game/phaser/index.ts');
       const phaserURL = performance

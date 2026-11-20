@@ -15,9 +15,11 @@ const { chromium } = await import(
   ).href
 );
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
-const folder = 'src/ui/game/construction-effects/evidence';
+const folder =
+  process.env.CONSTRUCTION_EVIDENCE ??
+  'src/ui/game/construction-effects/evidence';
 await mkdir(folder, { recursive: true });
-const base = 'http://127.0.0.1:5191';
+const base = process.env.CONSTRUCTION_URL ?? 'http://127.0.0.1:5191';
 const report = {
   browser: await browser.version(),
   viewports: [1280, 390],
