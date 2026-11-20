@@ -1,0 +1,92 @@
+.pm-event-picker.pm-flight-picker {
+  width: min(760px, 94vw);
+  max-height: 92dvh;
+  box-sizing: border-box;
+  overflow: auto;
+}
+.pm-flight-picker .pm-event-destinations {
+  display: flex;
+  flex-direction: column;
+  max-height: min(50dvh, 500px);
+  overflow: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: #ffe18b #152b38;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 6px 12px 6px 6px;
+}
+.pm-flight-picker .pm-flight-card {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  text-align: left;
+  padding: 14px 18px;
+  border-left: 8px solid var(--owner-color, #82909b);
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 12px,
+    #ffffff08 12px 15px
+  );
+  overflow-wrap: anywhere;
+}
+.pm-flight-card strong {
+  font-size: 1.15rem;
+}
+.pm-flight-card > span:not(.pm-flight-kind) {
+  grid-column: 1 / -1;
+}
+.pm-flight-card .pm-flight-kind {
+  font-size: 0.8rem;
+  align-self: center;
+}
+.pm-flight-owner {
+  font-weight: 700;
+}
+.pm-flight-price {
+  color: #ffe3a1;
+  font-size: 0.85rem;
+}
+.pm-flight-card[data-owner-color='grass'] {
+  --owner-color: #70cb88;
+  background-image: radial-gradient(#70cb8822 2px, transparent 2px);
+  background-size: 12px 12px;
+}
+.pm-flight-card[data-owner-color='fire'] {
+  --owner-color: #f59372;
+}
+.pm-flight-card[data-owner-color='water'] {
+  --owner-color: #78bdf5;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 10px,
+    #78bdf522 10px 12px
+  );
+}
+.pm-flight-card[data-owner-color='electric'] {
+  --owner-color: #f4d95d;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0 6px,
+    #f4d95d22 6px 8px
+  );
+}
+.pm-flight-picker[data-layout='horizontal'] .pm-event-destinations {
+  flex-direction: row;
+  touch-action: pan-x;
+}
+.pm-flight-picker[data-layout='horizontal'] .pm-flight-card {
+  width: min(440px, 80vw);
+}
+@media (max-width: 500px) {
+  .pm-event-picker.pm-flight-picker {
+    padding: 14px;
+  }
+  .pm-flight-picker .pm-flight-card {
+    padding: 12px;
+    gap: 6px;
+  }
+}
