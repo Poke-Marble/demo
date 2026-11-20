@@ -23,6 +23,8 @@ export interface GameSetup {
 }
 export interface UIChoice {
   id: string;
+  /** Revision-bound opaque legal selection, including economic intents. */
+  selectionId?: string;
   label: string;
   description?: string;
   disabled?: boolean;
@@ -58,6 +60,9 @@ export interface UICredit {
   requiredInline?: boolean;
 }
 export interface UIUpdate {
+  /** Resolve after all presentation or cancellation; never performs a transaction. */
+  presentationComplete?: () => void;
+  abilityActivations?: readonly import('../../game/abilities/activation').AbilityActivation[];
   /** Stable update identity for serialized event redelivery deduplication. */
   id?: string;
   view: GameView;

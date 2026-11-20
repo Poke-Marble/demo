@@ -8,3 +8,9 @@ src/assets/generated/
 package-lock.json
 src/ui/game/portraits/evidence/
 src/ui/game/portraits/manifest.json
+
+src/ui/game/events/assets/LICENSE.md
+src/ui/game/events/assets/README.md
+src/ui/game/events/assets/tracker.json
+src/ui/game/events/assets/credit_names.txt
+src/ui/game/events/assets/manifest.json

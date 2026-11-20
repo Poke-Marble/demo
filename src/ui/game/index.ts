@@ -1,3 +1,4 @@
+import { createAbilityPresenter } from './abilities/presenter';
 import { createGameplayFeedback } from './feedback/controller';
 import { createUpdateGate, walkingPath } from './feedback/policy';
 import type { SfxBus } from './feedback/audio';
@@ -81,6 +82,33 @@ export function mountGameUI(
   root.append(host);
   const feedback = createGameplayFeedback(root, options.sfx);
   root.append(feedback.controls);
+  const abilityWaiters = new Map<string, () => void>();
+  const ability = createAbilityPresenter(root, {
+    onEnd: (activation) => {
+      abilityWaiters.get(activation.id)?.();
+      abilityWaiters.delete(activation.id);
+    },
+  });
+  const releaseAudio = feedback.audio.subscribe((settings) => {
+    ability.audio.setMuted(settings.muted);
+    ability.audio.setVolume(settings.volume * 0.35);
+  });
+  const unlockAbility = () => {
+    void ability.audio.unlock();
+  };
+  const cancelAbility = () => ability.cancel();
+  const skipPresentation = button('연출 건너뛰기', () => {
+    feedback.skip();
+    ability.cancel();
+    effects.skip();
+  });
+  feedback.controls.append(skipPresentation);
+  const visibilityAbility = () => {
+    if (document.hidden) cancelAbility();
+  };
+  root.addEventListener('pointerdown', unlockAbility, true);
+  root.addEventListener('keydown', unlockAbility, true);
+  document.addEventListener('visibilitychange', visibilityAbility);
   const feedbackGate = createUpdateGate();
   let feedbackLocked = false;
   let pendingFeedback = 0;
@@ -213,8 +241,8 @@ export function mountGameUI(
       choice.label,
       () => {
         void invoke(() =>
-          promptId
-            ? adapter.choose(promptId, choice.id)
+          promptId || choice.selectionId
+            ? adapter.choose((promptId ?? choice.selectionId)!, choice.id)
             : choice.action
               ? adapter.dispatch(choice.action)
               : undefined,
@@ -222,6 +250,7 @@ export function mountGameUI(
       },
       `pm-action${choice.action?.type === 'roll-dice' ? ' pm-action-roll' : ''}`,
     );
+    b.dataset.choiceId = choice.id;
     b.disabled =
       !!choice.disabled ||
       busy ||
@@ -230,6 +259,7 @@ export function mountGameUI(
       feedbackLocked ||
       !humanTurn() ||
       (!promptId &&
+        !choice.selectionId &&
         (!choice.action ||
           choice.action.playerId !== view.state.activePlayerId));
     if (choice.description) b.title = choice.description;
@@ -883,6 +913,20 @@ export function mountGameUI(
       if (effectsLocked) lockEffects(false);
       animating = false;
     }
+    for (const activation of update.abilityActivations ?? []) {
+      if (feedback.suppressed) continue;
+      animating = true;
+      render();
+      await new Promise<void>((resolve) => {
+        abilityWaiters.set(activation.id, resolve);
+        if (!ability.enqueue(activation)) {
+          abilityWaiters.delete(activation.id);
+          resolve();
+        }
+      });
+      if (current !== generation || disposed) return;
+      animating = false;
+    }
     for (const cue of cues) if (cue.reaction !== 'acting') emotions.apply(cue);
     if (roll || movement) pendingFeedback = Math.max(0, pendingFeedback - 1);
     feedbackLocked = pendingFeedback > 0;
@@ -890,9 +934,15 @@ export function mountGameUI(
     render();
   }
   const unsubscribe = adapter.subscribe((received) => {
-    if (disposed) return;
+    if (disposed) {
+      received.presentationComplete?.();
+      return;
+    }
     const u = feedbackGate.accept(received);
-    if (!u) return;
+    if (!u) {
+      received.presentationComplete?.();
+      return;
+    }
     if (u.events.some((event) => event.type === 'dice-rolled') || u.movement) {
       // Synchronous input lock, including computer updates before queue delivery.
       feedbackLocked = true;
@@ -901,6 +951,7 @@ export function mountGameUI(
       animating = true;
     }
     if (u.view.state.phase === 'setup') {
+      ability.cancel();
       feedbackGate.reset();
       feedbackGate.accept(u);
       feedback.reset();
@@ -938,8 +989,10 @@ export function mountGameUI(
         movementFrom.clear();
         lockEffects(false);
         animating = false;
+        ability.cancel();
         tell('화면을 갱신하지 못했습니다.');
-      });
+      })
+      .finally(() => u.presentationComplete?.());
   });
   function animateSprites(now: number) {
     if (disposed) return;
@@ -961,7 +1014,13 @@ export function mountGameUI(
   frameId = requestAnimationFrame(animateSprites);
   return {
     destroy() {
+      if (disposed) return;
       disposed = true;
+      ability.destroy();
+      releaseAudio();
+      root.removeEventListener('pointerdown', unlockAbility, true);
+      root.removeEventListener('keydown', unlockAbility, true);
+      document.removeEventListener('visibilitychange', visibilityAbility);
       emotions.destroy();
       for (const portrait of portraits.values()) portrait.destroy();
       portraits.clear();

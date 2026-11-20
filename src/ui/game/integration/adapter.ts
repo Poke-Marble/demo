@@ -1,155 +1,248 @@
+import { settleAbilities } from './settlement.ts';
 import { kantoJohtoMap } from '../../../data/maps/kanto-johto.ts';
+import { createGame } from '../../../game/core/index.ts';
 import {
-  createGame,
-  dispatch,
-  type CoreState,
-  type Transition,
-} from '../../../game/core/index.ts';
+  createEconomyContext,
+  initializeEconomy,
+  dispatchEconomy,
+  getLegalActions,
+  quoteConstruction,
+  quoteToll,
+  tollBase,
+  type EconomyState,
+  type EconomyIntent,
+  type EconomyCommand,
+  type LegalActionSet,
+} from '../../../game/economy/index.ts';
+import { finalizeVictory } from '../../../game/victory/index.ts';
 import {
-  enterSpecial,
-  legalFlyDestinations,
-  type LegendaryAction,
-} from '../../../game/legendary.ts';
-import type { GameAction, GameEvent, TileId } from '../../../game/contracts';
+  emptyLedger,
+  type AbilityLedger,
+  type AbilityActivation,
+  type SettledTransaction,
+} from '../../../game/abilities/activation.ts';
+import { createExecutor } from '../../../game/ai/executor.ts';
+import type { Snapshot, ActionKind } from '../../../game/ai/contracts.ts';
+import type { GameEvent } from '../../../game/contracts';
 import type { GameSetup, GameUIAdapter, GameView, UIUpdate } from '../adapter';
 import { createInitialRoster } from '../setup.ts';
 import { presentationMap } from './map.ts';
 
-/** Real movement/trials; construction remains an explicitly labelled visual fixture. */
+export interface IntegratedState extends EconomyState {
+  readonly abilityLedger: AbilityLedger;
+  readonly abilityOutbox: readonly AbilityActivation[];
+  readonly abilityReceipts: readonly SettledTransaction[];
+}
+type Legal = LegalActionSet['actions'][number];
+const kinds: Partial<Record<EconomyIntent['type'], ActionKind>> = {
+  'roll-dice': 'roll',
+  'end-turn': 'end-turn',
+  'construct-property': 'build',
+  'buy-landmark': 'buy',
+  'takeover-property': 'takeover',
+  'sell-property': 'sell',
+  'declare-bankruptcy': 'bankrupt',
+  'pass-property': 'pass',
+  'attempt-trial': 'trial',
+  'use-escape-rope': 'rope',
+  fly: 'fly',
+};
+const labels: Partial<Record<EconomyIntent['type'], string>> = {
+  'roll-dice': '주사위 굴리기',
+  'end-turn': '턴 마치기',
+  'buy-landmark': '명소 구매',
+  'takeover-property': '인수',
+  'sell-property': '매각',
+  'declare-bankruptcy': '파산 선언',
+  'pass-property': '건너뛰기',
+  'attempt-trial': '시험에 도전',
+  'use-escape-rope': '탈출로프 사용',
+  fly: '공중날기',
+};
+const reasonLabels: Readonly<Record<string, string>> = {
+  'stage-locked': '개인 바퀴 해금 필요',
+  'final-revisit-required': '센터 완성 후 재방문 필요',
+  'already-built': '이미 완성한 단계',
+  'insufficient-funds': '잔액 부족',
+  'not-owner': '다른 플레이어 소유',
+};
+/** One authority for human and computer commands. No fixture state mutation. */
 export function createIntegratedPreview(
   options: { computerDelayMs?: number; seed?: number } = {},
 ) {
-  const map = kantoJohtoMap;
+  const context = createEconomyContext(kantoJohtoMap);
+  const map = context.map;
   let participants = createInitialRoster('pokemon:0001');
-  const fresh = () =>
-    createGame(map, participants, { seed: options.seed ?? 42, legendary: {} });
-  let state: CoreState = { ...fresh(), phase: 'setup' };
-  let session = 0;
-  let serial = 0;
-  let constructionOffered = '';
+  let session = 0,
+    serial = 0;
+  const fresh = (): IntegratedState => ({
+    ...initializeEconomy(
+      createGame(map, participants, {
+        seed: options.seed ?? 42,
+        legendary: {},
+      }),
+      context,
+      `game:${session}`,
+    ),
+    abilityLedger: emptyLedger(),
+    abilityOutbox: [],
+    abilityReceipts: [],
+  });
+  let state: IntegratedState = { ...fresh(), phase: 'setup' };
   let notice = '';
   const listeners = new Set<(update: UIUpdate) => void>();
+  const acknowledgements = new Map<() => void, (update: UIUpdate) => void>();
+  let presentation: Promise<void> = Promise.resolve();
+  let presentationBusy = false;
   const human = () =>
     participants.find((p) => p.id === state.activePlayerId)?.controller ===
     'human';
-  const active = () =>
-    state.players.find((p) => p.id === state.activePlayerId)!;
-  const promptId = () => `${session}:${state.turnNumber}:${active().position}`;
-  const currentTile = () => map.tiles.find((t) => t.id === active().position)!;
+  const legal = () => getLegalActions(state, context, state.activePlayerId);
+  const identity = () => `${state.economy.sessionId}:${state.economy.revision}`;
+  const label = (a: Legal) => {
+    const intent = a.intent;
+    const title =
+      intent.type === 'construct-property'
+        ? ['캠프 구매', '숍 건설', '센터 건설', '대표 시설 완성'][
+            intent.targetStage
+          ]!
+        : (labels[intent.type] ?? intent.type);
+    const tile =
+      'tileId' in intent
+        ? map.tiles.find((t) => t.id === intent.tileId)?.nameKo
+        : '';
+    return `${title}${intent.type === 'sell-property' ? ` · ${tile}` : ''}${a.quote ? ` · ${intent.type === 'sell-property' ? '+' : ''}${a.quote.total} ₽` : ''}`;
+  };
   const getView = (): GameView => {
-    const ext = state.legendary!;
-    const trial = ext.players[state.activePlayerId]!.trial;
-    const pendingFlight = ext.pendingFly?.playerId === state.activePlayerId;
-    let prompt: GameView['prompt'];
-    const playing = state.phase === 'playing';
-    const actions: GameView['actions'] =
-      playing && !trial && !pendingFlight
-        ? [
-            {
-              id: 'roll',
-              label: '주사위 굴리기',
-              disabled: state.core.turnStage !== 'awaiting-roll',
-              action: { type: 'roll-dice', playerId: state.activePlayerId },
-            },
-            {
-              id: 'end',
-              label: '턴 마치기',
-              disabled: state.core.turnStage !== 'awaiting-end',
-              action: { type: 'end-turn', playerId: state.activePlayerId },
-            },
-          ]
-        : [];
-    if (playing && trial && human()) {
-      const attempted = trial.lastAttemptTurn === state.turnNumber;
-      prompt = {
-        id: promptId(),
-        kind: 'upgrade',
-        title: trial.legendary === 'lugia' ? '루기아의 시험' : '칠색조의 시험',
-        description: attempted
-          ? '이번 도전은 실패했습니다.'
-          : `도전 ${trial.attempts + 1}회차`,
-        choices: [
-          {
-            id: attempted ? 'end' : 'attempt',
-            label: attempted ? '다음 차례에 재도전' : '시험에 도전',
-          },
-          ...(ext.players[state.activePlayerId]!.ropes > 0
-            ? [{ id: 'rope', label: '동굴탈출로프 사용' }]
-            : []),
-        ],
-      };
-    } else if (
-      playing &&
-      human() &&
-      !pendingFlight &&
-      state.core.turnStage === 'awaiting-end' &&
-      currentTile().kind === 'city' &&
-      constructionOffered !== promptId()
-    ) {
-      const holding = state.holdings.find(
-        (h) => h.tileId === active().position,
-      );
-      if (
-        !holding ||
-        (holding.ownerId === active().id && holding.facilityLevel < 3)
-      ) {
-        const labels = [
-          '캠프 세우기',
-          '숍 건설',
-          '센터 건설',
-          '대표 시설 완성',
-        ];
-        const next = holding ? holding.facilityLevel + 1 : 0;
-        prompt = {
-          id: promptId(),
-          kind: holding ? 'upgrade' : 'purchase',
-          title: currentTile().nameKo,
-          description: '건물 표시 시연 · 비용·해금·통행료는 아직 미연결입니다.',
-          choices: [
-            { id: 'construct', label: labels[next]! },
-            { id: 'skip', label: '건너뛰기' },
-          ],
-        };
+    const set = legal();
+    const choices = set.actions
+      .filter((a) => a.intent.type !== 'fly')
+      .map((a) => ({ id: a.actionKey, label: label(a) }));
+    const choosing =
+      set.phase === 'choosing-property' ||
+      set.phase === 'liquidating' ||
+      !!state.legendary?.players[state.activePlayerId]?.trial;
+    let description =
+      set.phase === 'liquidating'
+        ? `미납 ${state.economy.pendingDebt!.amount} ₽ · 매각 후 자동 정산`
+        : '확정 견적 · 선택하면 이번 방문 결정을 마칩니다.';
+    if (set.phase === 'choosing-property' && state.economy.landing) {
+      const tileId = state.economy.landing.tileId;
+      if (context.properties[tileId]?.kind === 'city') {
+        const reasons = ([0, 1, 2, 3] as const)
+          .map((stage) =>
+            quoteConstruction(
+              state,
+              context,
+              state.activePlayerId,
+              tileId,
+              stage,
+            ),
+          )
+          .filter((q) => !q.eligible)
+          .flatMap((q) => q.reasons);
+        description += ` 잠금: ${[...new Set(reasons)].map((r) => reasonLabels[r] ?? r).join(', ') || '없음'}`;
       }
     }
+    const flights = set.actions.filter((a) => a.intent.type === 'fly');
     return {
       state,
       map: presentationMap,
-      mapName: '여행 지도',
+      mapName: '관동·성도 여행',
       participants,
-      computer: { connected: true, status: '기본 자동 진행' },
-      actions,
-      ...(notice ? { notice } : {}),
-      ...(prompt ? { prompt } : {}),
-      ...(playing && pendingFlight && human()
+      computer: { connected: true, status: '표준 AI · 실제 경제 견적 판단 중' },
+      actions: choosing
+        ? []
+        : choices.map((c) => ({
+            ...c,
+            selectionId: identity(),
+            ...(set.actions.find((a) => a.actionKey === c.id)!.intent.type ===
+            'roll-dice'
+              ? {
+                  action: {
+                    type: 'roll-dice' as const,
+                    playerId: state.activePlayerId,
+                  },
+                }
+              : {}),
+          })),
+      ...(choosing && human()
+        ? {
+            prompt: {
+              id: identity(),
+              kind:
+                set.phase === 'liquidating'
+                  ? ('liquidate' as const)
+                  : ('purchase' as const),
+              title:
+                set.phase === 'liquidating' ? '채무 정산' : '이번 방문 선택',
+              description,
+              choices,
+            },
+          }
+        : {}),
+      ...(flights.length && human()
         ? {
             flightSelection: {
-              id: `flight:${session}:${state.turnNumber}`,
+              id: identity(),
               playerId: state.activePlayerId,
               cancellable: false,
-              destinations: legalFlyDestinations(state, map).map((tileId) => ({
-                tileId,
-                label: map.tiles.find((t) => t.id === tileId)!.nameKo,
+              destinations: flights.map((a) => ({
+                tileId: (a.intent as Extract<EconomyIntent, { type: 'fly' }>)
+                  .to,
+                label: map.tiles.find(
+                  (t) =>
+                    t.id ===
+                    (a.intent as Extract<EconomyIntent, { type: 'fly' }>).to,
+                )!.nameKo,
               })),
             },
           }
         : {}),
+      ...(notice ? { notice } : {}),
     };
   };
-  function publish(extra: Partial<Omit<UIUpdate, 'view' | 'id'>> = {}) {
-    const update: UIUpdate = {
-      id: `integrated:${session}:${++serial}`,
-      view: getView(),
-      events: [],
-      ...extra,
-    };
-    listeners.forEach((listener) => listener(update));
+  function cancelPresentation() {
+    for (const done of [...acknowledgements.keys()]) done();
   }
-  function apply(action: GameAction | LegendaryAction) {
+  function publish(extra: Partial<UIUpdate> = {}) {
+    presentationBusy = listeners.size > 0;
+    const waits: Promise<void>[] = [];
+    for (const listener of listeners) {
+      let done!: () => void;
+      const wait = new Promise<void>((resolve) => {
+        done = () => {
+          acknowledgements.delete(done);
+          resolve();
+        };
+      });
+      acknowledgements.set(done, listener);
+      waits.push(wait);
+      try {
+        listener({
+          id: `integrated:${session}:${++serial}`,
+          view: getView(),
+          events: [],
+          ...extra,
+          presentationComplete: done,
+        });
+      } catch {
+        done();
+      }
+    }
+    presentationBusy = waits.length > 0;
+    const current = Promise.all(waits).then(() => {
+      if (presentation === current) presentationBusy = false;
+    });
+    presentation = current;
+  }
+  function commit(command: EconomyCommand) {
+    if (presentationBusy) return false;
     const before = state;
-    const result: Transition = dispatch(state, map, action);
-    if (!result.ok) return false;
-    state = result.state;
+    const result = dispatchEconomy(before, context, command);
+    if (!result.ok || result.replayed) return result.ok;
+    let { next } = settleAbilities(before, context, result);
+    const activations = next.abilityOutbox.slice(before.abilityOutbox.length);
     const events = result.events.filter(
       (e): e is GameEvent =>
         ![
@@ -158,60 +251,223 @@ export function createIntegratedPreview(
           'start-rewarded',
           'tile-landed',
           'turn-started',
+          'economy-committed',
+          'debt-opened',
+          'toll-settled',
+          'property-sold',
         ].includes(e.type),
     );
-    const resolved = result.events.find((e) => e.type === 'trial-resolved');
-    const emotionCues: NonNullable<UIUpdate['emotionCues']> =
-      resolved?.type === 'trial-resolved'
-        ? [
-            {
-              id: `trial:${session}:${serial + 1}`,
-              playerId: resolved.playerId,
-              reaction: resolved.success ? 'joy' : 'distress',
-            },
-          ]
-        : [];
-    if (resolved?.type === 'trial-resolved')
-      notice = resolved.success
-        ? '시험 통과! 가호를 얻었습니다.'
-        : '시험 실패. 다음 차례에 다시 도전할 수 있습니다.';
-    if (action.type === 'use-escape-rope')
-      notice = '탈출했습니다. 주사위를 굴려 이동하세요.';
-    const dice = result.events.find((e) => e.type === 'dice-rolled');
-    let movement: UIUpdate['movement'];
-    if (dice?.type === 'dice-rolled') {
-      const start = map.tiles.findIndex(
-        (t) =>
-          t.id ===
-          before.players.find((p) => p.id === action.playerId)!.position,
-      );
-      movement = {
-        playerId: action.playerId,
-        path: Array.from(
-          { length: dice.values.reduce((a, b) => a + b, 0) },
-          (_, i) => map.tiles[(start + i + 1) % map.tiles.length]!.id,
-        ),
-      };
+    if (!next.economy.pendingDebt) {
+      const final = finalizeVictory(next, map, { actorId: command.playerId });
+      if (!final.ok) throw new Error(final.error.message);
+      next = final.state;
+      events.push(...final.events);
     }
+    state = next; // Single atomic publication: base money + ability ledger/money + victory.
+    const dice = result.events.find((e) => e.type === 'dice-rolled');
+    const start = map.tiles.findIndex(
+      (t) =>
+        t.id ===
+        before.players.find((p) => p.id === command.playerId)!.position,
+    );
+    const movement =
+      dice?.type === 'dice-rolled'
+        ? {
+            playerId: command.playerId,
+            path: Array.from(
+              { length: dice.values.reduce((a, b) => a + b, 0) },
+              (_, i) => map.tiles[(start + i + 1) % map.tiles.length]!.id,
+            ),
+          }
+        : undefined;
+    const toll = result.events.find((e) => e.type === 'toll-settled');
+    notice =
+      toll?.type === 'toll-settled'
+        ? `통행료 ${toll.recovered} ₽ 정산${toll.forgiven ? ` · 미회수 ${toll.forgiven} ₽` : ''}`
+        : '';
     publish({
       events,
-      emotionCues,
       ...(movement ? { movement } : {}),
-      effects: (result.presentations ?? []).map((effect, i) => ({
-        ...effect,
-        id: `effect:${session}:${serial + 1}:${i}`,
+      abilityActivations: activations,
+      effects: result.presentations.map((e, i) => ({
+        ...e,
+        id: `${command.sessionId}:${command.commandId}:${i}`,
       })),
     });
     return true;
   }
+  // One projected opponent visit, explicitly a heuristic horizon; rates come from authority.
+  function investmentIncome(a: Legal): number {
+    if (
+      !['construct-property', 'buy-landmark', 'takeover-property'].includes(
+        a.intent.type,
+      ) ||
+      !('tileId' in a.intent)
+    )
+      return 0;
+    const tileId = a.intent.tileId;
+    const stage =
+      a.intent.type === 'construct-property'
+        ? a.intent.targetStage
+        : (state.holdings.find((h) => h.tileId === tileId)?.facilityLevel ?? 0);
+    const projected = {
+      ...state,
+      holdings: [
+        ...state.holdings.filter((h) => h.tileId !== tileId),
+        { tileId, ownerId: state.activePlayerId, facilityLevel: stage },
+      ],
+    };
+    const visitor = state.players.find(
+      (p) => p.id !== state.activePlayerId && !p.bankrupt,
+    );
+    return visitor ? tollBase(projected, context, visitor.id, tileId) : 0;
+  }
+  const snapshot = (): Snapshot<EconomyIntent> => ({
+    session: state.economy.sessionId,
+    turn: String(state.turnNumber),
+    revision: String(state.economy.revision),
+    phase: state.phase === 'playing' ? 'playing' : 'finished',
+    activePlayerId: state.activePlayerId,
+    players: state.players.map((p) => ({
+      id: p.id,
+      bankrupt: p.bankrupt,
+      controller: participants.find((n) => n.id === p.id)!.controller,
+    })),
+    cash: state.players.find((p) => p.id === state.activePlayerId)!.balance,
+    debt: state.economy.pendingDebt?.amount ?? 0,
+    expectedToll: {
+      value: Math.max(
+        0,
+        ...state.holdings
+          .filter((h) => h.ownerId !== state.activePlayerId)
+          .map(
+            (h) =>
+              quoteToll(state, context, state.activePlayerId, h.tileId).total,
+          ),
+      ),
+      source: 'authority',
+    },
+    properties: Object.keys(context.properties).map((id) => ({
+      id,
+      ownerId: state.holdings.find((h) => h.tileId === id)?.ownerId ?? null,
+    })),
+    collections: [
+      ...map.cityGroups.map((g) => ({
+        id: g.id,
+        kind: 'group' as const,
+        propertyIds: g.cityIds,
+      })),
+      ...(['south', 'west', 'north', 'east'] as const).map((side) => ({
+        id: side,
+        kind: 'line' as const,
+        propertyIds: map.tiles
+          .filter((t) => t.kind === 'city' && t.side === side)
+          .map((t) => t.id),
+      })),
+      {
+        id: 'landmarks',
+        kind: 'four-landmarks',
+        propertyIds: map.tiles
+          .filter((t) => t.kind === 'landmark')
+          .map((t) => t.id),
+      },
+    ],
+    candidates: legal().actions.map((a) => ({
+      id: a.actionKey,
+      kind:
+        a.intent.type === 'construct-property' && a.quote?.fromStage === null
+          ? 'buy'
+          : kinds[a.intent.type]!,
+      action: a.intent,
+      ...('tileId' in a.intent ? { targetId: a.intent.tileId } : {}),
+      quote: {
+        debit: a.quote && a.intent.type !== 'sell-property' ? a.quote.total : 0,
+        credit: a.intent.type === 'sell-property' ? a.quote!.total : 0,
+      },
+      outlook: {
+        income: { value: investmentIncome(a), source: 'heuristic' },
+        trialSuccessProbability: state.legendary?.rules.successChance ?? 0,
+      },
+    })),
+  });
+  const aiCommands = new Map<string, EconomyCommand>();
+  const executor = createExecutor<EconomyIntent>(
+    {
+      read: snapshot,
+      async dispatch(command, signal) {
+        if (signal.aborted || command.session !== state.economy.sessionId)
+          return { accepted: false };
+        const known = aiCommands.get(command.commandId);
+        if (known) {
+          const replay = dispatchEconomy(state, context, known);
+          return { accepted: replay.ok && replay.replayed };
+        }
+        if (
+          human() ||
+          command.turn !== String(state.turnNumber) ||
+          command.revision !== String(state.economy.revision)
+        )
+          return { accepted: false };
+        const candidate = legal().actions.find(
+          (a) =>
+            a.actionKey === command.candidateId &&
+            JSON.stringify(a.intent) === JSON.stringify(command.action),
+        );
+        if (!candidate) return { accepted: false };
+        const envelope: EconomyCommand = {
+          sessionId: command.session,
+          commandId: `ai:${session}:${aiCommands.size}`,
+          expectedRevision: state.economy.revision,
+          playerId: state.activePlayerId,
+          intent: candidate.intent,
+        };
+        const accepted = commit(envelope);
+        if (accepted) aiCommands.set(command.commandId, envelope);
+        return { accepted };
+      },
+      async awaitPresentation(_, signal) {
+        if (signal.aborted) return;
+        await new Promise<void>((resolve) => {
+          const done = () => {
+            signal.removeEventListener('abort', done);
+            resolve();
+          };
+          signal.addEventListener('abort', done, { once: true });
+          void presentation.then(done);
+        });
+      },
+      delay: (signal) =>
+        new Promise<void>((resolve) => {
+          if (signal.aborted) return resolve();
+          const done = () => {
+            clearTimeout(timer);
+            signal.removeEventListener('abort', done);
+            resolve();
+          };
+          const timer = setTimeout(done, options.computerDelayMs ?? 350);
+          signal.addEventListener('abort', done, { once: true });
+        }),
+    },
+    { seed: options.seed ?? 42, maxActions: 64, callbackTimeoutMs: 60000 },
+  );
+  function humanCommit(a: Legal | undefined) {
+    if (!human() || executor.busy || !a) return;
+    commit({
+      sessionId: state.economy.sessionId,
+      commandId: `human:${session}:${state.economy.revision}`,
+      expectedRevision: state.economy.revision,
+      playerId: state.activePlayerId,
+      intent: a.intent,
+    });
+  }
   const adapter: GameUIAdapter = {
-    demo: true,
-    demoLabel: '통합 DEMO',
     getView,
     subscribe(listener) {
       listeners.add(listener);
       return () => {
         listeners.delete(listener);
+        for (const [done, owner] of acknowledgements)
+          if (owner === listener) done();
       };
     },
     start(setup: GameSetup) {
@@ -230,149 +486,61 @@ export function createIntegratedPreview(
           3
       )
         throw new Error('플레이어 배정을 확인하세요.');
-      participants = setup.participants.map((p) => ({ ...p }));
+      executor.cancel();
+      cancelPresentation();
       session++;
-      constructionOffered = '';
-      notice = '';
+      participants = setup.participants.map((p) => ({ ...p }));
       state = fresh();
+      notice = '';
       publish();
     },
     dispatch(action) {
-      if (human() && !getView().prompt) apply(action);
+      humanCommit(
+        legal().actions.find(
+          (a) => JSON.stringify(a.intent) === JSON.stringify(action),
+        ),
+      );
     },
     choose(id, choice) {
-      const prompt = getView().prompt;
-      if (
-        !human() ||
-        !prompt ||
-        id !== prompt.id ||
-        !prompt.choices.some((c) => c.id === choice)
-      )
-        return;
-      const playerId = state.activePlayerId;
-      if (choice === 'attempt') apply({ type: 'attempt-trial', playerId });
-      else if (choice === 'rope') apply({ type: 'use-escape-rope', playerId });
-      else if (choice === 'end') apply({ type: 'end-turn', playerId });
-      else {
-        constructionOffered = id;
-        const tileId = active().position;
-        if (choice === 'construct') {
-          const existing = state.holdings.find((h) => h.tileId === tileId);
-          const level = existing ? existing.facilityLevel + 1 : 0;
-          state = {
-            ...state,
-            holdings: [
-              ...state.holdings.filter((h) => h.tileId !== tileId),
-              { tileId, ownerId: playerId, facilityLevel: level },
-            ],
-          };
-          publish({
-            events: existing
-              ? [{ type: 'facility-upgraded', tileId, level }]
-              : [{ type: 'city-acquired', playerId, tileId }],
-          });
-        } else publish();
-      }
+      if (id === identity())
+        humanCommit(legal().actions.find((a) => a.actionKey === choice));
     },
-    selectFlightDestination(id, tileId) {
-      if (!human() || !tileId || id !== getView().flightSelection?.id) return;
-      apply({ type: 'fly', playerId: state.activePlayerId, to: tileId });
+    selectFlightDestination(id, to) {
+      if (id === identity())
+        humanCommit(
+          legal().actions.find(
+            (a) => a.intent.type === 'fly' && a.intent.to === to,
+          ),
+        );
     },
     async runComputerTurn(playerId, signal) {
-      const generation = session;
-      const valid = () =>
-        !signal.aborted &&
-        generation === session &&
-        state.phase === 'playing' &&
-        state.activePlayerId === playerId &&
-        !human();
-      const pause = () =>
-        new Promise<void>((resolve) => {
-          if (signal.aborted) return resolve();
-          const done = () => {
-            clearTimeout(timer);
-            signal.removeEventListener('abort', done);
-            resolve();
-          };
-          const timer = setTimeout(done, options.computerDelayMs ?? 3100);
-          signal.addEventListener('abort', done, { once: true });
-        });
-      await pause();
-      if (!valid()) return;
-      if (state.legendary!.players[playerId]!.trial)
-        apply({ type: 'attempt-trial', playerId });
-      else apply({ type: 'roll-dice', playerId });
-      await pause();
-      if (!valid()) return;
-      if (state.legendary!.pendingFly) {
-        const to = legalFlyDestinations(state, map)[0];
-        if (to) apply({ type: 'fly', playerId, to });
-        await pause();
-      }
-      if (!valid()) return;
-      const trial = state.legendary!.players[playerId]!.trial;
-      if (trial && trial.lastAttemptTurn !== state.turnNumber) {
-        apply({ type: 'attempt-trial', playerId });
-        await pause();
-      }
-      if (valid()) apply({ type: 'end-turn', playerId });
+      if (
+        playerId !== state.activePlayerId ||
+        human() ||
+        state.phase !== 'playing'
+      )
+        return;
+      const result = await executor.run(signal);
+      if (
+        [
+          'failed',
+          'rejected',
+          'no-progress',
+          'max-actions',
+          'timeout',
+          'no-candidate',
+        ].includes(result.reason)
+      )
+        throw new Error(`AI 진행 중단: ${result.reason}`);
     },
     restart() {
+      executor.cancel();
+      cancelPresentation();
       session++;
       state = { ...fresh(), phase: 'setup' };
       notice = '';
-      constructionOffered = '';
       publish();
     },
   };
-  // Explicit preview controls; never reachable through normal gameplay actions.
-  function arrive(tileId: TileId) {
-    if (state.phase !== 'playing') return;
-    const tile = map.tiles.find((t) => t.id === tileId);
-    if (!tile) return;
-    const person = participants.find((p) => p.controller === 'human')!;
-    const base = fresh();
-    state = {
-      ...base,
-      holdings: state.holdings,
-      activePlayerId: person.id,
-      core: { ...base.core, turnStage: 'awaiting-end' },
-      players: base.players.map((p) =>
-        p.id === person.id ? { ...p, position: tileId } : p,
-      ),
-    };
-    const entered = enterSpecial(state, tile);
-    state = entered.state;
-    constructionOffered = '';
-    notice = '';
-    publish({
-      effects: entered.presentations.map((effect, i) => ({
-        ...effect,
-        id: `preview:${session}:${serial + 1}:${i}`,
-      })),
-    });
-  }
-  function showBuildings(level: number | null) {
-    if (
-      state.phase !== 'playing' ||
-      (level !== null && (!Number.isInteger(level) || level < 0 || level > 3))
-    )
-      return;
-    state = {
-      ...state,
-      holdings:
-        level === null
-          ? []
-          : map.tiles
-              .filter((t) => t.kind === 'city')
-              .map((tile, i) => ({
-                tileId: tile.id,
-                ownerId: participants[i % 4]!.id,
-                facilityLevel: level,
-              })),
-    };
-    constructionOffered = promptId();
-    publish();
-  }
-  return { adapter, arrive, showBuildings };
+  return { adapter, snapshot, getState: () => state };
 }
