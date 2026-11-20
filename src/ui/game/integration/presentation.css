@@ -1,0 +1,13 @@
+/* Glue for the shared shell: component typography and mobile rail span. */
+.pm-integrated-hud {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+.pm-game .pm-hud-heading {
+  font-size: 14px;
+  margin: 0;
+  letter-spacing: 0.12em;
+}
+.pm-integrated-hud .pm-player-hud {
+  margin-bottom: 16px;
+}

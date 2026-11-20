@@ -6,7 +6,7 @@ import { findSprite } from '../../assets/sprites';
 import type { GameEvent, PokemonId, TileId } from '../../game/contracts';
 import type { GameUIAdapter, UIChoice, UIUpdate } from './adapter';
 import { createProjectedBoard } from './board';
-import { ownerTheme } from './art/ownership';
+import { mountPlayerHud, cashEventsFromGameEvents } from './hud';
 import {
   constructionFromHolding,
   type ConstructionVisual,
@@ -20,7 +20,6 @@ import { createWorldScenery } from './scenery';
 import { createSpecialEventPresenter } from './events/presenter';
 import { gameCredits } from './events/credits';
 import './events/shell.css';
-import { createPortrait } from './portraits/portrait';
 import {
   createEmotionController,
   eventEmotionCues,
@@ -30,6 +29,7 @@ export type { SpecialEventRequest, FlightSelection } from './events/contracts';
 import './game.css';
 import './isometric.css';
 import './theme/theme.css';
+import './integration/presentation.css';
 import { diceLabel } from './theme/dice';
 export type {
   GameUIAdapter,
@@ -100,7 +100,7 @@ export function mountGameUI(
   const cancelAbility = () => ability.cancel();
   // This transient sibling stays usable while game input is inert.
   const skipFeedback = button(
-    '?? ?? ? Esc',
+    '연출 스킵 · Esc',
     () => {
       feedback.skip();
       ability.cancel();
@@ -149,10 +149,9 @@ export function mountGameUI(
   let recordsOpen = false;
   let effectsLocked = false;
   let effectFocus: HTMLElement | null = null;
-  const portraits = new Map<string, ReturnType<typeof createPortrait>>();
-  const emotions = createEmotionController((playerId) => {
-    portraits.get(playerId)?.setReaction(emotions.get(playerId));
-  });
+  let hud: ReturnType<typeof mountPlayerHud> | undefined;
+  const hudHost = el('div', 'pm-integrated-hud');
+  const emotions = createEmotionController(() => hud?.refreshEmotions());
   let seenEventObjects = new WeakSet<GameEvent>();
   let anonymousUpdate = 0;
   function lockEffects(locked: boolean) {
@@ -441,23 +440,12 @@ export function mountGameUI(
   function render() {
     if (disposed) return;
     skipFeedback.hidden =
-      !feedbackLocked || effectsLocked || feedback.suppressed;
+      (!feedbackLocked && !animating) || effectsLocked || feedback.suppressed;
     const focused =
       document.activeElement instanceof HTMLElement
         ? document.activeElement.dataset.focus
         : undefined;
     closeDialog();
-    for (const [playerId, portrait] of portraits) {
-      if (
-        view.state.phase === 'setup' ||
-        !view.state.players.some(
-          (p) => p.id === playerId && p.pokemonId === portrait.pokemonId,
-        )
-      ) {
-        portrait.destroy();
-        portraits.delete(playerId);
-      }
-    }
     spriteFrames = [];
     host.replaceChildren();
     const header = el(
@@ -571,55 +559,9 @@ export function mountGameUI(
     );
     diceResult.setAttribute('role', 'status');
     rail.append(diceResult);
-    view.state.players.forEach((p, i) => {
-      const card = el(
-        'div',
-        `pm-player-card pm-player-${i} ${p.id === active?.id ? 'is-active' : ''}`,
-      );
-      const theme = ownerTheme({
-        id: p.id,
-        name: p.name,
-        pokemonId: p.pokemonId,
-      });
-      card.style.setProperty('--player', theme.color);
-      card.style.setProperty('--player-soft', theme.light);
-      card.append(
-        el('span', 'pm-trainer-number', `P${i + 1}`),
-        el(
-          'strong',
-          '',
-          view.participants.find((participant) => participant.id === p.id)
-            ?.name ?? p.name,
-        ),
-        el('span', '', p.bankrupt ? '파산' : money(p.balance)),
-      );
-      const avatar = el('span', 'pm-hud-avatar');
-      const portrait =
-        portraits.get(p.id) ??
-        createPortrait({
-          pokemonId: p.pokemonId,
-          name:
-            partners.find((partner) => partner.id === p.pokemonId)?.name ??
-            p.name,
-        });
-      portraits.set(p.id, portrait);
-      portrait.setReaction(emotions.get(p.id));
-      avatar.append(portrait.element);
-      card.prepend(avatar);
-      if (p.id === active?.id)
-        card.append(
-          el(
-            'small',
-            'pm-active-label',
-            view.state.phase === 'finished'
-              ? 'RESULT'
-              : humanTurn()
-                ? 'YOUR TURN'
-                : 'COMPUTER TURN',
-          ),
-        );
-      rail.append(card);
-    });
+    hud ??= mountPlayerHud(hudHost, view, { emotions });
+    hud.update(view);
+    rail.append(hudHost);
     const controls = el('div', 'pm-controls');
     view.actions.forEach((a) => {
       const b = choiceButton(a);
@@ -838,6 +780,15 @@ export function mountGameUI(
     if (disposed) return;
     const beforeView = view;
     view = update.view;
+    if (view.state.phase !== 'setup') {
+      hud ??= mountPlayerHud(hudHost, view, { emotions });
+      hud.update(view, {
+        cashEvents: cashEventsFromGameEvents(
+          update.id ?? `local:${anonymousUpdate + 1}`,
+          update.events,
+        ),
+      });
+    }
     const cues = [];
     if (view.state.phase !== 'setup') {
       emotions.syncState(view.state);
@@ -980,8 +931,8 @@ export function mountGameUI(
       feedbackLocked = false;
       pendingFeedback = 0;
       host.inert = false;
-      for (const portrait of portraits.values()) portrait.destroy();
-      portraits.clear();
+      hud?.destroy();
+      hud = undefined;
       emotions.reset();
       seenEventObjects = new WeakSet<GameEvent>();
       generation++;
@@ -1044,8 +995,8 @@ export function mountGameUI(
       root.removeEventListener('keydown', unlockAbility, true);
       document.removeEventListener('visibilitychange', visibilityAbility);
       emotions.destroy();
-      for (const portrait of portraits.values()) portrait.destroy();
-      portraits.clear();
+      hud?.destroy();
+      hud = undefined;
       feedback.destroy();
       document.removeEventListener('keydown', skipOnEscape);
       skipFeedback.remove();
