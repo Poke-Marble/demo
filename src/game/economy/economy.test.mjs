@@ -14,6 +14,7 @@ import {
   quoteToll,
   quoteTakeover,
   recommendedEconomyProfile,
+  economyProfileForPreset,
   verifyCommittedReceipt,
   assetValue,
 } from './index.ts';
@@ -152,6 +153,94 @@ const build = (s, stage, tileId = city) => ({
   targetStage: stage,
   landingId: s.economy.landing.id,
 });
+
+for (const preset of ['standard', 'quick']) {
+  test(`${preset}: cumulative stages, personal lap gates, final revisit and configuration binding`, () => {
+    const profile = economyProfileForPreset(preset);
+    const c = createEconomyContext(kantoJohtoMap, profile);
+    assert.deepEqual(
+      c.profile.unlockLaps,
+      preset === 'standard' ? [0, 0, 1, 2] : [0, 0, 1, 1],
+    );
+    assert.equal(c.profile.requireFinalRevisit, true);
+    for (const tile of kantoJohtoMap.tiles.filter(
+      (tile) => tile.kind === 'city',
+    ))
+      assert.equal(
+        c.properties[tile.id].finalFacilityKey,
+        tile.finalFacility.key,
+      );
+    let s = at(fresh({}, c), city, 1, 0);
+    assert.equal(quoteConstruction(s, c, id, city, 0).eligible, true);
+    assert.equal(quoteConstruction(s, c, id, city, 1).eligible, true);
+    fail(s, build(s, 2), 'stage-locked', c);
+    s = act(s, build(s, 1), c).state;
+    assert.deepEqual(s.economy.developmentByTileId[city].facilities, ['shop']);
+    s = at(s, city, 2, 1);
+    s = act(s, build(s, 2), c).state;
+    s = {
+      ...s,
+      economy: {
+        ...s.economy,
+        landing: { ...s.economy.landing, propertyDecisionUsed: false },
+      },
+    };
+    assert.ok(
+      quoteConstruction(s, c, id, city, 3).reasons.includes(
+        'final-revisit-required',
+      ),
+    );
+    s = at(s, city, 3, 1);
+    assert.equal(
+      quoteConstruction(s, c, id, city, 3).eligible,
+      preset === 'quick',
+    );
+    s = at(s, city, 3, profile.unlockLaps[3]);
+    const q = quoteConstruction(s, c, id, city, 3);
+    assert.equal(q.landSubtotal, 0);
+    assert.equal(q.upgradeSubtotal, c.properties[city].buildCosts[2]);
+    s = act(s, build(s, 3), c).state;
+    assert.deepEqual(s.economy.developmentByTileId[city].facilities, [
+      'shop',
+      'center',
+      'final',
+    ]);
+    assert.equal(s.holdings[0].facilityLevel, 3);
+    assert.equal(quoteTakeover(s, c, other, city).eligible, false);
+    const alternate = createEconomyContext(
+      kantoJohtoMap,
+      economyProfileForPreset(preset === 'standard' ? 'quick' : 'standard'),
+    );
+    assert.throws(() => validateEconomyState(s, alternate));
+    const changed = {
+      ...c,
+      profile: { ...c.profile, unlockLaps: [0, 0, 0, 0] },
+    };
+    assert.throws(
+      () => validateEconomyState(s, changed),
+      /configuration-mismatch/,
+    );
+    assert.deepEqual(
+      profile.unlockLaps,
+      preset === 'standard' ? [0, 0, 1, 2] : [0, 0, 1, 1],
+    );
+  });
+}
+
+test('omitted preset defaults to standard and invalid presets are rejected', () => {
+  assert.equal(economyProfileForPreset(), recommendedEconomyProfile);
+  assert.deepEqual(
+    createEconomyContext(kantoJohtoMap).profile.unlockLaps,
+    [0, 0, 1, 2],
+  );
+  assert.throws(
+    () => economyProfileForPreset('invalid'),
+    /invalid-rules-preset/,
+  );
+  assert.throws(() => {
+    recommendedEconomyProfile.unlockLaps[3] = 0;
+  }, TypeError);
+});
 function moveTo(s, tileId) {
   const index = map.tiles.findIndex((t) => t.id === tileId);
   return {
@@ -229,11 +318,11 @@ test('exact balance succeeds; shortage leaves all money, blessing, ownership, RN
 test('lap gates ignore global turns; final requires later actual landing and center ownership', () => {
   let s = { ...at(fresh(), city, 1, 0), turnNumber: 999 };
   fail(s, build(s, 2), 'stage-locked');
-  s = at(s, city, 1, 1);
+  s = at(s, city, 1, 2);
   fail(s, build(s, 3), 'final-revisit-required');
   s = act(s, build(s, 2)).state;
   fail(s, build(s, 3), 'property-decision-used');
-  s = at(s, city, 2, 1);
+  s = at(s, city, 2, 2);
   const q = quoteConstruction(s, context, id, city, 3);
   assert.equal(q.landSubtotal, 0);
   assert.equal(q.upgradeSubtotal, 50);
@@ -510,13 +599,13 @@ test('flight to an existing center is a new visit enabling final, no lap increme
       ...s.economy,
       completedLapsByPlayerId: {
         ...s.economy.completedLapsByPlayerId,
-        [id]: 1,
+        [id]: 2,
       },
     },
   };
   s = act(s, { type: 'roll-dice', playerId: id }).state;
   s = act(s, { type: 'fly', playerId: id, to: city }).state;
-  assert.equal(s.economy.completedLapsByPlayerId[id], 1);
+  assert.equal(s.economy.completedLapsByPlayerId[id], 2);
   assert.equal(quoteConstruction(s, context, id, city, 3).eligible, true);
 });
 test('invalid saved state and overflow fail atomically, including failed settlement blessing', () => {

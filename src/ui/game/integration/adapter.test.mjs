@@ -12,6 +12,52 @@ const start = (p) =>
     participants: createInitialRoster('pokemon:0007'),
   });
 const tick = () => new Promise((resolve) => setImmediate(resolve));
+
+test('new games select isolated standard/quick profiles and invalid setup preserves session', () => {
+  const p = createIntegratedPreview({ computerDelayMs: 0, seed: 1 });
+  const setup = {
+    mapId: kantoJohtoMap.id,
+    participants: createInitialRoster('pokemon:0001'),
+  };
+  p.adapter.start(setup);
+  const standard = p.getState();
+  assert.equal(standard.economy.profileId, 'standard-cumulative');
+  assert.equal(standard.phase, 'playing');
+  p.adapter.dispatch({ type: 'roll-dice', playerId: 'player:1' });
+  assert.equal(p.getState().economy.revision, 1);
+  assert.match(
+    p.adapter.getView().prompt.description,
+    /개인 1주회 완료 필요 \(현재 0주회\)/,
+  );
+  assert.match(p.adapter.getView().prompt.description, /개인 2주회 완료 필요/);
+  assert.match(
+    p.adapter.getView().prompt.description,
+    /센터 건설 후 이 도시에 다시 도착/,
+  );
+  const before = p.getState();
+  assert.throws(
+    () => p.adapter.start({ ...setup, rulesPreset: 'invalid' }),
+    /invalid-rules-preset/,
+  );
+  assert.equal(p.getState(), before);
+  const quickSetup = { ...setup, rulesPreset: 'quick' };
+  p.adapter.start(quickSetup);
+  const quick = p.getState();
+  quickSetup.rulesPreset = 'standard';
+  assert.equal(quick.economy.profileId, 'quick-cumulative');
+  assert.notEqual(quick.economy.sessionId, standard.economy.sessionId);
+  assert.notEqual(
+    quick.economy.configurationKey,
+    standard.economy.configurationKey,
+  );
+  p.adapter.dispatch({ type: 'roll-dice', playerId: 'player:1' });
+  assert.match(p.adapter.getView().prompt.description, /개인 1주회 완료 필요/);
+  assert.doesNotMatch(p.adapter.getView().prompt.description, /개인 2주회/);
+  p.adapter.restart();
+  p.adapter.start(setup);
+  assert.equal(p.getState().economy.profileId, 'standard-cumulative');
+});
+
 function humanStep(p) {
   const snap = p.snapshot();
   const decision = plan(

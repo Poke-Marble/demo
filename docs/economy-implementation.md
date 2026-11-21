@@ -15,7 +15,7 @@
 
 intent는 construct-property(tileId,targetStage,landingId), buy-landmark/takeover-property/pass-property(tileId,landingId), sell-property(tileId,debtId?), declare-bankruptcy(debtId), 기존 코어/LegendaryAction이다. 단계는 camp0/shop1/center2/final3. 없는 다른 담당 모듈은 import하지 않는다. 승리판정은 담당외이며 최종 확정 스냅샷을 호출자가 평가한다.
 
-권장 기본값은 누적 prefix, shop0/center1/final1 바퀴, 센터 보유 후 새 착지, 그룹2배/인수2배/매각50%/final 인수면역/관광 인수불가다. 사용자 확정은 캠프→숍→센터→도시별 최종시설과 누적 순서이며, 나머지는 확정 기획이 아니다. 가호율은 전설 상태 설정만 따른다.
+기본 표준 프리셋은 누적 prefix, shop0/center1/final2 주회이고 짧은 경기는 shop0/center1/final1이다. 양쪽 모두 센터 보유 후 새 착지가 필요하다. 그룹2배/인수2배/매각50%/final 인수면역/관광 인수불가와 가호율은 유지한다. 현재 선택·연결 계약은 [건설 규칙 프리셋](construction-rule-presets.md)을 따른다.
 
 ## 구현 결과와 기본 가정
 
@@ -26,7 +26,7 @@ intent는 construct-property(tileId,targetStage,landingId), buy-landmark/takeove
 | 시설     | 캠프는 부지 확보, 시설은 shop/center/final prefix, holdings level0..3 동시 갱신                                               | 사용자 확정 순서·누적                           |
 | 최종시설 | 원본 `finalFacility.key`를 사용. lab/백화점/회사/라디오/등대/박물관 등을 gym으로 치환하지 않음                                | 기존 지도 콘텐츠 제안 소비                      |
 | 가격     | 원본 seed의 purchasePrice/upgradeCosts/tollByLevel을 그대로 복사                                                              | 밸런스 미확정. 새 board/context로 교체          |
-| 해금     | 개인 출발통과수 `[camp0,shop0,center1,final1]`. 센터 생성/인수 이후 새로운 착지에서 final 허용                                | 권장 기본값, profile로 교체                     |
+| 해금     | 표준 `[camp0,shop0,center1,final2]`, 짧은 경기 `[0,0,1,1]`. 센터 생성/인수 이후 새로운 착지에서 final 허용                    | 새 경기 프리셋 선택                             |
 | 통행료   | 현재 단계 전체요금 × 완전소유 그룹 배율, 관광은 고정 별도 요금                                                                | 배율2는 권장값                                  |
 | 인수     | 정가 누적원가 × 2를 소유자에게 지급. 통행료 먼저 확정. 인수 방문에는 추가건설 금지                                            | 배율2/final면역/관광금지는 교체 가능            |
 | 매각     | 자산 전체를 은행에 정가 누적원가의 50%로 매각, 내림                                                                           | saleRate 교체 가능                              |

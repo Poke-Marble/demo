@@ -1,3 +1,8 @@
+import {
+  normalizeRulesPreset,
+  rulesPresets,
+  type RulesPreset,
+} from '../rulesets.ts';
 import type { BoardDefinition } from '../../data/maps/types.ts';
 import { toMapDefinition } from '../../data/maps/types.ts';
 import type { CoreState } from '../core/index.ts';
@@ -11,17 +16,33 @@ import type {
   Property,
 } from './types.ts';
 
-export const recommendedEconomyProfile: EconomyProfile = Object.freeze({
-  id: 'recommended-draft-cumulative',
-  version: '1',
-  unlockLaps: [0, 0, 1, 1] as const,
+const sharedEconomyRules = {
   requireFinalRevisit: true,
   groupTollMultiplier: 2,
   takeoverMultiplier: 2,
   saleRate: 0.5,
   finalTakeoverImmune: true,
   landmarkTakeoverAllowed: false,
+} as const;
+export const standardEconomyProfile: EconomyProfile = Object.freeze({
+  ...sharedEconomyRules,
+  id: 'standard-cumulative',
+  version: '1',
+  unlockLaps: rulesPresets.standard.unlockLaps,
 });
+export const quickEconomyProfile: EconomyProfile = Object.freeze({
+  ...sharedEconomyRules,
+  id: 'quick-cumulative',
+  version: '1',
+  unlockLaps: rulesPresets.quick.unlockLaps,
+});
+export const recommendedEconomyProfile = standardEconomyProfile;
+
+export function economyProfileForPreset(preset?: RulesPreset): EconomyProfile {
+  return normalizeRulesPreset(preset) === 'quick'
+    ? quickEconomyProfile
+    : standardEconomyProfile;
+}
 export function money(value: number): number {
   if (!Number.isSafeInteger(value) || value < 0)
     throw new RangeError('invalid-state');

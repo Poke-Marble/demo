@@ -1,3 +1,4 @@
+import type { RulesPreset } from '../../game/rulesets';
 import type {
   GameAction,
   GameEvent,
@@ -18,6 +19,7 @@ export interface SetupParticipant {
   controller: 'human' | 'computer';
 }
 export interface GameSetup {
+  rulesPreset?: RulesPreset;
   mapId: MapId;
   participants: readonly SetupParticipant[];
 }
