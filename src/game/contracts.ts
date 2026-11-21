@@ -54,11 +54,31 @@ export interface CityHolding {
   readonly facilityLevel: number;
 }
 
-export type VictoryReason =
+export type ImmediateVictoryReason =
   | 'last-player-standing'
   | 'three-city-groups'
   | 'one-side-cities'
   | 'four-landmarks';
+
+export type VictoryReason = ImmediateVictoryReason | 'round-limit-assets';
+
+export interface AssetRank {
+  readonly playerId: PlayerId;
+  readonly seat: number;
+  readonly cash: number;
+  readonly propertyCost: number;
+  readonly total: number;
+  readonly bankrupt: boolean;
+}
+
+export interface MatchState {
+  readonly rulesPreset: 'standard' | 'quick';
+  readonly roundLimit: 30 | 20;
+  /** Completed original-seat cycles, independent of laps and dice rolls. */
+  readonly completedRounds: number;
+  readonly completedBasicTurnsByPlayerId: Readonly<Record<PlayerId, number>>;
+  readonly finalRanking: readonly AssetRank[] | null;
+}
 
 export interface GameState {
   readonly schemaVersion: 1;
@@ -68,6 +88,7 @@ export interface GameState {
   readonly players: readonly Player[];
   readonly activePlayerId: PlayerId;
   readonly turnNumber: number;
+  readonly match?: MatchState;
   readonly holdings: readonly CityHolding[];
   readonly victory: {
     readonly winnerId: PlayerId;

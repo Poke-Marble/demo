@@ -4,6 +4,7 @@ import {
   type RulesPreset,
 } from '../rulesets.ts';
 import type { BoardDefinition } from '../../data/maps/types.ts';
+import { validMatch } from '../match/rounds.ts';
 import { toMapDefinition } from '../../data/maps/types.ts';
 import type { CoreState } from '../core/index.ts';
 import { quoteBlessing } from '../legendary.ts';
@@ -266,6 +267,7 @@ export function initializeEconomy<S extends CoreState>(
 }
 export const facilities = ['shop', 'center', 'final'] as const;
 export function validateEconomyState(s: EconomyState, c: EconomyContext): void {
+  check(validMatch(s), 'invalid-match-rounds');
   validateContext(c);
   const e = s.economy;
   check(

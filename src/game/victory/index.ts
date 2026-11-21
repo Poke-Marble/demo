@@ -95,9 +95,11 @@ export function evaluateVictory(
     config.groupsToWin < 1 ||
     !Number.isSafeInteger(config.landmarksToWin) ||
     config.landmarksToWin < 1 ||
-    config.reasonPriority.length !== reasons.length ||
-    new Set(config.reasonPriority).size !== reasons.length ||
-    !config.reasonPriority.every((reason) => reasons.includes(reason))
+    new Set(config.reasonPriority).size !== config.reasonPriority.length ||
+    !reasons.every((reason) => config.reasonPriority.includes(reason)) ||
+    !config.reasonPriority.every(
+      (reason) => reasons.includes(reason) || reason === 'round-limit-assets',
+    )
   )
     return fail(
       'invalid-config',
@@ -164,7 +166,8 @@ export function evaluateVictory(
       (!state.victory ||
         !players.has(state.victory.winnerId) ||
         players.get(state.victory.winnerId)?.bankrupt ||
-        !reasons.includes(state.victory.reason)))
+        (!reasons.includes(state.victory.reason) &&
+          state.victory.reason !== 'round-limit-assets')))
   )
     return fail(
       'invalid-victory',
@@ -219,6 +222,7 @@ export function evaluateVictory(
       'three-city-groups': completedGroupIds.length >= config.groupsToWin,
       'one-side-cities': completedSides.length > 0,
       'four-landmarks': landmarkIds.length >= config.landmarksToWin,
+      'round-limit-assets': false,
     };
     const matched = config.reasonPriority.filter((reason) => matches[reason]);
     if (matched.length > 0)

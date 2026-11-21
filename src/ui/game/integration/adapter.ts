@@ -17,7 +17,7 @@ import {
   type EconomyCommand,
   type LegalActionSet,
 } from '../../../game/economy/index.ts';
-import { finalizeVictory } from '../../../game/victory/index.ts';
+import { finalizeMatch, matchProgress } from '../../../game/match/index.ts';
 import {
   emptyLedger,
   type AbilityLedger,
@@ -80,7 +80,7 @@ export function createIntegratedPreview(
       createGame(map, participants, {
         seed: options.seed ?? 42,
         legendary: {},
-        ...{ rulesPreset },
+        rulesPreset,
       }),
       context,
       `game:${session}`,
@@ -174,6 +174,7 @@ export function createIntegratedPreview(
     const flights = set.actions.filter((a) => a.intent.type === 'fly');
     return {
       state,
+      matchProgress: matchProgress(state, context)!,
       map: presentationMap,
       mapName: '관동·성도 여행',
       participants,
@@ -365,8 +366,7 @@ export function createIntegratedPreview(
         ].includes(e.type),
     );
     if (!next.economy.pendingDebt) {
-      const final = finalizeVictory(next, map, { actorId: command.playerId });
-      if (!final.ok) throw new Error(final.error.message);
+      const final = finalizeMatch(next, context, { actorId: command.playerId });
       next = final.state;
       events.push(...final.events);
     }

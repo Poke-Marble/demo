@@ -759,7 +759,7 @@ export function mountGameUI(
       );
       modal(
         '여행 완료!',
-        `${winner?.name ?? '트레이너'} 승리 · ${view.state.victory ? victoryLabels[view.state.victory.reason] : '결과 확인'}`,
+        `${winner?.name ?? '트레이너'} 승리 · ${view.state.victory ? victoryLabels[view.state.victory.reason] : '결과 확인'}${view.state.match?.finalRanking ? ` · 최종 자산 순위: ${view.state.match.finalRanking.map((r, i) => `${i + 1}위 ${view.state.players.find((p) => p.id === r.playerId)?.name} ${r.total} ₽ (현금 ${r.cash} + 토지·누적 건설원가 ${r.propertyCost})${r.bankrupt ? ' 파산' : ''}`).join(' / ')} · 동점: 현금 우선, 이후 원래 seat 순` : ''}`,
         [
           button(
             '새 여행 시작',
@@ -1132,4 +1132,5 @@ const victoryLabels = {
   'three-city-groups': '도시 그룹 3개',
   'one-side-cities': '한 면 도시 독점',
   'four-landmarks': '명소 4개',
+  'round-limit-assets': '라운드 제한 · 최종 자산',
 };

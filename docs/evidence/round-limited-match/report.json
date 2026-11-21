@@ -1,0 +1,81 @@
+{
+  "browser": "157.0.8103.80",
+  "cleanHarness": true,
+  "seed": 42,
+  "preset": "quick",
+  "before": {
+    "session": "game:1",
+    "rounds": 19,
+    "turn": 80,
+    "commands": 235
+  },
+  "victory": {
+    "winnerId": "player:2",
+    "reason": "round-limit-assets"
+  },
+  "match": {
+    "rulesPreset": "quick",
+    "roundLimit": 20,
+    "completedRounds": 20,
+    "completedBasicTurnsByPlayerId": {
+      "player:1": 20,
+      "player:2": 20,
+      "player:3": 20,
+      "player:4": 20
+    },
+    "finalRanking": [
+      {
+        "playerId": "player:2",
+        "seat": 1,
+        "cash": 737,
+        "propertyCost": 1750,
+        "total": 2487,
+        "bankrupt": false
+      },
+      {
+        "playerId": "player:3",
+        "seat": 2,
+        "cash": 684,
+        "propertyCost": 1705,
+        "total": 2389,
+        "bankrupt": false
+      },
+      {
+        "playerId": "player:1",
+        "seat": 0,
+        "cash": 605,
+        "propertyCost": 1550,
+        "total": 2155,
+        "bankrupt": false
+      },
+      {
+        "playerId": "player:4",
+        "seat": 3,
+        "cash": 548,
+        "propertyCost": 1375,
+        "total": 1923,
+        "bankrupt": false
+      }
+    ]
+  },
+  "restarted": {
+    "phase": "setup",
+    "rounds": 0,
+    "ranking": null,
+    "turn": 1,
+    "session": "game:2"
+  },
+  "newGame": {
+    "phase": "playing",
+    "rounds": 0,
+    "limit": 30,
+    "ranking": null,
+    "turn": 1,
+    "session": "game:3",
+    "revision": 0
+  },
+  "blocked": true,
+  "resultText": "여행 완료!\n\nCOMPUTER 1 승리 · 라운드 제한 · 최종 자산 · 최종 자산 순위: 1위 COMPUTER 1 2487 ₽ (현금 737 + 토지·누적 건설원가 1750) / 2위 COMPUTER 2 2389 ₽ (현금 684 + 토지·누적 건설원가 1705) / 3위 나 2155 ₽ (현금 605 + 토지·누적 건설원가 1550) / 4위 COMPUTER 3 1923 ₽ (현금 548 + 토지·누적 건설원가 1375) · 동점: 현금 우선, 이후 원래 seat 순\n\n새 여행 시작",
+  "errors": [],
+  "failed": []
+}
