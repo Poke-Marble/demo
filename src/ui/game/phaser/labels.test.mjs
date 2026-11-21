@@ -55,3 +55,21 @@ test('focused long Korean label stays inside narrow viewport at a camera edge', 
   }
   assert.deepEqual(layoutLabels([], 362, 260), []);
 });
+
+test('labels avoid model and pawn rectangles while preserving the tile anchor', () => {
+  const obstacle = { left: 80, top: 60, width: 100, height: 110 };
+  const [box] = layoutLabels(
+    [{ id: 'trial', x: 130, y: 120, width: 150, height: 20 }],
+    390,
+    280,
+    [obstacle],
+  );
+  assert.equal(box.x, 130);
+  assert.equal(box.y, 120);
+  assert.ok(
+    box.left + box.width <= obstacle.left ||
+      box.left >= obstacle.left + obstacle.width ||
+      box.top + box.height <= obstacle.top ||
+      box.top >= obstacle.top + obstacle.height,
+  );
+});

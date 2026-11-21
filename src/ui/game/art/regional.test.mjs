@@ -20,13 +20,14 @@ test('stable IDs determine places regardless of ordering; unknown tiles stay neu
     ['lugia-trial', 'whirl'],
     ['ho-oh-trial', 'bell'],
     ['fly', 'fly'],
+    ['bell-tower', 'den'],
   ]) {
     assert.equal(regionalScene({ id: `tile:kj:${id}`, kind: 'city' }), scene);
   }
   assert.equal(regionalScene({ id: 'tile:unknown:8', kind: 'city' }), 'town');
   assert.equal(
     regionalScene({ id: 'tile:kj:whirl', kind: 'landmark' }),
-    'whirl',
+    'lake',
   );
   assert.equal(
     regionalScene({ id: 'tile:custom:x', kind: 'city', visualScene: 'bell' }),
@@ -82,6 +83,14 @@ const {
   animateConstruction,
 } = await import(buildingsURL);
 const { modelPoint, modelGeometry, modelPlacement } = await import(geometryURL);
+const { createSceneryArt } = await import(
+  moduleURL(
+    (await read('./regional.ts'))
+      .replace("'./places'", JSON.stringify(placesURL))
+      .replace("'./model-geometry'", JSON.stringify(geometryURL))
+      .replace("'./buildings'", JSON.stringify(buildingsURL)),
+  )
+);
 function withSVG(run) {
   const previous = globalThis.document;
   globalThis.document = {
@@ -100,6 +109,21 @@ function withSVG(run) {
     globalThis.document = previous;
   }
 }
+test('start owns the START flag; flight and four landmarks have distinct scenery', () =>
+  withSVG(() => {
+    const start = createSceneryArt('start').innerHTML;
+    const flight = createSceneryArt('fly').innerHTML;
+    assert.match(start, /data-marker="start-flag"/);
+    assert.match(start, />START</);
+    assert.match(flight, /data-marker="flight"/);
+    assert.doesNotMatch(flight, /start-flag|START/);
+    const scenes = ['power', 'ice', 'lake', 'den', 'whirl', 'bell'];
+    assert.equal(
+      new Set(scenes.map((scene) => createSceneryArt(scene).innerHTML)).size,
+      scenes.length,
+    );
+  }));
+
 test('ownership and construction are explicit; no holding is empty and owned zero is flag only', () => {
   assert.deepEqual(constructionFromHolding(), { stage: 'unowned' });
   for (const [facilityLevel, stage] of [

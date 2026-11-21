@@ -14,8 +14,8 @@ const { chromium } = await import(
     ),
   ).href
 );
-const origin = process.env.LABEL_ORIGIN || 'http://127.0.0.1:5188';
-const folder = 'artifacts/label-clarity';
+const origin = process.env.LABEL_ORIGIN || 'http://127.0.0.1:5193';
+const folder = 'artifacts/board-landmark-identity';
 await mkdir(folder, { recursive: true });
 const baseline = execFileSync(
   'git',
@@ -102,7 +102,47 @@ async function measure(page) {
       b = canvas.getBoundingClientRect();
     const text = scene.children.list.find((x) => x.type === 'Text');
     const labels = [...document.querySelectorAll('button.phaser-map-label')];
+    const foreground = scene.children.list
+      .filter(
+        (x) =>
+          x.visible &&
+          x.texture &&
+          (x.texture.key.startsWith('model:') || x.type === 'Sprite'),
+      )
+      .map((image) => {
+        const r = image.getBounds();
+        const a = scene.cameras.main.matrixCombined.transformPoint(
+          r.left,
+          r.top,
+        );
+        const z = scene.cameras.main.matrixCombined.transformPoint(
+          r.right,
+          r.bottom,
+        );
+        return {
+          left: (a.x * b.width) / 1000 + b.left,
+          right: (z.x * b.width) / 1000 + b.left,
+          top: (a.y * b.height) / 720 + b.top,
+          bottom: (z.y * b.height) / 720 + b.top,
+        };
+      });
+    const foregroundOverlaps = [
+      ...document.querySelectorAll('.phaser-map-labels .phaser-map-label'),
+    ]
+      .filter((x) => !x.hidden)
+      .filter((label) => {
+        const r = label.getBoundingClientRect();
+        return foreground.some(
+          (f) =>
+            r.left < f.right &&
+            r.right > f.left &&
+            r.top < f.bottom &&
+            r.bottom > f.top,
+        );
+      })
+      .map((x) => x.textContent);
     return {
+      foregroundOverlaps,
       dpr: devicePixelRatio,
       zoom: scene.cameras.main.zoom,
       canvas: {
@@ -143,6 +183,8 @@ try {
         const page = await browser.newPage({
           viewport: { width, height: 1000 },
           deviceScaleFactor: dpr,
+          isMobile: width === 390,
+          hasTouch: width === 390,
         });
         page.on('pageerror', (e) => report.errors.push(e.message));
         await fixture(
@@ -167,6 +209,11 @@ try {
           assert.equal(metrics.fontLoaded, true);
           assert.equal(metrics.overflow, false);
           if (phase === 'after') {
+            assert.deepEqual(
+              metrics.foregroundOverlaps,
+              [],
+              'labels clear model and pawn bounds',
+            );
             assert.equal(metrics.names.length, 32);
             assert.equal(new Set(metrics.names).size, 32);
             assert.ok(
@@ -208,7 +255,7 @@ try {
                 : 'button.phaser-map-label:focus',
             )
             .evaluate((el) => getComputedStyle(el).fontSize);
-          assert.equal(focusedSize, '18px');
+          assert.equal(focusedSize, '14px');
           // The SVG endpoint is the projected tile-label anchor. Invert through Phaser.
           const alignment = await page.evaluate(() => {
             const scene = window.labelGame.scene.scenes[0];
@@ -263,6 +310,39 @@ try {
             'responsive transition retains all names',
           );
           assert.equal((await measure(page)).canvases, 1);
+          await page
+            .getByRole('button', { name: '전체 보기', exact: true })
+            .click();
+          await page.getByRole('button', { name: '확대', exact: true }).click();
+          await page.waitForTimeout(120);
+          const beforeDrag = await page.evaluate(
+            () => window.labelGame.scene.scenes[0].cameras.main.scrollX,
+          );
+          const surface = await page
+            .locator('.phaser-board-surface')
+            .boundingBox();
+          await page.mouse.move(
+            surface.x + surface.width / 2,
+            surface.y + surface.height / 2,
+          );
+          await page.mouse.down();
+          await page.mouse.move(
+            surface.x + surface.width / 2 + 35,
+            surface.y + surface.height / 2 + 12,
+            { steps: 8 },
+          );
+          await page.mouse.up();
+          await page.waitForTimeout(120);
+          assert.notEqual(
+            await page.evaluate(
+              () => window.labelGame.scene.scenes[0].cameras.main.scrollX,
+            ),
+            beforeDrag,
+            'actual pointer drag pans camera',
+          );
+          report.checks.push(
+            `${width}/DPR${dpr}: zoom button and pointer drag`,
+          );
           await page.evaluate(() => window.labelUI.destroy());
           await page.waitForTimeout(150);
           assert.equal(
@@ -272,7 +352,7 @@ try {
             0,
           );
           report.checks.push(
-            `${width}/DPR${dpr}: full names, CSS size, focus, camera alignment, pan, resize, destroy`,
+            `${width}/DPR${dpr}: full names, CSS size, restrained focus, camera alignment, pan, resize, destroy`,
           );
         }
         await page.close();

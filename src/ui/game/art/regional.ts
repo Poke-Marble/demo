@@ -69,30 +69,34 @@ export function createSceneryArt(scene: RegionalScene) {
       }
       art += box(-2, -2, 4, 4, 6, ['#f3d88e', '#d8b765', '#aa935d'], 57);
       break;
-    case 'fly':
+    case 'ice':
+      art += box(-21, -18, 42, 36, 1, ['#80bdc9', '#548ba4', '#3a6f90']);
+      art += box(-19, -13, 16, 17, 21, ['#e2efeb', '#a2c7d4', '#729cad']);
+      art += box(5, -4, 14, 16, 26, ['#e2efeb', '#a2c7d4', '#729cad']);
+      break;
+    case 'lake':
+      art += box(-21, -18, 42, 36, 2, foliage);
+      art += box(-17, -14, 34, 28, 1, ['#80bdc9', '#548ba4', '#3a6f90'], 2);
       art +=
-        box(-20, -17, 40, 34, 2, ['#d6d9bf', '#a9bda9', '#8eaaa4']) +
-        box(-2, -2, 4, 4, 38, stone) +
-        box(0, -1, 17, 3, 5, ['#e9c787', '#d0a16e', '#ad8068'], 30) +
-        polygon(
-          [
-            [-11, 5, 3],
-            [-1, 5, 3],
-            [-1, 1, 3],
-            [10, 9, 3],
-            [-1, 16, 3],
-            [-1, 12, 3],
-            [-11, 12, 3],
-          ],
-          '#f2ecd0',
-        );
+        '<path d="M30 84l14 4m5-9l17 5m-22 7l13 4" stroke="#d2e7df" fill="none" stroke-width="2"/>';
+      art += box(-21, -18, 5, 8, 13, foliage) + box(15, 9, 6, 9, 10, foliage);
+      break;
+    case 'den':
+      art += box(-20, -16, 40, 32, 7, stone);
+      art += box(-16, -12, 32, 24, 18, stone, 7);
+      art +=
+        '<path d="M38 94V80q12-22 24 0v14z" fill="#233e4b" stroke="#697f89" stroke-width="3"/><path d="M43 94l7-7 7 7" fill="none" stroke="#80bdc9" stroke-width="3"/>';
+      break;
+    case 'fly':
+      art += box(-20, -17, 40, 34, 2, ['#d6d9bf', '#a9bda9', '#8eaaa4']);
+      // A pair of raised wings and a tail reads as flight, without a flagpole.
+      art +=
+        '<g data-marker="flight" fill="#f2ecd0" stroke="#496c7f" stroke-width="1.5" stroke-linejoin="round"><path d="M50 69L18 49l8 23 20 9-5 15 9-7 9 7-5-15 20-9 8-23z"/><path d="M50 69v20" fill="none"/></g>';
       break;
     case 'start':
+      art += box(-19, -13, 38, 26, 2, stone);
       art +=
-        box(-19, -13, 38, 26, 2, stone) +
-        box(-15, 0, 4, 4, 31, stone) +
-        box(11, 0, 4, 4, 31, stone) +
-        box(-18, -2, 36, 8, 5, ['#f0cc88', '#d0a170', '#ac7e66'], 31);
+        '<g data-marker="start-flag"><path d="M34 91V42" stroke="#697f89" stroke-width="3"/><path d="M35 43h39l-7 10 7 10H35z" fill="#e9c787" stroke="#496c7f" stroke-width="1.5"/><text x="39" y="56" fill="#233e4b" font-family="sans-serif" font-size="8" font-weight="700">START</text></g>';
       break;
     case 'power':
       art +=
