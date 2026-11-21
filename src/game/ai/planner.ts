@@ -119,7 +119,11 @@ export function rankCandidates<Action>(
   for (const c of s.candidates) {
     const after = s.cash - c.quote.debit + c.quote.credit;
     const investment = ['buy', 'build', 'takeover'].includes(c.kind);
-    if (investment && (s.debt > 0 || after < reserve)) continue;
+    if (
+      investment &&
+      (s.debt > 0 || (after < reserve && !c.outlook?.immediateWin))
+    )
+      continue;
     // The authority should supply only debt-resolution candidates during debt.
     if (s.debt > 0 && !['sell', 'pay-debt', 'bankrupt'].includes(c.kind))
       continue;
@@ -138,11 +142,15 @@ export function rankCandidates<Action>(
       reasons.push('public-collection-progress');
     }
     if (
-      o?.blocksImmediateMonopoly &&
+      (o?.blocksImmediateMonopoly || o?.blocksMonopolyThreat) &&
       ['buy', 'takeover', 'fly'].includes(c.kind)
     ) {
       score += STANDARD.immediateDefense;
-      reasons.push('supplied-immediate-defense');
+      reasons.push(
+        o.blocksImmediateMonopoly
+          ? 'supplied-immediate-defense'
+          : 'public-monopoly-threat',
+      );
     }
     if (c.kind === 'sell') {
       score +=
@@ -179,6 +187,7 @@ export function rankCandidates<Action>(
       reasons.push('preserve-rope');
     }
     score -= o?.tollExposure?.value ?? 0;
+    if (o?.immediateWin) reasons.push('authority-immediate-win');
     if (!Number.isFinite(score)) throw new RangeError('Score overflow');
     ranked.push({ candidate: c, score, reasons });
   }
@@ -192,7 +201,9 @@ export function rankCandidates<Action>(
         ? 2
         : s.debt > 0 && c.kind === 'sell'
           ? 1
-          : 0;
+          : c.outlook?.immediateWin
+            ? 1
+            : 0;
   return ranked.sort(
     (a, b) =>
       priority(b.candidate) - priority(a.candidate) ||

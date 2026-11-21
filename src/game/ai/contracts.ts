@@ -49,6 +49,10 @@ export interface Candidate<Action = unknown> {
     readonly ropeValue?: Estimate;
     /** Authority/adapter confirms an immediately available rival completion. */
     readonly blocksImmediateMonopoly?: boolean;
+    /** Public, affordable one-acquisition rival win; reachability is not predicted. */
+    readonly blocksMonopolyThreat?: boolean;
+    /** Deterministic authority victory evaluation after the quoted action. */
+    readonly immediateWin?: boolean;
   };
 }
 

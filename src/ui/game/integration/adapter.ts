@@ -11,7 +11,6 @@ import {
   getLegalActions,
   quoteConstruction,
   quoteToll,
-  tollBase,
   type EconomyState,
   type EconomyIntent,
   type EconomyCommand,
@@ -25,7 +24,7 @@ import {
   type SettledTransaction,
 } from '../../../game/abilities/activation.ts';
 import { createExecutor } from '../../../game/ai/executor.ts';
-import type { Snapshot, ActionKind } from '../../../game/ai/contracts.ts';
+import { publicSnapshot } from '../../../game/ai/outlooks.ts';
 import type { GameEvent } from '../../../game/contracts';
 import type { GameSetup, GameUIAdapter, GameView, UIUpdate } from '../adapter';
 import { createInitialRoster } from '../setup.ts';
@@ -37,19 +36,6 @@ export interface IntegratedState extends EconomyState {
   readonly abilityReceipts: readonly SettledTransaction[];
 }
 type Legal = LegalActionSet['actions'][number];
-const kinds: Partial<Record<EconomyIntent['type'], ActionKind>> = {
-  'roll-dice': 'roll',
-  'end-turn': 'end-turn',
-  'construct-property': 'build',
-  'buy-landmark': 'buy',
-  'takeover-property': 'takeover',
-  'sell-property': 'sell',
-  'declare-bankruptcy': 'bankrupt',
-  'pass-property': 'pass',
-  'attempt-trial': 'trial',
-  'use-escape-rope': 'rope',
-  fly: 'fly',
-};
 const labels: Partial<Record<EconomyIntent['type'], string>> = {
   'roll-dice': '주사위 굴리기',
   'end-turn': '턴 마치기',
@@ -404,100 +390,15 @@ export function createIntegratedPreview(
     });
     return true;
   }
-  // One projected opponent visit, explicitly a heuristic horizon; rates come from authority.
-  function investmentIncome(a: Legal): number {
-    if (
-      !['construct-property', 'buy-landmark', 'takeover-property'].includes(
-        a.intent.type,
-      ) ||
-      !('tileId' in a.intent)
-    )
-      return 0;
-    const tileId = a.intent.tileId;
-    const stage =
-      a.intent.type === 'construct-property'
-        ? a.intent.targetStage
-        : (state.holdings.find((h) => h.tileId === tileId)?.facilityLevel ?? 0);
-    const projected = {
-      ...state,
-      holdings: [
-        ...state.holdings.filter((h) => h.tileId !== tileId),
-        { tileId, ownerId: state.activePlayerId, facilityLevel: stage },
-      ],
-    };
-    const visitor = state.players.find(
-      (p) => p.id !== state.activePlayerId && !p.bankrupt,
-    );
-    return visitor ? tollBase(projected, context, visitor.id, tileId) : 0;
-  }
-  const snapshot = (): Snapshot<EconomyIntent> => ({
-    session: state.economy.sessionId,
-    turn: String(state.turnNumber),
-    revision: String(state.economy.revision),
-    phase: state.phase === 'playing' ? 'playing' : 'finished',
-    activePlayerId: state.activePlayerId,
-    players: state.players.map((p) => ({
-      id: p.id,
-      bankrupt: p.bankrupt,
-      controller: participants.find((n) => n.id === p.id)!.controller,
-    })),
-    cash: state.players.find((p) => p.id === state.activePlayerId)!.balance,
-    debt: state.economy.pendingDebt?.amount ?? 0,
-    expectedToll: {
-      value: Math.max(
-        0,
-        ...state.holdings
-          .filter((h) => h.ownerId !== state.activePlayerId)
-          .map(
-            (h) =>
-              quoteToll(state, context, state.activePlayerId, h.tileId).total,
-          ),
-      ),
-      source: 'authority',
-    },
-    properties: Object.keys(context.properties).map((id) => ({
-      id,
-      ownerId: state.holdings.find((h) => h.tileId === id)?.ownerId ?? null,
-    })),
-    collections: [
-      ...map.cityGroups.map((g) => ({
-        id: g.id,
-        kind: 'group' as const,
-        propertyIds: g.cityIds,
-      })),
-      ...(['south', 'west', 'north', 'east'] as const).map((side) => ({
-        id: side,
-        kind: 'line' as const,
-        propertyIds: map.tiles
-          .filter((t) => t.kind === 'city' && t.side === side)
-          .map((t) => t.id),
-      })),
-      {
-        id: 'landmarks',
-        kind: 'four-landmarks',
-        propertyIds: map.tiles
-          .filter((t) => t.kind === 'landmark')
-          .map((t) => t.id),
-      },
-    ],
-    candidates: legal().actions.map((a) => ({
-      id: a.actionKey,
-      kind:
-        a.intent.type === 'construct-property' && a.quote?.fromStage === null
-          ? 'buy'
-          : kinds[a.intent.type]!,
-      action: a.intent,
-      ...('tileId' in a.intent ? { targetId: a.intent.tileId } : {}),
-      quote: {
-        debit: a.quote && a.intent.type !== 'sell-property' ? a.quote.total : 0,
-        credit: a.intent.type === 'sell-property' ? a.quote!.total : 0,
-      },
-      outlook: {
-        income: { value: investmentIncome(a), source: 'heuristic' },
-        trialSuccessProbability: state.legendary?.rules.successChance ?? 0,
-      },
-    })),
-  });
+  let projectedState: IntegratedState | undefined;
+  let projected: ReturnType<typeof publicSnapshot> | undefined;
+  const snapshot = () => {
+    if (projectedState !== state) {
+      projected = publicSnapshot(state, context, participants);
+      projectedState = state;
+    }
+    return projected!;
+  };
   const aiCommands = new Map<string, EconomyCommand>();
   const executor = createExecutor<EconomyIntent>(
     {
