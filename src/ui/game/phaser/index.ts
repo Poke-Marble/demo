@@ -259,10 +259,16 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
     // refresh() measures parents after scaling: a formerly detached parent needs
     // its actual size supplied first, otherwise the first narrow frame stays 0px.
     game.scale.setParentSize(bounds.width, bounds.height);
-    // FIT's Size starts at 0 when booted under a detached parent. Restore the
-    // logical aspect once after attachment; ordinary resize keeps the buffer.
-    if (game.scale.displaySize.width === 0) game.scale.setGameSize(1000, 720);
-    scene.cameras.main.setZoom(zoom).centerOn(500, 360);
+    // Match the allocated surface instead of letterboxing a fixed 1000x720
+    // frame. Keep at least 1000 logical pixels across for crisp sprite/model
+    // textures; the label layer already projects through scene.scale.
+    const height = Math.round((1000 * bounds.height) / bounds.width);
+    if (game.scale.width !== 1000 || game.scale.height !== height)
+      game.scale.setGameSize(1000, height);
+    // The island, tall facilities and pawns fit inside this padded world box.
+    // User zoom remains relative to this complete-board view on every resize.
+    const framing = Math.min(1000 / 860, height / 600);
+    scene.cameras.main.setZoom(framing * zoom).centerOn(500, 340);
   }
   const observer = new ResizeObserver(fit);
   observer.observe(surface);
