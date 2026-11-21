@@ -57,6 +57,8 @@ export interface Landing {
   readonly tileId: TileId;
   readonly visitOrdinal: number;
   readonly propertyDecisionUsed: boolean;
+  /** False for flight/forced arrivals; serialized to forbid subsequent takeover skills too. */
+  readonly skillEligible?: boolean;
 }
 export interface Debt {
   readonly id: string;
@@ -70,6 +72,13 @@ export interface Debt {
 }
 export type EconomyIntent =
   | GameAction
+  | {
+      readonly type: 'use-skill';
+      readonly mode: 'signature' | 'breakthrough';
+      readonly tileId: TileId;
+      readonly landingId: string;
+    }
+  | { readonly type: 'pay-toll'; readonly landingId: string }
   | LegendaryAction
   | {
       readonly type: 'construct-property';
@@ -147,6 +156,10 @@ export interface EconomyExtension {
   readonly developmentByTileId: Readonly<Record<TileId, Development>>;
   readonly landing: Landing | null;
   readonly pendingDebt: Debt | null;
+  readonly pendingToll?: {
+    readonly tileId: TileId;
+    readonly landingId: string;
+  } | null;
   readonly processedCommands: Readonly<
     Record<string, { readonly fingerprint: string; readonly receipt: Receipt }>
   >;
@@ -156,6 +169,10 @@ export interface EconomyState extends CoreState {
 }
 export type EconomyEvent =
   | CoreEvent
+  | {
+      readonly type: 'skill-activated';
+      readonly activation: import('../skills/index.ts').SkillActivation;
+    }
   | { readonly type: 'economy-committed'; readonly receipt: Receipt }
   | { readonly type: 'debt-opened'; readonly debt: Debt }
   | {
