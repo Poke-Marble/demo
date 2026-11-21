@@ -69,3 +69,9 @@ the new header additional room.
 - Six label-layout and pawn-occlusion regression tests passed. Build, lint,
   changed-file formatting and diff whitespace checks passed. The production
   build retains Vite's existing large-chunk warning.
+
+Header integration follow-up: the header owner's actual preview at port 5207
+was checked read-only with this branch's stylesheet applied at 844 × 390.
+Navigation now stays on one line (28px buttons); total header height is exactly
+56px and document size remains 844 × 390. Screenshot:
+`artifacts/mobile-framing/integrated-header-844.png`.
