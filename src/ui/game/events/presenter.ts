@@ -82,20 +82,13 @@ export function createSpecialEventPresenter(options: {
               : '칠색조의 시험',
         );
         const graphic = node('div', 'pm-event-graphic');
-        const legendarySprite =
-          request.type === 'trial-intro'
-            ? createLegendarySprite(request.legendary, media.matches)
-            : undefined;
+        const sprite = createLegendarySprite(
+          request.type === 'trial-intro' ? request.legendary : 'ho-oh',
+          media.matches,
+          request.type === 'fly',
+        );
         graphic.setAttribute('aria-hidden', 'true');
-        if (!legendarySprite)
-          graphic.append(
-            node('span', 'pm-event-wing left'),
-            node('span', 'pm-event-body'),
-            node('span', 'pm-event-wing right'),
-          );
-        if (legendarySprite) graphic.append(legendarySprite.element);
-        const shadow = node('div', 'pm-event-shadow');
-        shadow.setAttribute('aria-hidden', 'true');
+        graphic.append(sprite.element);
         const title = node(
           'h2',
           'pm-event-title',
@@ -115,9 +108,6 @@ export function createSpecialEventPresenter(options: {
           opponent.append(graphic, title);
           versus.append(partner, node('strong', '', 'VS'), opponent);
         }
-        const feathers = node('div', 'pm-event-feathers');
-        feathers.setAttribute('aria-hidden', 'true');
-        for (let i = 0; i < 3; i++) feathers.append(node('span'));
         const reducedSummary =
           request.type === 'fly'
             ? `${description.playerName} · ${description.destinationName ?? request.to} 도착`
@@ -125,24 +115,16 @@ export function createSpecialEventPresenter(options: {
         const status = node('p', 'pm-event-caption');
         status.setAttribute('role', 'status');
         const skip = action('연출 스킵 · Enter / Space / Esc', finish);
-        if (legendarySprite) stage.append(eyebrow, feathers, versus, status);
-        else
-          stage.append(
-            eyebrow,
-            feathers,
-            graphic,
-            shadow,
-            title,
-            versus,
-            status,
-          );
+        if (request.type === 'trial-intro')
+          stage.append(eyebrow, versus, status);
+        else stage.append(eyebrow, graphic, title, status);
         dialog.append(stage, skip);
         const timers: ReturnType<typeof setTimeout>[] = [];
         let done = false;
         function finish() {
           if (done) return;
           done = true;
-          legendarySprite?.dispose();
+          sprite.dispose();
           timers.forEach(clearTimeout);
           signal.removeEventListener('abort', finish);
           media.removeEventListener('change', finish);
@@ -153,19 +135,22 @@ export function createSpecialEventPresenter(options: {
         }
         const phases =
           request.type === 'fly'
-            ? ['암전', '이륙', '화면 횡단', '착지']
+            ? ['출발 준비', '이륙', '비행 중', '도착']
             : [
-                '암전',
+                '시험 준비',
                 request.legendary === 'lugia'
-                  ? '파도가 일렁인다'
-                  : '깃털과 빛이 내려온다',
+                  ? '루기아가 나타났다'
+                  : '칠색조가 나타났다',
                 '전설과 마주하다',
                 '보드로 복귀',
               ];
         function phase(index: number) {
           dialog.dataset.phase = String(index);
-          legendarySprite?.phase(index);
-          status.textContent = `${description.playerName} · ${phases[index]}`;
+          sprite.phase(index);
+          status.textContent =
+            request.type === 'fly' && index === 3
+              ? reducedSummary
+              : `${description.playerName} · ${phases[index]}`;
         }
         dialog.oncancel = (event) => {
           event.preventDefault();

@@ -7,10 +7,13 @@ const urls = import.meta.glob<string>('./assets/sprite/*/*-Anim.png', {
 });
 type Animation = 'Idle' | 'Attack' | 'Hover';
 
-/** Original pixels only. XML cells, S/SE/E/NE/N/NW/W/SW rows, 60Hz ticks. */
+/** Original pixels only. XML cells, S/SE/E/NE/N/NW/W/SW rows, 60Hz ticks.
+ * Flight reuses Hover facing E; it does not represent a gameplay blessing.
+ */
 export function createLegendarySprite(
   legendary: 'lugia' | 'ho-oh',
   reduced: boolean,
+  flight = false,
 ) {
   const entry = manifest.entries.find(
     (e) => e.species === (legendary === 'lugia' ? '0249' : '0250'),
@@ -29,7 +32,7 @@ export function createLegendarySprite(
   const context = canvas.getContext('2d');
   const images = new Map<Animation, HTMLImageElement>();
   let disposed = false;
-  let name: Animation = reduced ? 'Idle' : 'Hover';
+  let name: Animation = flight ? 'Hover' : reduced ? 'Idle' : 'Hover';
   let epoch = performance.now();
   let frame = 0;
   function draw(now: number) {
@@ -51,7 +54,7 @@ export function createLegendarySprite(
       context.drawImage(
         image,
         index * data.frameWidth,
-        6 * data.frameHeight,
+        (flight ? 2 : 6) * data.frameHeight,
         data.frameWidth,
         data.frameHeight,
         (120 - data.frameWidth) / 2,
@@ -101,7 +104,7 @@ export function createLegendarySprite(
   return {
     element,
     phase(index: number) {
-      if (disposed || reduced) return;
+      if (disposed || reduced || flight) return;
       name = index === 2 ? 'Attack' : index === 3 ? 'Idle' : 'Hover';
       epoch = performance.now();
     },
