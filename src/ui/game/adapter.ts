@@ -39,6 +39,13 @@ export interface GamePrompt {
   dismissible?: boolean;
 }
 export interface GameView {
+  activeSkill?: {
+    definition: import('../../game/skills/index.ts').SkillDefinition;
+    statusLabel: string;
+    cooldownLabel: string;
+    unavailableReason?: string;
+    choice?: UIChoice;
+  };
   state: GameState;
   map: MapDefinition;
   mapName: string;
@@ -62,6 +69,7 @@ export interface UICredit {
   requiredInline?: boolean;
 }
 export interface UIUpdate {
+  skillActivations?: readonly import('../../game/skills/index.ts').SkillActivation[];
   /** Resolve after all presentation or cancellation; never performs a transaction. */
   presentationComplete?: () => void;
   abilityActivations?: readonly import('../../game/abilities/activation').AbilityActivation[];

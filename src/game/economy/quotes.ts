@@ -1,3 +1,8 @@
+import {
+  economicSkillRule,
+  skillDiscountedAmount,
+  type SkillMode,
+} from '../skills/index.ts';
 import type { PlayerId, TileId } from '../contracts.ts';
 import { quoteBlessing } from '../legendary.ts';
 import {
@@ -74,8 +79,21 @@ function makeQuote(
   const gross = money(
     blessingKind === 'upgrade' ? land + modified.amount : modified.amount,
   );
+  const rule =
+    kind === 'toll' ||
+    (kind === 'takeover' && c.properties[tileId]?.kind === 'city')
+      ? economicSkillRule(s, playerId, tileId, kind)
+      : null;
+  const blessingRate =
+    blessed.consumed && blessingKind === 'toll'
+      ? s.legendary!.rules.tollDiscount
+      : 0;
   const total = money(
-    blessingKind === 'upgrade' ? land + blessed.amount : blessed.amount,
+    rule
+      ? skillDiscountedAmount(gross, blessingRate, rule)
+      : blessingKind === 'upgrade'
+        ? land + blessed.amount
+        : blessed.amount,
   );
   const revenue = kind === 'sale' ? total : 0;
   const cost = kind === 'sale' ? 0 : total;
@@ -265,4 +283,32 @@ export function quoteToll(
     [{ key: 'toll', amount, alreadyOwned: false }],
     'toll',
   );
+}
+
+/** Pure candidate projection; spending occurs only at dispatch. */
+export function quoteSkillUse(
+  s: EconomyState,
+  c: EconomyContext,
+  playerId: PlayerId,
+  tileId: TileId,
+  mode: SkillMode,
+  kind: 'toll' | 'takeover',
+): Quote {
+  const projected = {
+    ...s,
+    skills: {
+      ...s.skills!,
+      players: {
+        ...s.skills!.players,
+        [playerId]: {
+          ...s.skills!.players[playerId]!,
+          usedThisBasicTurn: true,
+          prepared: { mode, tileId, kind },
+        },
+      },
+    },
+  };
+  return kind === 'toll'
+    ? quoteToll(projected, c, playerId, tileId)
+    : quoteTakeover(projected, c, playerId, tileId);
 }
