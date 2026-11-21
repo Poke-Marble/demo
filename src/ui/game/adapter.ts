@@ -18,6 +18,7 @@ export interface SetupParticipant {
   controller: 'human' | 'computer';
 }
 export interface GameSetup {
+  rulesPreset?: 'standard' | 'quick';
   mapId: MapId;
   participants: readonly SetupParticipant[];
 }

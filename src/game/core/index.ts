@@ -22,6 +22,7 @@ import type {
   PresentationRequest,
 } from '../legendary.ts';
 import { nextRandom } from './random.ts';
+import { createMatch, validMatch, completeBasicTurn } from '../match/rounds.ts';
 
 export interface CoreRules {
   readonly initialBalance: number;
@@ -133,6 +134,7 @@ export function createGame(
     readonly seed?: number;
     readonly rules?: Partial<CoreRules>;
     readonly legendary?: Partial<LegendaryRules>;
+    readonly rulesPreset?: 'standard' | 'quick';
   } = {},
 ): CoreState {
   if (!validMap(map))
@@ -172,6 +174,10 @@ export function createGame(
     players: roster,
     activePlayerId: roster[0]!.id,
     turnNumber: 1,
+    match: createMatch(
+      options.rulesPreset,
+      roster.map((p) => p.id),
+    ),
     holdings: [],
     victory: null,
     ...(options.legendary
@@ -228,6 +234,12 @@ export function dispatch(
     error,
   });
   if (state.phase !== 'playing') return reject('game-not-playing');
+  if (
+    validMatch(state) &&
+    state.match &&
+    state.match.completedRounds >= state.match.roundLimit
+  )
+    return reject('game-not-playing');
   const activeIndex = state.players.findIndex(
     (player) => player.id === state.activePlayerId,
   );
@@ -236,6 +248,7 @@ export function dispatch(
     !validMap(map) ||
     map.id !== state.mapId ||
     !validPlayers(state.players, map) ||
+    !validMatch(state) ||
     !active ||
     (active.bankrupt && state.core.turnStage === 'awaiting-roll') ||
     state.victory !== null ||
@@ -351,6 +364,9 @@ export function dispatch(
           ...next,
           activePlayerId: nextPlayer.id,
           turnNumber: next.turnNumber + 1,
+          ...(next.match
+            ? { match: completeBasicTurn(next, nextPlayer.id)! }
+            : {}),
           core: { ...next.core, turnStage: 'awaiting-roll' },
         };
         events.push({
