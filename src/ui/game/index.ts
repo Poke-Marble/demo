@@ -1,5 +1,6 @@
 import { createAbilityPresenter } from './abilities/presenter';
 import { mountResultNotice } from './result-notice';
+import { mountTurnHeader, createTurnProgressInfo } from './turn-header';
 import { createConstructionPresenter } from './construction-effects/presenter';
 import { createConstructionGate } from './construction-effects/model';
 import { createGameplayFeedback } from './feedback/controller';
@@ -156,6 +157,9 @@ export function mountGameUI(
   let effectFocus: HTMLElement | null = null;
   let hud: ReturnType<typeof mountPlayerHud> | undefined;
   const hudHost = el('div', 'pm-integrated-hud');
+  const turnHeader = mountTurnHeader(() =>
+    modal('승리 조건 · 경기 진척', '', [createTurnProgressInfo(view)], true),
+  );
   const emotions = createEmotionController(() => hud?.refreshEmotions());
   let seenEventObjects = new WeakSet<GameEvent>();
   let anonymousUpdate = 0;
@@ -581,6 +585,11 @@ export function mountGameUI(
           'pm-credits-button',
         ),
       );
+    if (view.state.phase !== 'setup') {
+      header.classList.add('pm-header-with-turn');
+      turnHeader.update(view);
+      header.append(turnHeader.element);
+    }
     header.append(tools);
     host.append(header);
     for (const credit of view.credits ?? []) {
@@ -614,16 +623,6 @@ export function mountGameUI(
     const rail = el('aside', 'pm-rail');
     const active = view.state.players.find(
       (p) => p.id === view.state.activePlayerId,
-    );
-    rail.append(
-      el('p', 'pm-eyebrow', `TURN ${view.state.turnNumber}`),
-      el(
-        'h2',
-        '',
-        view.state.phase === 'finished'
-          ? '게임 결과'
-          : `${view.participants.find((p) => p.id === active?.id)?.name ?? active?.name ?? '트레이너'}의 차례`,
-      ),
     );
     const diceResult = el(
       'p',
@@ -1091,6 +1090,7 @@ export function mountGameUI(
       if (disposed) return;
       disposed = true;
       resultNotice.destroy();
+      turnHeader.destroy();
       ability.destroy();
       construction.destroy();
       constructionGate.reset();

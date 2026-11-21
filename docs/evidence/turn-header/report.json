@@ -1,0 +1,418 @@
+[
+  {
+    "width": 1280,
+    "height": 720,
+    "geometry": {
+      "document": [
+        1280,
+        720
+      ],
+      "viewport": [
+        1280,
+        720
+      ],
+      "header": {
+        "x": 380.40625,
+        "y": 18.796875,
+        "width": 519.171875,
+        "height": 50.390625,
+        "top": 18.796875,
+        "right": 899.578125,
+        "bottom": 69.1875,
+        "left": 380.40625
+      },
+      "buttons": [
+        {
+          "text": "승리·진척 ⓘ",
+          "x": 811.078125,
+          "y": 31.984375,
+          "width": 75.5,
+          "height": 24,
+          "top": 31.984375,
+          "right": 886.578125,
+          "bottom": 55.984375,
+          "left": 811.078125
+        },
+        {
+          "text": "도시 목록",
+          "x": 1107,
+          "y": 22,
+          "width": 61,
+          "height": 44,
+          "top": 22,
+          "right": 1168,
+          "bottom": 66,
+          "left": 1107
+        },
+        {
+          "text": "소리",
+          "x": 1178,
+          "y": 22,
+          "width": 32,
+          "height": 44,
+          "top": 22,
+          "right": 1210,
+          "bottom": 66,
+          "left": 1178
+        },
+        {
+          "text": "크레딧",
+          "x": 1220,
+          "y": 22,
+          "width": 44,
+          "height": 44,
+          "top": 22,
+          "right": 1264,
+          "bottom": 66,
+          "left": 1220
+        },
+        {
+          "text": "주사위 굴리기",
+          "x": 874,
+          "y": 533.203125,
+          "width": 209.453125,
+          "height": 44.796875,
+          "top": 533.203125,
+          "right": 1083.453125,
+          "bottom": 578,
+          "left": 874
+        }
+      ],
+      "board": {
+        "x": 16,
+        "y": 130,
+        "width": 840,
+        "height": 530,
+        "top": 130,
+        "right": 856,
+        "bottom": 660,
+        "left": 16
+      }
+    },
+    "seen": {
+      "trial": true,
+      "near": true,
+      "bankruptcy": false,
+      "final": true,
+      "commands": 237,
+      "trialDialog": {
+        "top": 251.734375,
+        "bottom": 468.265625
+      },
+      "endReason": "round-limit-assets"
+    },
+    "errors": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "geometry": {
+      "document": [
+        390,
+        844
+      ],
+      "viewport": [
+        390,
+        844
+      ],
+      "header": {
+        "x": 10,
+        "y": 6,
+        "width": 370,
+        "height": 54.6875,
+        "top": 6,
+        "right": 380,
+        "bottom": 60.6875,
+        "left": 10
+      },
+      "buttons": [
+        {
+          "text": "승리·진척 ⓘ",
+          "x": 296.5,
+          "y": 31.6875,
+          "width": 75.5,
+          "height": 24,
+          "top": 31.6875,
+          "right": 372,
+          "bottom": 55.6875,
+          "left": 296.5
+        },
+        {
+          "text": "도시 목록",
+          "x": 232.40625,
+          "y": 62.6875,
+          "width": 56.59375,
+          "height": 24,
+          "top": 62.6875,
+          "right": 289,
+          "bottom": 86.6875,
+          "left": 232.40625
+        },
+        {
+          "text": "소리",
+          "x": 299,
+          "y": 62.6875,
+          "width": 30,
+          "height": 24,
+          "top": 62.6875,
+          "right": 329,
+          "bottom": 86.6875,
+          "left": 299
+        },
+        {
+          "text": "크레딧",
+          "x": 339,
+          "y": 62.6875,
+          "width": 41,
+          "height": 24,
+          "top": 62.6875,
+          "right": 380,
+          "bottom": 86.6875,
+          "left": 339
+        },
+        {
+          "text": "주사위 굴리기",
+          "x": 10,
+          "y": 714.109375,
+          "width": 182,
+          "height": 44.796875,
+          "top": 714.109375,
+          "right": 192,
+          "bottom": 758.90625,
+          "left": 10
+        }
+      ],
+      "board": {
+        "x": 10,
+        "y": 134.6875,
+        "width": 370,
+        "height": 336.390625,
+        "top": 134.6875,
+        "right": 380,
+        "bottom": 471.078125,
+        "left": 10
+      }
+    },
+    "seen": {
+      "trial": true,
+      "near": true,
+      "bankruptcy": false,
+      "final": true,
+      "commands": 237,
+      "trialDialog": {
+        "top": 304.359375,
+        "bottom": 539.640625
+      },
+      "endReason": "round-limit-assets"
+    },
+    "errors": []
+  },
+  {
+    "width": 375,
+    "height": 812,
+    "geometry": {
+      "document": [
+        375,
+        812
+      ],
+      "viewport": [
+        375,
+        812
+      ],
+      "header": {
+        "x": 10,
+        "y": 6,
+        "width": 355,
+        "height": 54.6875,
+        "top": 6,
+        "right": 365,
+        "bottom": 60.6875,
+        "left": 10
+      },
+      "buttons": [
+        {
+          "text": "승리·진척 ⓘ",
+          "x": 281.5,
+          "y": 31.6875,
+          "width": 75.5,
+          "height": 24,
+          "top": 31.6875,
+          "right": 357,
+          "bottom": 55.6875,
+          "left": 281.5
+        },
+        {
+          "text": "도시 목록",
+          "x": 217.40625,
+          "y": 62.6875,
+          "width": 56.59375,
+          "height": 24,
+          "top": 62.6875,
+          "right": 274,
+          "bottom": 86.6875,
+          "left": 217.40625
+        },
+        {
+          "text": "소리",
+          "x": 284,
+          "y": 62.6875,
+          "width": 30,
+          "height": 24,
+          "top": 62.6875,
+          "right": 314,
+          "bottom": 86.6875,
+          "left": 284
+        },
+        {
+          "text": "크레딧",
+          "x": 324,
+          "y": 62.6875,
+          "width": 41,
+          "height": 24,
+          "top": 62.6875,
+          "right": 365,
+          "bottom": 86.6875,
+          "left": 324
+        },
+        {
+          "text": "주사위 굴리기",
+          "x": 10,
+          "y": 682.109375,
+          "width": 174.5,
+          "height": 44.796875,
+          "top": 682.109375,
+          "right": 184.5,
+          "bottom": 726.90625,
+          "left": 10
+        }
+      ],
+      "board": {
+        "x": 10,
+        "y": 134.6875,
+        "width": 355,
+        "height": 304.390625,
+        "top": 134.6875,
+        "right": 365,
+        "bottom": 439.078125,
+        "left": 10
+      }
+    },
+    "seen": {
+      "trial": true,
+      "near": true,
+      "bankruptcy": false,
+      "final": true,
+      "commands": 237,
+      "trialDialog": {
+        "top": 288.359375,
+        "bottom": 523.640625
+      },
+      "endReason": "round-limit-assets"
+    },
+    "errors": []
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "geometry": {
+      "document": [
+        844,
+        390
+      ],
+      "viewport": [
+        844,
+        390
+      ],
+      "header": {
+        "x": 177.71875,
+        "y": 11.109375,
+        "width": 488.546875,
+        "height": 41.78125,
+        "top": 11.109375,
+        "right": 666.265625,
+        "bottom": 52.890625,
+        "left": 177.71875
+      },
+      "buttons": [
+        {
+          "text": "승리·진척 ⓘ",
+          "x": 581.765625,
+          "y": 20,
+          "width": 75.5,
+          "height": 24,
+          "top": 20,
+          "right": 657.265625,
+          "bottom": 44,
+          "left": 581.765625
+        },
+        {
+          "text": "도시 목록",
+          "x": 706.40625,
+          "y": 18,
+          "width": 52.59375,
+          "height": 28,
+          "top": 18,
+          "right": 759,
+          "bottom": 46,
+          "left": 706.40625
+        },
+        {
+          "text": "소리",
+          "x": 765,
+          "y": 18,
+          "width": 26,
+          "height": 28,
+          "top": 18,
+          "right": 791,
+          "bottom": 46,
+          "left": 765
+        },
+        {
+          "text": "크레딧",
+          "x": 797,
+          "y": 18,
+          "width": 37,
+          "height": 28,
+          "top": 18,
+          "right": 834,
+          "bottom": 46,
+          "left": 797
+        },
+        {
+          "text": "주사위 굴리기",
+          "x": 504,
+          "y": 277.203125,
+          "width": 176.71875,
+          "height": 38.796875,
+          "top": 277.203125,
+          "right": 680.71875,
+          "bottom": 316,
+          "left": 504
+        }
+      ],
+      "board": {
+        "x": 10,
+        "y": 106,
+        "width": 484,
+        "height": 244,
+        "top": 106,
+        "right": 494,
+        "bottom": 350,
+        "left": 10
+      }
+    },
+    "seen": {
+      "trial": true,
+      "near": true,
+      "bankruptcy": false,
+      "final": true,
+      "commands": 237,
+      "trialDialog": {
+        "top": 96.90625,
+        "bottom": 293.09375
+      },
+      "endReason": "round-limit-assets"
+    },
+    "errors": []
+  }
+]
