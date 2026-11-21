@@ -18,6 +18,21 @@
 .pm-shell .pm-header-tools {
   gap: 12px;
 }
+/* The independent turn-header module owns its contents; the shell reserves
+   their agreed total height without taking space from the action rows. */
+.pm-shell .pm-header.pm-header-with-turn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  flex-basis: auto;
+  min-height: 72px;
+}
+.pm-shell .pm-header-with-turn .pm-header-tools {
+  justify-self: end;
+}
+.pm-shell .pm-rail > .pm-skill-hud {
+  min-width: 0;
+  grid-column: 1 / -1 !important;
+}
 .pm-shell .pm-header-tools button {
   min-height: 36px;
   padding: 4px;
@@ -226,6 +241,22 @@
   }
 }
 @media (max-width: 700px) and (min-height: 501px) {
+  .pm-shell .pm-header.pm-header-with-turn {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    min-height: 80px;
+  }
+  .pm-shell .pm-header-with-turn .pm-brand {
+    display: none;
+  }
+  .pm-shell .pm-header-with-turn .pm-header-tools {
+    min-height: 24px;
+  }
+  .pm-game.pm-shell .pm-header-with-turn .pm-header-tools button {
+    min-height: 24px;
+    padding: 0 4px;
+    font-size: 11px;
+  }
   .pm-game.pm-shell {
     padding: 6px 10px;
     gap: 6px;
@@ -307,6 +338,9 @@
   }
 }
 @media (max-height: 500px) {
+  .pm-shell .pm-header.pm-header-with-turn {
+    min-height: 56px;
+  }
   .pm-game.pm-shell {
     padding: 4px 10px;
     gap: 4px;
@@ -506,6 +540,159 @@
 .pm-shell .pm-dialog .pm-art-credits a {
   color: #32677a;
 }
+
+/* Compact roster keeps all four portraits and reserves space for rail skills.
+   Optional metadata still uses the HUD's local scrolling region. */
+@media (max-width: 700px) and (min-height: 501px),
+  (max-height: 500px) and (min-width: 701px) {
+  .pm-shell .pm-rail {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-content: start;
+    gap: 4px 8px;
+  }
+  .pm-shell .pm-rail > .pm-eyebrow,
+  .pm-shell .pm-rail > h2 {
+    grid-row: 1;
+    align-self: center;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .pm-shell .pm-rail > h2 {
+    grid-column: 2;
+    text-align: right;
+  }
+  .pm-shell .pm-integrated-hud {
+    margin: 0;
+    max-height: 230px;
+  }
+  .pm-shell .pm-hud-list {
+    gap: 6px 10px;
+  }
+  .pm-shell .pm-hud-header {
+    display: none;
+  }
+  .pm-shell .pm-hud-player {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 6px;
+    padding: 4px 6px 0;
+  }
+  .pm-shell .pm-hud-turn {
+    display: none;
+  }
+  .pm-shell .pm-hud-identity {
+    display: contents;
+  }
+  .pm-shell .pm-hud-portrait {
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+  .pm-shell .pm-hud-names,
+  .pm-shell .pm-hud-cash {
+    grid-column: 2;
+    margin: 0;
+  }
+  .pm-shell .pm-hud-name {
+    font-size: 12px;
+    margin: 0;
+  }
+  .pm-shell .pm-hud-controller {
+    font-size: 9px;
+  }
+  .pm-shell .pm-player-hud .pm-balance {
+    font-size: 16px;
+    text-align: left;
+  }
+  .pm-shell .pm-hud-assets,
+  .pm-shell .pm-hud-chips,
+  .pm-shell .pm-hud-supplied,
+  .pm-shell .pm-hud-delta {
+    grid-column: 1 / -1;
+  }
+  .pm-shell .pm-hud-chips {
+    margin: 3px 0;
+  }
+  .pm-shell .pm-hud-assets {
+    min-height: 26px;
+    padding: 2px 0;
+    font-size: 10px;
+  }
+  .pm-shell .pm-hud-chips {
+    grid-column: 1;
+    align-self: center;
+    margin: 2px 0;
+  }
+  .pm-shell .pm-hud-chip {
+    font-size: 9px;
+    padding: 1px 2px;
+  }
+  .pm-shell .pm-hud-assets {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: center;
+    font-size: 9px;
+  }
+  .pm-game.pm-shell .pm-dialogue {
+    min-height: 32px;
+  }
+}
+@media (max-width: 700px) and (min-height: 501px) {
+  .pm-shell .pm-rail > .pm-integrated-hud,
+  .pm-shell .pm-rail > .pm-controls,
+  .pm-shell .pm-rail > .pm-dice-result {
+    /* Override the legacy <=380px rail rule without changing the shared skin. */
+    grid-column: 1 / -1 !important;
+  }
+  .pm-shell .pm-rail > h2 {
+    grid-column: 2 !important;
+  }
+  .pm-shell .pm-rail > .pm-secondary {
+    grid-column: auto !important;
+  }
+  .pm-shell .pm-dice-result {
+    min-height: 24px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+@media (max-height: 500px) and (min-width: 701px) {
+  .pm-shell .pm-layout {
+    grid-template-columns: minmax(0, 1fr) 330px;
+  }
+  .pm-shell .pm-rail > .pm-dice-result {
+    grid-row: 1;
+  }
+  .pm-shell .pm-hud-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .pm-shell .pm-hud-player {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 4px 0;
+  }
+  .pm-shell .pm-hud-portrait {
+    align-self: center;
+  }
+  .pm-shell .pm-hud-name {
+    font-size: 10px;
+  }
+  .pm-shell .pm-player-hud .pm-balance {
+    font-size: 13px;
+  }
+  .pm-shell .pm-hud-chips {
+    margin-top: 2px;
+  }
+  .pm-shell .pm-hud-assets {
+    width: 100%;
+  }
+}
+/* Expanded starter descriptions stay in the setup panel's own scroll region. */
+.pm-shell .pm-lobby {
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 /* Only unusually long live metadata needs local scrolling; actions keep their
    allocated rows and no HUD field is discarded. */
 .pm-shell .pm-integrated-hud {
@@ -522,46 +709,5 @@
 @media (max-height: 500px) and (min-width: 701px) {
   .pm-shell .pm-rail {
     grid-template-rows: auto minmax(0, 1fr) auto auto;
-  }
-}
-@media (max-width: 700px) and (min-height: 501px) and (max-height: 740px) {
-  .pm-shell .pm-rail > .pm-eyebrow {
-    display: none;
-  }
-  .pm-shell .pm-rail > h2 {
-    grid-column: 1 / -1;
-    text-align: left;
-  }
-  .pm-shell .pm-hud-player {
-    display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
-    column-gap: 6px;
-  }
-  .pm-shell .pm-hud-turn {
-    display: none;
-  }
-  .pm-shell .pm-hud-identity {
-    display: contents;
-  }
-  .pm-shell .pm-hud-portrait {
-    grid-row: 1 / 3;
-    align-self: center;
-  }
-  .pm-shell .pm-hud-names,
-  .pm-shell .pm-hud-cash {
-    grid-column: 2;
-  }
-  .pm-shell .pm-hud-name {
-    font-size: 12px;
-    margin: 0;
-  }
-  .pm-shell .pm-hud-controller {
-    font-size: 9px;
-  }
-  .pm-shell .pm-hud-assets,
-  .pm-shell .pm-hud-chips,
-  .pm-shell .pm-hud-supplied,
-  .pm-shell .pm-hud-delta {
-    grid-column: 1 / -1;
   }
 }
