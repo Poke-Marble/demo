@@ -3,7 +3,7 @@ import type { VictoryReason } from '../contracts';
 export interface VictoryConfig {
   readonly groupsToWin: number;
   readonly landmarksToWin: number;
-  /** Every reason exactly once, highest priority first. */
+  /** Four immediate reasons required; optional asset reason is always deferred to match. */
   readonly reasonPriority: readonly VictoryReason[];
 }
 

@@ -15,7 +15,7 @@ import {
   type EconomyCommand,
   type LegalActionSet,
 } from '../../../game/economy/index.ts';
-import { finalizeVictory } from '../../../game/victory/index.ts';
+import { finalizeMatch } from '../../../game/match/index.ts';
 import {
   emptyLedger,
   type AbilityLedger,
@@ -74,6 +74,7 @@ export function createIntegratedPreview(
   const context = createEconomyContext(kantoJohtoMap);
   const map = context.map;
   let participants = createInitialRoster('pokemon:0001');
+  let rulesPreset: 'standard' | 'quick' = 'standard';
   let session = 0,
     serial = 0;
   const fresh = (): IntegratedState => ({
@@ -81,6 +82,7 @@ export function createIntegratedPreview(
       createGame(map, participants, {
         seed: options.seed ?? 42,
         legendary: {},
+        rulesPreset,
       }),
       context,
       `game:${session}`,
@@ -343,8 +345,7 @@ export function createIntegratedPreview(
         ].includes(e.type),
     );
     if (!next.economy.pendingDebt) {
-      const final = finalizeVictory(next, map, { actorId: command.playerId });
-      if (!final.ok) throw new Error(final.error.message);
+      const final = finalizeMatch(next, context, { actorId: command.playerId });
       next = final.state;
       events.push(...final.events);
     }
@@ -557,6 +558,9 @@ export function createIntegratedPreview(
       };
     },
     start(setup: GameSetup) {
+      const preset = setup.rulesPreset ?? 'standard';
+      if (preset !== 'standard' && preset !== 'quick')
+        throw new Error('Unknown match preset');
       const allowed = new Set(
         createInitialRoster('pokemon:0001').map((p) => p.pokemonId),
       );
@@ -576,6 +580,7 @@ export function createIntegratedPreview(
       cancelPresentation();
       session++;
       participants = setup.participants.map((p) => ({ ...p }));
+      rulesPreset = preset;
       state = fresh();
       notice = '';
       publish();

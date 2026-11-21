@@ -249,6 +249,12 @@ export function dispatchEconomy<S extends EconomyState>(
       'stale-revision',
     );
     check(original.phase === 'playing', 'game-not-playing');
+    check(
+      !original.match ||
+        original.match.completedRounds < original.match.roundLimit ||
+        !!original.economy.pendingDebt,
+      'round-limit-reached',
+    );
     const actor = original.players.find((p) => p.id === command.playerId);
     check(
       actor && !actor.bankrupt && actor.id === original.activePlayerId,
