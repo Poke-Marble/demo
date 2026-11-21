@@ -113,7 +113,7 @@ export function mountPlayerHud(
   const seenCash = new Set<string>();
   let disposed = false;
   let view = initialView;
-  let meta = options.meta ?? {};
+  let meta = options.meta ?? initialView.hudMeta ?? {};
   let active = '';
   let announceTimer: ReturnType<typeof setTimeout> | undefined;
   let messages: string[] = [];
@@ -195,7 +195,7 @@ export function mountPlayerHud(
     // An open default detail view must never show stale ownership.
     closeDetails();
     view = next;
-    if (input.meta !== undefined) meta = input.meta;
+    meta = input.meta ?? next.hudMeta ?? options.meta ?? {};
     round.textContent = `TURN ${view.state.turnNumber}`;
     const players = hudPlayers(view, meta);
     const ids = new Set(players.map((p) => p.id));
@@ -265,6 +265,7 @@ export function mountPlayerHud(
         ['특성', player.meta.abilityName],
         ['가호', player.meta.blessing],
         ['시험', player.meta.trialStay],
+        ['로프', player.meta.ropes],
         [
           '컴퓨터',
           player.controller === 'computer'
@@ -273,8 +274,14 @@ export function mountPlayerHud(
         ],
         ['쿨다운', player.meta.abilityCooldown],
       ]) {
-        if (value)
-          row.chips.append(el('span', 'pm-hud-chip', `${label} · ${value}`));
+        if (value) {
+          const chip = el('span', 'pm-hud-chip', `${label} · ${value}`);
+          if (label === '시험' && player.meta.trialDetails) {
+            chip.title = player.meta.trialDetails;
+            chip.setAttribute('aria-label', player.meta.trialDetails);
+          }
+          row.chips.append(chip);
+        }
       }
       row.chips.hidden = !row.chips.childElementCount;
       row.supplied.replaceChildren();

@@ -7,6 +7,8 @@ export interface PlayerDisplayMeta {
   abilityName?: string;
   blessing?: string;
   trialStay?: string;
+  trialDetails?: string;
+  ropes?: string;
   computerStatus?: string;
   totalAssets?: number;
   expectedIncome?: number;
@@ -42,7 +44,10 @@ export function playerAssets(view: GameView, playerId: PlayerId) {
   return { cities, landmarks };
 }
 
-export function hudPlayers(view: GameView, meta: DisplayMeta = {}) {
+export function hudPlayers(
+  view: GameView,
+  meta: DisplayMeta = view.hudMeta ?? {},
+) {
   return view.state.players.map((player) => ({
     ...player,
     controller: view.participants.find((p) => p.id === player.id)?.controller,
