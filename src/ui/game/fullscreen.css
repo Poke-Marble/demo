@@ -29,6 +29,10 @@
 .pm-shell .pm-header-with-turn .pm-header-tools {
   justify-self: end;
 }
+.pm-shell .pm-header-with-turn .pm-header-tools button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 .pm-shell .pm-rail > .pm-skill-hud {
   min-width: 0;
   grid-column: 1 / -1 !important;
@@ -340,6 +344,14 @@
 @media (max-height: 500px) {
   .pm-shell .pm-header.pm-header-with-turn {
     min-height: 56px;
+  }
+  .pm-shell .pm-header-with-turn .pm-header-tools {
+    gap: 6px;
+  }
+  .pm-game.pm-shell .pm-header-with-turn .pm-header-tools button {
+    min-height: 28px;
+    padding: 0 2px;
+    font-size: 11px;
   }
   .pm-game.pm-shell {
     padding: 4px 10px;
