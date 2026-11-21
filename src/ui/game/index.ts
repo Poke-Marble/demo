@@ -18,6 +18,7 @@ import {
 import { createWorldScenery } from './scenery';
 import { createSpecialEventPresenter } from './events/presenter';
 import { gameCredits } from './events/credits';
+import { createArtCredits } from './art/credits';
 import './events/shell.css';
 import {
   createEmotionController,
@@ -29,6 +30,7 @@ import './game.css';
 import './isometric.css';
 import './theme/theme.css';
 import './integration/presentation.css';
+import './fullscreen.css';
 import { diceLabel } from './theme/dice';
 export type {
   GameUIAdapter,
@@ -147,7 +149,7 @@ export function mountGameUI(
   let computerAbort: AbortController | null = null;
   let computerRunning = false;
   let computerError = false;
-  let recordsOpen = false;
+  let cityList: HTMLElement | undefined;
   let effectsLocked = false;
   let effectFocus: HTMLElement | null = null;
   let hud: ReturnType<typeof mountPlayerHud> | undefined;
@@ -253,7 +255,17 @@ export function mountGameUI(
       });
       board = next;
       next.mount(boardHost);
+      // The product shell owns navigation and credits; keep Phaser's live tile
+      // buttons (and their handlers) available in a bounded modal.
+      cityList =
+        next.element.querySelector<HTMLElement>('.phaser-board-tiles') ??
+        undefined;
+      cityList?.parentElement?.remove();
+      next.element.querySelector('.phaser-board-credits')?.remove();
       await next.ready;
+      // Narrow layouts expose the same cities through the shell's modal. Do
+      // not let the renderer's inline directory consume the board's height.
+      next.element.querySelector('.phaser-map-label-directory')?.remove();
       return next;
     })();
     return boardTask;
@@ -356,6 +368,7 @@ export function mountGameUI(
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
+    closeDialog();
     const d = el('dialog', 'pm-dialog');
     dialog = d;
     const h = el('h2', '', title);
@@ -520,6 +533,7 @@ export function mountGameUI(
         '크레딧',
         () => {
           const content = el('div', 'pm-credits-content');
+          content.append(createArtCredits());
           for (const credit of gameCredits(view.credits)) {
             const entry = el('section', 'pm-credit-entry');
             entry.append(
@@ -540,6 +554,31 @@ export function mountGameUI(
         'pm-credits-button',
       ),
     );
+    tools.prepend(
+      button(
+        '소리',
+        () => {
+          modal('소리 설정', '', [feedback.controls], true);
+        },
+        'pm-credits-button',
+      ),
+    );
+    if (view.state.phase !== 'setup')
+      tools.prepend(
+        button(
+          '도시 목록',
+          () => {
+            if (cityList)
+              modal(
+                '도시 목록',
+                '도시를 선택해 정보를 확인하세요.',
+                [cityList],
+                true,
+              );
+          },
+          'pm-credits-button',
+        ),
+      );
     header.append(tools);
     host.append(header);
     for (const credit of view.credits ?? []) {
@@ -564,7 +603,7 @@ export function mountGameUI(
     const layout = el('main', 'pm-layout');
     const boardArea = el('section', 'pm-board-area');
     boardArea.setAttribute('aria-label', view.mapName);
-    boardArea.append(boardHost, el('p', 'pm-integrated-dice pm-dice', dice));
+    boardArea.append(boardHost);
     board?.setInputLocked(
       busy || animating || effectsLocked || feedbackLocked || !humanTurn(),
     );
@@ -656,16 +695,22 @@ export function mountGameUI(
         'pm-secondary',
       ),
     );
-    const records = el('details', 'pm-records');
-    records.open = recordsOpen;
-    records.ontoggle = () => {
-      if (records.isConnected) recordsOpen = records.open;
-    };
-    records.append(el('summary', '', '여행 기록'));
-    const list = el('ol');
-    log.slice(-30).forEach((entry) => list.append(el('li', '', entry)));
-    records.append(list);
-    rail.append(records);
+    rail.append(
+      button(
+        '여행 기록',
+        () => {
+          const list = el('ol', 'pm-travel-log');
+          log.slice(-30).forEach((entry) => list.append(el('li', '', entry)));
+          modal(
+            '여행 기록',
+            log.length ? '' : '아직 여행 기록이 없습니다.',
+            [list],
+            true,
+          );
+        },
+        'pm-secondary',
+      ),
+    );
     layout.append(rail);
     host.append(layout);
     const dialogue = el('footer', 'pm-dialogue');
