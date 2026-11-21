@@ -1,0 +1,555 @@
+﻿/* Product shell: allocate viewport space before sizing the board. Component
+   internals, world coordinates, sprite scale and presentation gates stay owned
+   by their respective renderers. Long navigation lives in native dialogs. */
+.pm-game.pm-shell {
+  height: 100dvh;
+  min-height: 0;
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pm-shell .pm-header {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  flex: 0 0 36px;
+}
+.pm-shell .pm-header-tools {
+  gap: 12px;
+}
+.pm-shell .pm-header-tools button {
+  min-height: 36px;
+  padding: 4px;
+}
+.pm-shell .pm-status {
+  margin: 0;
+  max-width: none;
+  font-size: 12px;
+}
+.pm-shell .pm-layout {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: stretch;
+  gap: 18px;
+}
+.pm-shell .pm-board-area,
+.pm-shell .pm-integrated-board {
+  min-height: 0;
+  height: 100%;
+}
+.pm-shell .phaser-board {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pm-shell .phaser-board-controls {
+  margin: 0;
+  flex: 0 0 auto;
+}
+.pm-shell .phaser-board-controls button {
+  min-height: 36px;
+  padding: 4px 12px;
+}
+.pm-shell .phaser-board-surface {
+  flex: 1;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+.pm-shell .pm-integrated-dice {
+  top: auto;
+  bottom: 8px;
+  margin: 0;
+}
+.pm-shell .pm-rail {
+  min-height: 0;
+  padding: 2px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pm-shell .pm-rail > .pm-eyebrow {
+  font-size: 11px;
+}
+.pm-shell .pm-rail > h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.pm-shell .pm-dice-result {
+  margin: 0;
+  min-height: 34px;
+  padding: 3px 8px;
+}
+.pm-shell .pm-computer-progress {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+.pm-shell .pm-integrated-hud {
+  margin: auto 0;
+}
+.pm-shell .pm-player-hud {
+  margin: 0;
+}
+.pm-shell .pm-hud-header {
+  padding-bottom: 6px;
+}
+.pm-shell .pm-hud-list {
+  gap: 8px;
+}
+.pm-shell .pm-hud-player {
+  padding: 5px 10px 0;
+}
+.pm-shell .pm-hud-turn {
+  margin-bottom: 2px;
+}
+.pm-shell .pm-hud-identity {
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
+}
+.pm-shell .pm-hud-names {
+  display: grid;
+}
+.pm-shell .pm-hud-name {
+  font-size: 14px;
+}
+.pm-shell .pm-hud-cash {
+  margin: 4px 0 2px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.pm-shell .pm-balance {
+  font-size: 18px;
+  text-align: right;
+}
+.pm-shell .pm-hud-assets {
+  min-height: 28px;
+  padding: 4px 0;
+}
+.pm-shell .pm-hud-chips:empty,
+.pm-shell .pm-hud-supplied:empty {
+  display: none;
+}
+.pm-shell .pm-controls {
+  margin: 0;
+  gap: 6px;
+}
+.pm-shell .pm-controls:empty {
+  display: none;
+}
+.pm-shell .pm-action {
+  min-height: 40px;
+  padding: 6px 8px;
+}
+.pm-shell .pm-secondary {
+  min-height: 32px;
+  padding: 4px 8px;
+}
+.pm-shell .pm-dialogue {
+  width: 100%;
+  max-width: none;
+  min-height: 36px;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 5px 16px;
+  border-radius: 12px;
+  flex-wrap: nowrap;
+}
+.pm-shell .pm-dialogue strong {
+  width: auto;
+}
+.pm-shell .pm-dialogue span {
+  font-size: 12px;
+}
+.pm-shell .pm-dialog {
+  inset: 0;
+  width: min(610px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 20px;
+  overscroll-behavior: contain;
+}
+.pm-dialog .phaser-board-tiles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.pm-dialog .phaser-board-tiles button {
+  min-width: 0;
+  font: inherit;
+  padding: 8px;
+  border: 1px solid #7c9d9c;
+  border-radius: 8px;
+  background: #f8fbf0;
+  color: #355661;
+}
+.pm-dialog .pm-sfx-controls {
+  position: static;
+  display: flex;
+  flex-wrap: wrap;
+}
+.pm-shell .pm-lobby {
+  width: min(1180px, 100%);
+  margin: auto;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+@media (max-width: 1100px), (max-height: 650px) and (min-width: 701px) {
+  .pm-shell .pm-layout {
+    grid-template-columns: minmax(0, 1fr) 390px;
+    gap: 12px;
+  }
+  .pm-shell .pm-hud-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pm-shell .pm-hud-names .pm-hud-type {
+    display: none;
+  }
+  .pm-shell .pm-hud-cash dt {
+    display: none;
+  }
+  .pm-shell .pm-balance {
+    text-align: left;
+  }
+}
+@media (max-width: 700px) and (min-height: 501px) {
+  .pm-game.pm-shell {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .pm-shell .pm-header {
+    flex-basis: 32px;
+    flex-wrap: nowrap;
+  }
+  .pm-shell .pm-header-tools {
+    gap: 9px;
+  }
+  .pm-shell .pm-header-tools button {
+    font-size: 11px;
+    min-height: 32px;
+  }
+  .pm-shell .pm-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .pm-shell .pm-rail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 10px;
+  }
+  .pm-shell .pm-rail > .pm-eyebrow {
+    align-self: center;
+  }
+  .pm-shell .pm-rail > h2 {
+    font-size: 15px;
+    text-align: right;
+  }
+  .pm-shell .pm-dice-result,
+  .pm-shell .pm-integrated-hud,
+  .pm-shell .pm-controls {
+    grid-column: 1 / -1;
+  }
+  .pm-shell .pm-dice-result {
+    min-height: 28px;
+    font-size: 12px;
+  }
+  .pm-shell .pm-hud-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 10px;
+  }
+  .pm-shell .pm-hud-header {
+    display: none;
+  }
+  .pm-shell .pm-hud-player {
+    padding: 4px 7px 0;
+  }
+  .pm-shell .pm-hud-names .pm-hud-type {
+    display: none;
+  }
+  .pm-shell .pm-hud-controller {
+    font-size: 10px;
+  }
+  .pm-shell .pm-hud-cash dt {
+    display: none;
+  }
+  .pm-shell .pm-balance {
+    text-align: left;
+    font-size: 17px;
+  }
+  .pm-shell .pm-hud-assets {
+    min-height: 28px;
+    font-size: 10px;
+  }
+  .pm-shell .pm-dialogue {
+    padding: 4px 10px;
+    min-height: 32px;
+  }
+  .pm-shell .pm-starter-choices {
+    margin: 12px auto;
+    gap: 10px;
+  }
+  .pm-shell .pm-assignment {
+    margin: 8px auto;
+  }
+}
+@media (max-height: 500px) {
+  .pm-game.pm-shell {
+    padding: 4px 10px;
+    gap: 4px;
+  }
+  .pm-shell .pm-header {
+    flex-basis: 28px;
+  }
+  .pm-shell .pm-header-tools button {
+    min-height: 28px;
+  }
+  .pm-shell .pm-layout {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 10px;
+  }
+  .pm-shell .pm-rail {
+    gap: 4px;
+  }
+  .pm-shell .pm-rail > .pm-eyebrow,
+  .pm-shell .pm-hud-header {
+    display: none;
+  }
+  .pm-shell .pm-rail > h2 {
+    font-size: 14px;
+  }
+  .pm-shell .pm-hud-player {
+    padding: 2px 6px 0;
+  }
+  .pm-shell .pm-hud-turn {
+    font-size: 10px;
+  }
+  .pm-shell .pm-hud-assets {
+    min-height: 24px;
+    padding: 2px 0;
+    font-size: 10px;
+  }
+  .pm-shell .pm-hud-cash {
+    margin: 0;
+  }
+  .pm-shell .pm-hud-list {
+    gap: 6px;
+  }
+  .pm-shell .pm-dialogue {
+    min-height: 28px;
+    padding: 2px 12px;
+  }
+  .pm-shell .pm-lobby {
+    padding: 8px 16px;
+  }
+  .pm-shell .pm-title-scene {
+    width: 240px;
+    margin: 4px auto;
+  }
+  .pm-shell .pm-starter-choices {
+    margin: 6px auto;
+    gap: 10px;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .pm-shell .pm-starter {
+    padding: 5px;
+  }
+  .pm-shell .pm-starter .pm-partner-portrait {
+    height: 62px;
+    margin: 0;
+  }
+  .pm-shell .pm-assignment {
+    margin: 4px auto;
+    padding: 0;
+  }
+  .pm-shell .pm-setup-steps {
+    margin: 0;
+  }
+  .pm-shell .pm-back {
+    margin: 2px auto;
+    padding: 2px 8px;
+  }
+  .pm-shell .pm-map-choices {
+    margin: 8px auto;
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+/* A two-column roster leaves room for live effect badges and all actions. */
+@media (min-width: 701px) {
+  .pm-shell .pm-layout {
+    grid-template-columns: minmax(0, 1fr) 390px;
+  }
+  .pm-shell .pm-hud-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pm-shell .pm-hud-names .pm-hud-type {
+    display: none;
+  }
+  .pm-shell .pm-hud-cash dt {
+    display: none;
+  }
+  .pm-shell .pm-balance {
+    text-align: left;
+  }
+}
+@media (max-height: 500px) and (min-width: 701px) {
+  .pm-shell .pm-layout {
+    grid-template-columns: minmax(0, 1fr) 390px;
+  }
+  .pm-shell .pm-rail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: center;
+  }
+  .pm-shell .pm-rail > h2 {
+    align-self: center;
+  }
+  .pm-shell .pm-dice-result {
+    min-height: 28px;
+    font-size: 11px;
+  }
+  .pm-shell .pm-integrated-hud,
+  .pm-shell .pm-controls {
+    grid-column: 1 / -1;
+  }
+  .pm-shell .pm-hud-player {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 6px;
+  }
+  .pm-shell .pm-hud-turn {
+    display: none;
+  }
+  .pm-shell .pm-hud-identity {
+    display: contents;
+  }
+  .pm-shell .pm-hud-portrait {
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+  .pm-shell .pm-hud-names {
+    grid-column: 2;
+  }
+  .pm-shell .pm-hud-controller {
+    font-size: 9px;
+  }
+  .pm-shell .pm-hud-name {
+    font-size: 12px;
+    margin: 0;
+  }
+  .pm-shell .pm-hud-cash {
+    grid-column: 2;
+  }
+  .pm-shell .pm-balance {
+    font-size: 16px;
+  }
+  .pm-shell .pm-hud-assets,
+  .pm-shell .pm-hud-chips,
+  .pm-shell .pm-hud-supplied,
+  .pm-shell .pm-hud-delta {
+    grid-column: 1 / -1;
+  }
+  .pm-shell .pm-action {
+    min-height: 32px;
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+  .pm-shell .pm-secondary {
+    min-height: 28px;
+  }
+  .pm-shell .pm-starter > .pm-partner-portrait {
+    height: 48px;
+  }
+  .pm-shell .pm-assignment {
+    display: none;
+  }
+}
+@media (max-width: 700px) and (min-height: 501px) and (max-height: 740px) {
+  .pm-shell .pm-lobby {
+    padding: 10px;
+  }
+  .pm-shell .pm-starter .pm-partner-portrait {
+    height: 60px;
+  }
+  .pm-shell .pm-starter-choices {
+    margin: 8px auto;
+  }
+  .pm-shell .pm-assignment {
+    margin: 4px auto;
+    padding: 0;
+  }
+}
+.pm-shell .pm-dialog .pm-art-credits {
+  position: static;
+  color: inherit;
+}
+.pm-shell .pm-dialog .pm-art-credits > p {
+  position: static;
+  width: auto;
+  color: inherit;
+  background: transparent;
+  border: 0;
+}
+.pm-shell .pm-dialog .pm-art-credits a {
+  color: #32677a;
+}
+/* Only unusually long live metadata needs local scrolling; actions keep their
+   allocated rows and no HUD field is discarded. */
+.pm-shell .pm-integrated-hud {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+}
+@media (max-width: 700px) and (min-height: 501px) {
+  .pm-shell .pm-integrated-hud {
+    max-height: 36dvh;
+  }
+}
+@media (max-height: 500px) and (min-width: 701px) {
+  .pm-shell .pm-rail {
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+  }
+}
+@media (max-width: 700px) and (min-height: 501px) and (max-height: 740px) {
+  .pm-shell .pm-rail > .pm-eyebrow {
+    display: none;
+  }
+  .pm-shell .pm-rail > h2 {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  .pm-shell .pm-hud-player {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 6px;
+  }
+  .pm-shell .pm-hud-turn {
+    display: none;
+  }
+  .pm-shell .pm-hud-identity {
+    display: contents;
+  }
+  .pm-shell .pm-hud-portrait {
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+  .pm-shell .pm-hud-names,
+  .pm-shell .pm-hud-cash {
+    grid-column: 2;
+  }
+  .pm-shell .pm-hud-name {
+    font-size: 12px;
+    margin: 0;
+  }
+  .pm-shell .pm-hud-controller {
+    font-size: 9px;
+  }
+  .pm-shell .pm-hud-assets,
+  .pm-shell .pm-hud-chips,
+  .pm-shell .pm-hud-supplied,
+  .pm-shell .pm-hud-delta {
+    grid-column: 1 / -1;
+  }
+}
