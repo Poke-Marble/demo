@@ -166,13 +166,18 @@ export function rankCandidates<Action>(
     if (c.kind === 'bankrupt') score = -1000000000;
     if (c.kind === 'roll') score = 10;
     if (c.kind === 'end-turn' || c.kind === 'pass') score = 0;
-    if (c.kind === 'fly') {
+    if (c.kind === 'fly' || c.kind === 'resolve-dice') {
       score +=
         (o?.destinationValue?.value ?? 0) +
         STANDARD.incomeWeight * (o?.income?.value ?? 0) -
         c.quote.debit;
-      reasons.push('supplied-flight-outlook');
+      reasons.push(
+        c.kind === 'fly'
+          ? 'supplied-flight-outlook'
+          : 'public-revealed-movement',
+      );
     }
+    if (c.kind === 'pay-toll') score = -c.quote.debit;
     if (c.kind === 'trial') {
       // Missing probability is pessimistic, never inferred from a hidden roll.
       score =
@@ -187,6 +192,7 @@ export function rankCandidates<Action>(
       reasons.push('preserve-rope');
     }
     score -= o?.tollExposure?.value ?? 0;
+    score -= (o?.resourceCost?.value ?? 0) * (investment ? 0.25 : 1);
     if (o?.immediateWin) reasons.push('authority-immediate-win');
     if (!Number.isFinite(score)) throw new RangeError('Score overflow');
     ranked.push({ candidate: c, score, reasons });
