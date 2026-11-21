@@ -11,6 +11,8 @@ export type ActionKind =
   | 'pass'
   | 'trial'
   | 'rope'
+  | 'resolve-dice'
+  | 'pay-toll'
   | 'fly';
 
 export interface Estimate {
@@ -53,6 +55,8 @@ export interface Candidate<Action = unknown> {
     readonly blocksMonopolyThreat?: boolean;
     /** Deterministic authority victory evaluation after the quoted action. */
     readonly immediateWin?: boolean;
+    /** Heuristic value of the finite PP consumed, in currency units. */
+    readonly resourceCost?: Estimate;
   };
 }
 

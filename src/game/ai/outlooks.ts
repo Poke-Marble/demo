@@ -30,13 +30,20 @@ export type PublicState = Pick<
   | 'holdings'
   | 'victory'
   | 'legendary'
+  | 'skills'
 > & {
-  readonly core: Pick<EconomyState['core'], 'turnStage' | 'rules'>;
+  readonly core: Pick<
+    EconomyState['core'],
+    'turnStage' | 'rules' | 'pendingDice'
+  >;
   readonly economy: Omit<EconomyState['economy'], 'processedCommands'>;
 };
 type Legal = LegalActionSet['actions'][number];
 const kinds: Partial<Record<EconomyIntent['type'], ActionKind>> = {
   'roll-dice': 'roll',
+  'resolve-dice': 'resolve-dice',
+  'pay-toll': 'pay-toll',
+  'use-skill': 'pay-toll',
   'end-turn': 'end-turn',
   'construct-property': 'build',
   'buy-landmark': 'buy',
@@ -64,8 +71,14 @@ function projection(s: PublicState): EconomyState {
     holdings: s.holdings,
     victory: s.victory,
     ...(s.legendary ? { legendary: s.legendary } : {}),
+    ...(s.skills ? { skills: s.skills } : {}),
     // Required by the quote contract only. Never dispatch a random action here.
-    core: { turnStage: s.core.turnStage, rules: s.core.rules, rngState: 0 },
+    core: {
+      turnStage: s.core.turnStage,
+      rules: s.core.rules,
+      rngState: 0,
+      ...(s.core.pendingDice ? { pendingDice: s.core.pendingDice } : {}),
+    },
     economy: {
       schemaVersion: e.schemaVersion,
       sessionId: e.sessionId,
@@ -79,14 +92,18 @@ function projection(s: PublicState): EconomyState {
       developmentByTileId: e.developmentByTileId,
       landing: e.landing,
       pendingDebt: e.pendingDebt,
+      ...(e.pendingToll ? { pendingToll: e.pendingToll } : {}),
       processedCommands: {},
     },
   };
 }
 
 function investment(a: Legal) {
-  return ['construct-property', 'buy-landmark', 'takeover-property'].includes(
-    a.intent.type,
+  return (
+    (a.intent.type === 'use-skill' && a.quote?.kind === 'takeover') ||
+    ['construct-property', 'buy-landmark', 'takeover-property'].includes(
+      a.intent.type,
+    )
   );
 }
 
@@ -96,7 +113,11 @@ function apply(
   c: EconomyContext,
   a: Legal,
 ): EconomyState | null {
-  if (!investment(a) && a.intent.type !== 'fly') return null;
+  if (
+    !investment(a) &&
+    !['fly', 'resolve-dice', 'pay-toll', 'use-skill'].includes(a.intent.type)
+  )
+    return null;
   const result = dispatchEconomy(s, c, {
     sessionId: s.economy.sessionId,
     expectedRevision: s.economy.revision,
@@ -244,6 +265,9 @@ export function publicSnapshot(
       },
     ],
     candidates: [],
+    ...(state.core.pendingDice
+      ? { diceResult: state.core.pendingDice.values }
+      : {}),
   });
   const threats = new Map<string, boolean>();
   const candidate = (
@@ -271,9 +295,12 @@ export function publicSnapshot(
     return {
       id: a.actionKey,
       kind:
-        a.intent.type === 'construct-property' && a.quote?.fromStage === null
-          ? 'buy'
-          : kinds[a.intent.type]!,
+        a.intent.type === 'use-skill' && investment(a)
+          ? 'takeover'
+          : a.intent.type === 'construct-property' &&
+              a.quote?.fromStage === null
+            ? 'buy'
+            : kinds[a.intent.type]!,
       action: a.intent,
       ...(targetId ? { targetId } : {}),
       quote: {
@@ -281,6 +308,14 @@ export function publicSnapshot(
         credit: a.intent.type === 'sell-property' ? a.quote!.total : 0,
       },
       outlook: {
+        // Scarce PP is held for meaningful savings or positional gains. This is
+        // strategy utility, not a discount rate or an extra game resource rule.
+        resourceCost: heuristic(
+          a.intent.type === 'use-skill' ||
+            (a.intent.type === 'resolve-dice' && a.intent.adjustment !== 0)
+            ? 60 / Math.max(1, state.skills?.players[id]?.pp ?? 1)
+            : 0,
+        ),
         income: heuristic(income),
         immediateWin: next ? wins(next, context, id) : false,
         blocksMonopolyThreat:
@@ -332,10 +367,50 @@ export function publicSnapshot(
             ),
           },
         };
-      if (a.intent.type !== 'fly') return result;
-      const landed = apply(s, context, a);
+      if (a.intent.type !== 'fly' && a.intent.type !== 'resolve-dice')
+        return result;
+      let landed = apply(s, context, a);
       if (!landed) return result;
-      const toll = quoteToll(s, context, id, a.intent.to).total;
+      const to =
+        a.intent.type === 'fly'
+          ? a.intent.to
+          : landed.players.find((p) => p.id === id)!.position;
+      let toll = quoteToll(s, context, id, to).total;
+      let resourceCost = result.outlook!.resourceCost!.value;
+      const startCredit = Math.max(
+        0,
+        landed.players.find((p) => p.id === id)!.balance -
+          snapshot.cash +
+          (landed.economy.pendingToll ? 0 : toll),
+      );
+      // A revealed normal move may open a mandatory toll choice. Evaluate its
+      // actual legal alternatives before the destination's property decision.
+      if (landed.economy.pendingToll) {
+        const payments = rankCandidates(
+          {
+            ...base(landed),
+            players: snapshot.players.map((p) =>
+              p.id === id ? { ...p, controller: 'computer' } : p,
+            ),
+            candidates: getLegalActions(landed, context, id).actions.map((n) =>
+              candidate(landed!, n),
+            ),
+          },
+          0,
+        );
+        const payment = payments[0];
+        const legalPayment =
+          payment &&
+          getLegalActions(landed, context, id).actions.find(
+            (n) => n.actionKey === payment.candidate.id,
+          );
+        const paid = legalPayment && apply(landed, context, legalPayment);
+        if (paid) {
+          landed = paid;
+          toll = payment!.candidate.quote.debit;
+          resourceCost += payment!.candidate.outlook?.resourceCost?.value ?? 0;
+        }
+      }
       // Debt liquidation is an emergency cost, never destination utility.
       if (
         landed.economy.pendingDebt ||
@@ -344,10 +419,11 @@ export function publicSnapshot(
       )
         return {
           ...result,
-          targetId: a.intent.to,
+          targetId: to,
           outlook: {
             destinationValue: heuristic(0),
             tollExposure: authority(toll),
+            resourceCost: heuristic(resourceCost),
           },
         };
       const followups = getLegalActions(landed, context, id).actions.map((n) =>
@@ -367,10 +443,13 @@ export function publicSnapshot(
       const best = evaluated[0];
       return {
         ...result,
-        targetId: a.intent.to,
+        targetId: to,
         outlook: {
-          destinationValue: heuristic(Math.max(0, best?.score ?? 0)),
+          destinationValue: heuristic(
+            startCredit + Math.max(0, best?.score ?? 0),
+          ),
           tollExposure: authority(toll),
+          resourceCost: heuristic(resourceCost),
           immediateWin: best?.candidate.outlook?.immediateWin ?? false,
           // Follow-up score already contains the defense bonus; do not count it twice.
         },
