@@ -1,4 +1,9 @@
 import { normalizeRulesPreset } from '../../../game/rulesets.ts';
+import {
+  clearFinishedSkills,
+  skillForPokemon,
+  skillUnavailableReason,
+} from '../../../game/skills/index.ts';
 import { settleAbilities } from './settlement.ts';
 import { specialHudMeta, specialFeedback } from './special-feedback.ts';
 import { kantoJohtoMap } from '../../../data/maps/kanto-johto.ts';
@@ -16,7 +21,11 @@ import {
   type EconomyCommand,
   type LegalActionSet,
 } from '../../../game/economy/index.ts';
-import { finalizeMatch, matchProgress } from '../../../game/match/index.ts';
+import {
+  finalizeMatch,
+  matchProgress,
+  hasPendingSettlement,
+} from '../../../game/match/index.ts';
 import {
   emptyLedger,
   type AbilityLedger,
@@ -67,6 +76,7 @@ export function createIntegratedPreview(
         seed: options.seed ?? 42,
         legendary: {},
         rulesPreset,
+        skills: true,
       }),
       context,
       `game:${session}`,
@@ -98,6 +108,12 @@ export function createIntegratedPreview(
       'tileId' in intent
         ? map.tiles.find((t) => t.id === intent.tileId)?.nameKo
         : '';
+    if (intent.type === 'resolve-dice')
+      return intent.adjustment === 0
+        ? '원래 합계로 이동 · PP 무료'
+        : `${skillForPokemon(state.players.find((p) => p.id === state.activePlayerId)!.pokemonId)?.name} · 합계 ${intent.adjustment > 0 ? '+1' : '-1'} · 1PP`;
+    if (intent.type === 'use-skill')
+      return `${intent.mode === 'breakthrough' ? '기술돌파' : skillForPokemon(state.players.find((p) => p.id === state.activePlayerId)!.pokemonId)?.name} · 1PP · ${a.quote?.total} ₽`;
     return `${title}${intent.type === 'sell-property' ? ` · ${tile}` : ''}${a.quote ? ` · ${intent.type === 'sell-property' ? '+' : ''}${a.quote.total} ₽` : ''}`;
   };
   const getView = (): GameView => {
@@ -157,10 +173,53 @@ export function createIntegratedPreview(
     const trial = state.legendary?.players[state.activePlayerId]?.trial;
     if (trial)
       description = `${hudMeta[state.activePlayerId]?.trialDetails} · 탈출로프 ${state.legendary!.players[state.activePlayerId]!.ropes}개`;
+    const definition = skillForPokemon(
+      state.players.find((p) => p.id === state.activePlayerId)!.pokemonId,
+    );
+    const skillState = state.skills?.players[state.activePlayerId];
+    const skillChoice = set.actions.find(
+      (a) =>
+        a.intent.type === 'use-skill' ||
+        (a.intent.type === 'resolve-dice' && a.intent.adjustment !== 0),
+    );
+    const unavailableReason =
+      skillUnavailableReason(state, state.activePlayerId) ??
+      (state.economy.pendingDebt
+        ? '부채 정산 중 사용 불가'
+        : skillChoice
+          ? undefined
+          : '눈 공개·통행료·인수 선택 시 사용');
     const flights = set.actions.filter((a) => a.intent.type === 'fly');
     return {
       state,
       matchProgress: matchProgress(state, context)!,
+      ...(definition && skillState
+        ? {
+            activeSkill: {
+              definition,
+              statusLabel: state.core.pendingDice
+                ? `공개된 눈 ${state.core.pendingDice.values.join(' + ')} = ${state.core.pendingDice.values[0] + state.core.pendingDice.values[1]}`
+                : skillState.prepared
+                  ? '정산 중'
+                  : skillState.usedThisBasicTurn
+                    ? '이번 기본차례 사용 완료'
+                    : skillState.pp
+                      ? '사용 대기'
+                      : 'PP 소진',
+              cooldownLabel: `PP ${skillState.pp}/3 · 자동 충전 없음`,
+              ...(unavailableReason ? { unavailableReason } : {}),
+              ...(skillChoice && human()
+                ? {
+                    choice: {
+                      id: skillChoice.actionKey,
+                      selectionId: identity(),
+                      label: label(skillChoice),
+                    },
+                  }
+                : {}),
+            },
+          }
+        : {}),
       map: presentationMap,
       mapName: '관동·성도 여행',
       participants,
@@ -340,6 +399,8 @@ export function createIntegratedPreview(
     const events = result.events.filter(
       (e): e is GameEvent =>
         ![
+          'dice-revealed',
+          'skill-activated',
           'trial-resolved',
           'rope-used',
           'start-rewarded',
@@ -351,9 +412,9 @@ export function createIntegratedPreview(
           'property-sold',
         ].includes(e.type),
     );
-    if (!next.economy.pendingDebt) {
+    if (!hasPendingSettlement(next)) {
       const final = finalizeMatch(next, context, { actorId: command.playerId });
-      next = final.state;
+      next = clearFinishedSkills(final.state);
       events.push(...final.events);
     }
     state = next; // Single atomic publication: base money + ability ledger/money + victory.
@@ -368,7 +429,9 @@ export function createIntegratedPreview(
         ? {
             playerId: command.playerId,
             path: Array.from(
-              { length: dice.values.reduce((a, b) => a + b, 0) },
+              {
+                length: dice.distance ?? dice.values.reduce((a, b) => a + b, 0),
+              },
               (_, i) => map.tiles[(start + i + 1) % map.tiles.length]!.id,
             ),
           }
@@ -383,6 +446,9 @@ export function createIntegratedPreview(
       ...specialFeedback(before, result),
       ...(movement ? { movement } : {}),
       abilityActivations: activations,
+      skillActivations: result.events.flatMap((e) =>
+        e.type === 'skill-activated' ? [e.activation] : [],
+      ),
       effects: result.presentations.map((e, i) => ({
         ...e,
         id: `${command.sessionId}:${command.commandId}:${i}`,

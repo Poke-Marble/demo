@@ -100,6 +100,11 @@ export interface GameState {
 export type GameAction =
   | { readonly type: 'roll-dice'; readonly playerId: PlayerId }
   | {
+      readonly type: 'resolve-dice';
+      readonly playerId: PlayerId;
+      readonly adjustment: -1 | 0 | 1;
+    }
+  | {
       readonly type: 'buy-city';
       readonly playerId: PlayerId;
       readonly tileId: TileId;
@@ -117,6 +122,7 @@ export type GameEvent =
       readonly type: 'dice-rolled';
       readonly playerId: PlayerId;
       readonly values: readonly number[];
+      readonly distance?: number;
     }
   | {
       readonly type: 'player-moved';

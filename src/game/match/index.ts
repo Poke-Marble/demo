@@ -15,6 +15,15 @@ export {
   roundStatus,
 } from './rounds.ts';
 
+/** No final score may bypass an unresolved movement or payment choice. */
+export function hasPendingSettlement(state: EconomyState): boolean {
+  return !!(
+    state.core.pendingDice ||
+    state.economy.pendingDebt ||
+    state.economy.pendingToll
+  );
+}
+
 /** Public, authoritative UI projection. All remaining rounds include the current unfinished cycle. */
 export function matchProgress(state: EconomyState, context: EconomyContext) {
   const m = state.match;
@@ -32,7 +41,7 @@ export function matchProgress(state: EconomyState, context: EconomyContext) {
     extraRoll: false as const,
     roundDefinition:
       '원래 seat 순서의 생존 참가자 기본 차례 1순환. 파산자 건너뛰기, 시험 체류 포함. 추가 굴림은 라운드를 늘리지 않음.',
-    settlementPending: !!state.economy.pendingDebt,
+    settlementPending: hasPendingSettlement(state),
     criteria: {
       groupsToWin: defaultVictoryConfig.groupsToWin,
       sideRule: 'all-cities-on-one-side' as const,
@@ -69,7 +78,7 @@ export function matchProgress(state: EconomyState, context: EconomyContext) {
       ).length,
     })),
     survivors: state.players.filter((p) => !p.bankrupt).length,
-    assetRanking: state.economy.pendingDebt
+    assetRanking: hasPendingSettlement(state)
       ? null
       : (m.finalRanking ?? rankAssets(state, context)),
     finalRanking: m.finalRanking,
@@ -84,8 +93,8 @@ export function rankAssets(
   context: EconomyContext,
 ): readonly AssetRank[] {
   validateEconomyState(state, context);
-  if (state.economy.pendingDebt)
-    throw new Error('Settle debt before asset ranking');
+  if (hasPendingSettlement(state))
+    throw new Error('Settle debt or pending dice/toll before asset ranking');
   return state.players
     .map((p, seat) => {
       const propertyCost = state.holdings
@@ -120,7 +129,7 @@ export function finalizeMatch<S extends EconomyState>(
 ): { state: S; events: readonly GameEvent[] } {
   if (!validMatch(state)) throw new Error('Invalid match rounds');
   validateEconomyState(state, context);
-  if (state.economy.pendingDebt) return { state, events: [] };
+  if (hasPendingSettlement(state)) return { state, events: [] };
   const immediate = finalizeVictory(state, context.map, options);
   if (!immediate.ok) throw new Error(immediate.error.message);
   if (state.phase === 'finished') return { state, events: [] };

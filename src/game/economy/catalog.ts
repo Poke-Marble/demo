@@ -3,6 +3,11 @@ import {
   rulesPresets,
   type RulesPreset,
 } from '../rulesets.ts';
+import {
+  validateSkills,
+  economicSkillRule,
+  skillDiscountedAmount,
+} from '../skills/index.ts';
 import type { BoardDefinition } from '../../data/maps/types.ts';
 import { validMatch } from '../match/rounds.ts';
 import { toMapDefinition } from '../../data/maps/types.ts';
@@ -269,6 +274,7 @@ export const facilities = ['shop', 'center', 'final'] as const;
 export function validateEconomyState(s: EconomyState, c: EconomyContext): void {
   check(validMatch(s), 'invalid-match-rounds');
   validateContext(c);
+  check(validateSkills(s), 'invalid-skills');
   const e = s.economy;
   check(
     s.schemaVersion === 1 &&
@@ -345,6 +351,15 @@ export function validateEconomyState(s: EconomyState, c: EconomyContext): void {
         typeof l.propertyDecisionUsed === 'boolean',
     );
   }
+  if (e.pendingToll) {
+    check(
+      !e.pendingDebt &&
+        e.landing?.id === e.pendingToll.landingId &&
+        e.landing.tileId === e.pendingToll.tileId &&
+        s.core.turnStage === 'awaiting-end',
+      'invalid-pending-toll',
+    );
+  }
   if (e.pendingDebt) {
     const d = e.pendingDebt;
     money(d.gross);
@@ -383,7 +398,14 @@ export function validateEconomyState(s: EconomyState, c: EconomyContext): void {
     );
     const blessed = quoteBlessing(s, d.debtorId, 'toll', d.gross);
     check(
-      blessed.amount === d.amount && blessed.consumed === d.consumesBlessing,
+      (economicSkillRule(s, d.debtorId, d.tileId, 'toll')
+        ? skillDiscountedAmount(
+            d.gross,
+            blessed.consumed ? s.legendary!.rules.tollDiscount : 0,
+            economicSkillRule(s, d.debtorId, d.tileId, 'toll')!,
+          )
+        : blessed.amount) === d.amount &&
+        blessed.consumed === d.consumesBlessing,
     );
   }
   if (s.legendary) {

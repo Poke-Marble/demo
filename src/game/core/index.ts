@@ -1,3 +1,12 @@
+import {
+  createSkillsState,
+  completeSkillBasicTurn,
+  clearFinishedSkills,
+  movementAdjustment,
+  spendSkill,
+  validateSkills,
+  type SkillsState,
+} from '../skills/index.ts';
 import type {
   GameAction,
   GameEvent,
@@ -36,8 +45,11 @@ export const defaultRules: CoreRules = Object.freeze({
 
 export interface CoreState extends GameState {
   readonly legendary?: LegendaryState;
+  readonly skills?: SkillsState;
   readonly core: {
     readonly rngState: number;
+    readonly pendingDice?:
+      { readonly values: readonly [number, number] } | undefined;
     readonly turnStage: 'awaiting-roll' | 'awaiting-end';
     readonly rules: CoreRules;
   };
@@ -51,6 +63,11 @@ export interface PlayerSetup {
 
 export type CoreEvent =
   | GameEvent
+  | {
+      readonly type: 'dice-revealed';
+      readonly playerId: PlayerId;
+      readonly values: readonly [number, number];
+    }
   | LegendaryEvent
   | {
       readonly type: 'start-rewarded';
@@ -132,6 +149,7 @@ export function createGame(
   players: readonly PlayerSetup[],
   options: {
     readonly seed?: number;
+    readonly skills?: boolean;
     readonly rules?: Partial<CoreRules>;
     readonly legendary?: Partial<LegendaryRules>;
     readonly rulesPreset?: 'standard' | 'quick';
@@ -179,6 +197,9 @@ export function createGame(
       roster.map((p) => p.id),
     ),
     holdings: [],
+    ...(options.skills
+      ? { skills: createSkillsState(roster.map((p) => p.id)) }
+      : {}),
     victory: null,
     ...(options.legendary
       ? {
@@ -246,6 +267,13 @@ export function dispatch(
   const active = state.players[activeIndex];
   if (
     !validMap(map) ||
+    !validateSkills(state) ||
+    (state.core.pendingDice !== undefined &&
+      (state.core.turnStage !== 'awaiting-roll' ||
+        state.core.pendingDice.values.length !== 2 ||
+        !state.core.pendingDice.values.every(
+          (n) => Number.isInteger(n) && n >= 1 && n <= 6,
+        ))) ||
     map.id !== state.mapId ||
     !validPlayers(state.players, map) ||
     !validMatch(state) ||
@@ -276,19 +304,66 @@ export function dispatch(
   const events: CoreEvent[] = [];
   let presentations: readonly PresentationRequest[] = [];
   let next: CoreState;
-  if (action.type === 'roll-dice') {
+  if (action.type === 'roll-dice' || action.type === 'resolve-dice') {
     if (state.core.turnStage !== 'awaiting-roll')
       return reject('already-rolled');
+    if (action.type === 'roll-dice' && state.core.pendingDice)
+      return reject('already-rolled');
+    if (action.type === 'resolve-dice' && !state.core.pendingDice)
+      return reject('roll-required');
+    if (
+      action.type === 'resolve-dice' &&
+      action.adjustment !== 0 &&
+      action.adjustment !== movementAdjustment(state, active.id)
+    )
+      return reject('unsupported-action');
     const first = nextRandom(state.core.rngState);
     const second = nextRandom(first.state);
-    const values = [
-      Math.floor(first.value * 6) + 1,
-      Math.floor(second.value * 6) + 1,
-    ] as const;
+    const values =
+      state.core.pendingDice?.values ??
+      ([
+        Math.floor(first.value * 6) + 1,
+        Math.floor(second.value * 6) + 1,
+      ] as const);
+    if (
+      action.type === 'roll-dice' &&
+      movementAdjustment(state, active.id) !== null
+    ) {
+      return {
+        ok: true,
+        state: {
+          ...state,
+          core: {
+            ...state.core,
+            rngState: second.state,
+            pendingDice: { values },
+          },
+        },
+        events: [{ type: 'dice-revealed', playerId: active.id, values }],
+      };
+    }
     const fromIndex = map.tiles.findIndex(
       (tile) => tile.id === active.position,
     );
-    const distance = values[0] + values[1];
+    const distance = Math.max(
+      2,
+      Math.min(
+        12,
+        values[0] +
+          values[1] +
+          (action.type === 'resolve-dice' ? action.adjustment : 0),
+      ),
+    );
+    if (
+      action.type === 'resolve-dice' &&
+      action.adjustment !== 0 &&
+      distance === values[0] + values[1]
+    )
+      return reject('unsupported-action');
+    const spent =
+      action.type === 'resolve-dice' && action.adjustment !== 0
+        ? spendSkill(state, active.id, null)
+        : state;
     const startIndex = map.tiles.findIndex((tile) => tile.kind === 'start');
     const offsetFromStart =
       (fromIndex - startIndex + map.tiles.length) % map.tiles.length;
@@ -298,7 +373,7 @@ export function dispatch(
     if (!Number.isSafeInteger(active.balance + amount))
       return reject('invalid-state');
     next = {
-      ...state,
+      ...spent,
       players: state.players.map((player) =>
         player.id === active.id
           ? { ...player, position: tile.id, balance: player.balance + amount }
@@ -306,12 +381,14 @@ export function dispatch(
       ),
       core: {
         ...state.core,
-        rngState: second.state,
+        rngState:
+          action.type === 'resolve-dice' ? state.core.rngState : second.state,
+        pendingDice: undefined,
         turnStage: 'awaiting-end',
       },
     };
     events.push(
-      { type: 'dice-rolled', playerId: active.id, values },
+      { type: 'dice-rolled', playerId: active.id, values, distance },
       {
         type: 'player-moved',
         playerId: active.id,
@@ -335,7 +412,8 @@ export function dispatch(
     next = landed.state;
     events.push(...landed.events);
   } else if (action.type === 'end-turn') {
-    if (state.core.turnStage !== 'awaiting-end') return reject('roll-required');
+    if (state.core.pendingDice || state.core.turnStage !== 'awaiting-end')
+      return reject('roll-required');
     next = state;
     if (hooks.onEndTurn) {
       const effect = hooks.onEndTurn(next);
@@ -377,6 +455,9 @@ export function dispatch(
       }
     }
   } else return reject('unsupported-action');
+  if (action.type === 'end-turn')
+    next = completeSkillBasicTurn(next, active.id, state.turnNumber);
+  next = clearFinishedSkills(next);
   return {
     ok: true,
     state: next,

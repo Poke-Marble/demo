@@ -20,7 +20,9 @@ The match module owns round accounting, full-cost asset ranking and settled vict
 
 ## Victory and assets
 
-Immediate last-survivor, three groups, one complete side, or four landmarks wins before the round limit. Pending debt defers judgment. At the limit the current basic turn (including its purchases, trial or debt settlement) finishes before ranking. No next-turn financial action is accepted after finalization.
+Immediate last-survivor, three groups, one complete side, or four landmarks wins before the round limit. Pending dice, mandatory toll, or debt defers judgment. At the limit the current basic turn (including its purchases, trial or payment settlement) finishes before ranking. No next-turn financial action is accepted after finalization.
+
+Combined active-skill integration uses `hasPendingSettlement` for the adapter and match finalizer. The economy expiration guard still permits resolving an existing pending dice/toll/debt obligation; its phase-specific legality checks prevent unrelated commands. `skill-settlement.test.mjs` verifies deferred results/ranking, no basic-turn advancement during revealed dice, and a real pending toll payment plus inert command replay. The expired counter in this boundary test is synthetic and is not presented as full-game browser evidence.
 
 Score = cash + catalog land cost of currently owned properties + cumulative catalog construction costs through the current stage. It is independent of sale rate, takeover premium and discounts. Bankrupt players rank after survivors. Ties among survivors use cash descending, then original zero-based seat ascending. Final ranking is recorded for all victory reasons; the victory winner may differ from the asset leader for an immediate victory.
 
@@ -39,7 +41,7 @@ The four-reason victory config remains valid. A fifth `round-limit-assets` entry
 | `criteria`                                           | Actual groupsToWin=3, all cities on one side, landmarksToWin=4, survivorsToWin=1, full-cost asset formula, tie-break order and immediate-victory priority            |
 | `players`                                            | Original seat order: playerId, seat, bankrupt, completedBasicTurns, completedLaps, trial; groups `{groupId,owned,total}`, sides `{side,owned,total}`, landmarksOwned |
 | `survivors`                                          | Current survivor count                                                                                                                                               |
-| `settlementPending`, `assetRanking`                  | No provisional ranking is exposed during debt: assetRanking=null                                                                                                     |
+| `settlementPending`, `assetRanking`                  | Pending dice, mandatory toll or debt hides provisional ranking: assetRanking=null                                                                                    |
 | `finalRanking`, `endReason`                          | Recorded final asset ranking and actual victory reason                                                                                                               |
 
 `AssetRank`: `{playerId, seat, cash, propertyCost, total, bankrupt}`. The result dialog uses the recorded ranking and explicitly names the tie-break rules. Header and victory-progress modal rendering are owned by `poke-turn-ui`; this branch leaves header/HUD layout unchanged.

@@ -19,7 +19,19 @@ function fresh() {
     mapId: c.map.id,
     participants: createInitialRoster('pokemon:0007'),
   });
-  return p.getState();
+  const s = p.getState();
+  return {
+    ...s,
+    skills: {
+      ...s.skills,
+      players: Object.fromEntries(
+        Object.entries(s.skills.players).map(([id, p]) => [
+          id,
+          { ...p, pp: 0 },
+        ]),
+      ),
+    },
+  };
 }
 const balance = (s, n, id = 'player:1') => ({
   ...s,
@@ -93,7 +105,7 @@ function approaching(s, target) {
   };
 }
 
-test('START reward precedes toll: 500 activates, 501 does not; replay grants zero twice', () => {
+test('START reward precedes toll; old automatic cash traits never activate or replay', () => {
   const target = c.map.tiles[6].id;
   for (const amount of [300, 301]) {
     const before = approaching(
@@ -110,7 +122,7 @@ test('START reward precedes toll: 500 activates, 501 does not; replay grants zer
       next.abilityOutbox.some(
         (a) => a.playerId === 'player:1' && a.abilityId === 'torrent',
       ),
-      amount === 300,
+      false,
     );
     const replay = dispatchEconomy(next, c, command);
     assert.ok(replay.ok && replay.replayed);
@@ -137,14 +149,14 @@ test('last sale funds debt above 500: uses settlement cash, clears debt, no torr
   );
   const settled = act(debt.next, sale.intent);
   assert.equal(settled.next.economy.pendingDebt, null);
-  assert.ok(settled.next.abilityReceipts.some((t) => t.kind === 'toll'));
+  assert.equal(settled.next.abilityReceipts.length, 0);
   assert.equal(
     settled.next.abilityOutbox.some((a) => a.playerId === 'player:1'),
     false,
   );
 });
 
-test('partial recovery bankruptcy uses original turn, excludes bankrupt refund, static paid once', () => {
+test('partial recovery bankruptcy pays no automatic static or torrent bonus', () => {
   let s = own(fresh(), 'tile:kj:blackthorn', 'player:2', 3);
   s = {
     ...s,
@@ -163,12 +175,12 @@ test('partial recovery bankruptcy uses original turn, excludes bankrupt refund, 
     ),
   );
   assert.ok(next.turnNumber > s.turnNumber);
-  assert.equal(next.abilityReceipts[0].turn, s.turnNumber);
+  assert.equal(next.abilityReceipts.length, 0);
   assert.equal(next.players[0].balance, 0);
   assert.equal(next.players[0].bankrupt, true);
   assert.deepEqual(
     next.abilityOutbox.map((a) => [a.playerId, a.amount]),
-    [['player:2', 5]],
+    [],
   );
 });
 
@@ -216,7 +228,7 @@ test('four victory boundaries follow a legal settled acquisition / bankruptcy (c
   assert.equal(final.state.victory.winnerId, 'player:2');
 });
 
-test('blessing and ability share one discounted base receipt and replay neither consumes nor pays twice', () => {
+test('blessing settles once without automatic trait refund; replay is inert', () => {
   let s = own(fresh(), 'tile:kj:blackthorn', 'player:2', 3);
   s = {
     ...s,
@@ -233,12 +245,9 @@ test('blessing and ability share one discounted base receipt and replay neither 
   assert.equal(quoted.total, 310);
   const { next, command } = act(s, { type: 'roll-dice', playerId: 'player:1' });
   assert.equal(next.legendary.players['player:1'].lugia, false);
-  assert.equal(next.abilityReceipts[0].paid, 310);
-  assert.equal(
-    next.abilityOutbox.find((a) => a.playerId === 'player:1').amount,
-    60,
-  );
-  assert.equal(next.players[0].balance, 150);
+  assert.equal(next.abilityReceipts.length, 0);
+  assert.equal(next.abilityOutbox.length, 0);
+  assert.equal(next.players[0].balance, 90);
   const replay = dispatchEconomy(next, c, command);
   assert.ok(replay.ok && replay.replayed);
   assert.equal(settleAbilities(next, c, replay).next, next);
