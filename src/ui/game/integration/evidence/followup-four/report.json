@@ -1,0 +1,1361 @@
+{
+  "sourceCommits": {
+    "identity": "7fb4a42",
+    "fullscreen": "7870b3e",
+    "sprites": "04c858c",
+    "mechanics": "843cce7"
+  },
+  "mergeCommits": ["ab04994", "f5ba1d7", "0be0475", "4e4763a"],
+  "nodeTests": {
+    "passed": 188,
+    "failed": 0
+  },
+  "production": {
+    "url": "http://127.0.0.1:5192/",
+    "htmlSHA256": "72d62044aac4711da599cce99331136b651be7e0ac39d42e7ec3d614850f95a1"
+  },
+  "special": {
+    "errors": [],
+    "captures": ["flight", "success", "consumed", "failed", "rope"],
+    "duplicateChecks": 27,
+    "receipts": [
+      {
+        "turn": "1",
+        "before": "0",
+        "after": "1",
+        "action": "roll-dice",
+        "cashBefore": 1500,
+        "cashAfter": 1500
+      },
+      {
+        "turn": "1",
+        "before": "1",
+        "after": "2",
+        "action": "pass-property",
+        "cashBefore": 1500,
+        "cashAfter": 1500
+      },
+      {
+        "turn": "1",
+        "before": "2",
+        "after": "3",
+        "action": "end-turn",
+        "cashBefore": 1500,
+        "cashAfter": 1500
+      },
+      {
+        "turn": "5",
+        "before": "12",
+        "after": "13",
+        "action": "roll-dice",
+        "cashBefore": 1500,
+        "cashAfter": 1500
+      },
+      {
+        "turn": "5",
+        "before": "13",
+        "after": "14",
+        "action": "pass-property",
+        "cashBefore": 1500,
+        "cashAfter": 1500
+      },
+      {
+        "turn": "5",
+        "before": "14",
+        "after": "15",
+        "action": "end-turn",
+        "cashBefore": 1500,
+        "cashAfter": 1215
+      },
+      {
+        "turn": "9",
+        "before": "22",
+        "after": "23",
+        "action": "roll-dice",
+        "cashBefore": 1500,
+        "cashAfter": 1500
+      },
+      {
+        "turn": "9",
+        "before": "23",
+        "after": "24",
+        "action": "buy-landmark",
+        "cashBefore": 1500,
+        "cashAfter": 1250
+      },
+      {
+        "turn": "9",
+        "before": "24",
+        "after": "25",
+        "action": "end-turn",
+        "cashBefore": 1250,
+        "cashAfter": 1020
+      },
+      {
+        "turn": "13",
+        "before": "34",
+        "after": "35",
+        "action": "roll-dice",
+        "cashBefore": 1250,
+        "cashAfter": 1250
+      },
+      {
+        "turn": "13",
+        "before": "35",
+        "after": "36",
+        "action": "fly",
+        "toll": 0,
+        "cashBefore": 1250,
+        "cashAfter": 1250
+      },
+      {
+        "turn": "13",
+        "before": "36",
+        "after": "37",
+        "action": "attempt-trial",
+        "cashBefore": 1250,
+        "cashAfter": 1250
+      },
+      {
+        "turn": "13",
+        "before": "37",
+        "after": "38",
+        "action": "end-turn",
+        "cashBefore": 1250,
+        "cashAfter": 645
+      },
+      {
+        "turn": "17",
+        "before": "47",
+        "after": "48",
+        "action": "roll-dice",
+        "cashBefore": 1250,
+        "cashAfter": 1250
+      },
+      {
+        "turn": "17",
+        "before": "48",
+        "after": "49",
+        "action": "fly",
+        "toll": 95,
+        "cashBefore": 1250,
+        "cashAfter": 1155
+      },
+      {
+        "turn": "17",
+        "before": "49",
+        "after": "50",
+        "action": "takeover-property",
+        "cashBefore": 1155,
+        "cashAfter": 585
+      },
+      {
+        "turn": "17",
+        "before": "50",
+        "after": "51",
+        "action": "end-turn",
+        "cashBefore": 585,
+        "cashAfter": 845
+      },
+      {
+        "turn": "21",
+        "before": "61",
+        "after": "62",
+        "action": "roll-dice",
+        "cashBefore": 585,
+        "cashAfter": 585
+      },
+      {
+        "turn": "21",
+        "before": "62",
+        "after": "63",
+        "action": "construct-property",
+        "cashBefore": 585,
+        "cashAfter": 422
+      },
+      {
+        "turn": "21",
+        "before": "63",
+        "after": "64",
+        "action": "end-turn",
+        "cashBefore": 422,
+        "cashAfter": 665
+      },
+      {
+        "turn": "25",
+        "before": "73",
+        "after": "74",
+        "action": "roll-dice",
+        "cashBefore": 877,
+        "cashAfter": 752
+      },
+      {
+        "turn": "25",
+        "before": "74",
+        "after": "75",
+        "action": "pass-property",
+        "cashBefore": 752,
+        "cashAfter": 752
+      },
+      {
+        "turn": "25",
+        "before": "75",
+        "after": "76",
+        "action": "end-turn",
+        "cashBefore": 752,
+        "cashAfter": 210
+      },
+      {
+        "turn": "29",
+        "before": "86",
+        "after": "87",
+        "action": "roll-dice",
+        "cashBefore": 847,
+        "cashAfter": 1047
+      },
+      {
+        "turn": "29",
+        "before": "87",
+        "after": "88",
+        "action": "end-turn",
+        "cashBefore": 1047,
+        "cashAfter": 115
+      },
+      {
+        "turn": "33",
+        "before": "97",
+        "after": "98",
+        "action": "roll-dice",
+        "cashBefore": 1095,
+        "cashAfter": 1095
+      },
+      {
+        "turn": "33",
+        "before": "98",
+        "after": "99",
+        "action": "attempt-trial",
+        "cashBefore": 1095,
+        "cashAfter": 1095
+      },
+      {
+        "turn": "33",
+        "before": "99",
+        "after": "100",
+        "action": "use-escape-rope",
+        "cashBefore": 1095,
+        "cashAfter": 1095
+      },
+      {
+        "turn": "33",
+        "before": "100",
+        "after": "101",
+        "action": "roll-dice",
+        "cashBefore": 1095,
+        "cashAfter": 985
+      }
+    ],
+    "notices": [
+      {
+        "text": "COMPUTER 2 · 루기아 시험 1회차 실패 · 다음 내 차례에 2회차 재도전 · 3회차 성공 보장",
+        "turn": "3",
+        "revision": "8"
+      },
+      {
+        "text": "COMPUTER 3 · 루기아 시험 1회차 실패 · 다음 내 차례에 2회차 재도전 · 3회차 성공 보장",
+        "turn": "4",
+        "revision": "11"
+      },
+      {
+        "text": "COMPUTER 2 · 루기아 시험 2회차 성공 · 루기아 가호 보유",
+        "turn": "7",
+        "revision": "19"
+      },
+      {
+        "text": "COMPUTER 3 · 루기아 시험 2회차 성공 · 루기아 가호 보유",
+        "turn": "8",
+        "revision": "21"
+      },
+      {
+        "text": "COMPUTER 3 · 루기아 가호 1회 소비 · 할인 후 통행료 33 ₽ · 실제 지불 33 ₽ · 가호 잔여 없음",
+        "turn": "12",
+        "revision": "32"
+      },
+      {
+        "text": "나 · 비행 도착 · 전설시험 진입",
+        "turn": "13",
+        "revision": "36"
+      },
+      {
+        "text": "나 · 칠색조 시험 1회차 성공 · 칠색조 가호 보유",
+        "turn": "13",
+        "revision": "37"
+      },
+      {
+        "text": "나 · 비행 도착 · 통행료 95 ₽ 정산",
+        "turn": "17",
+        "revision": "49"
+      },
+      {
+        "text": "COMPUTER 3 · 비행 도착 · 도착지 구매·건설 선택",
+        "turn": "20",
+        "revision": "59"
+      },
+      {
+        "text": "나 · 칠색조 가호 1회 소비 · 시설 건설 195 → 163 ₽ 결제 · 가호 잔여 없음",
+        "turn": "21",
+        "revision": "63"
+      },
+      {
+        "text": "COMPUTER 1 · 비행 도착 · 통행료 95 ₽ 정산",
+        "turn": "26",
+        "revision": "78"
+      },
+      {
+        "text": "COMPUTER 2 · 루기아 가호 1회 소비 · 할인 후 통행료 48 ₽ · 실제 지불 48 ₽ · 가호 잔여 없음",
+        "turn": "31",
+        "revision": "92"
+      },
+      {
+        "text": "나 · 루기아 시험 1회차 실패 · 다음 내 차례에 2회차 재도전 · 3회차 성공 보장",
+        "turn": "33",
+        "revision": "99"
+      },
+      {
+        "text": "나 · 탈출로프 1개 사용 · 남은 로프 0개 · 시험 해제, 주사위 굴리기 가능",
+        "turn": "33",
+        "revision": "100"
+      }
+    ],
+    "layouts": [
+      {
+        "kind": "normal",
+        "viewport": [1280, 720],
+        "document": [1280, 720],
+        "board": {
+          "x": 16,
+          "y": 102,
+          "width": 840,
+          "height": 558,
+          "top": 102,
+          "right": 856,
+          "bottom": 660,
+          "left": 16
+        },
+        "hud": {
+          "x": 874,
+          "y": 172.203125,
+          "width": 390,
+          "height": 345.046875,
+          "top": 172.203125,
+          "right": 1264,
+          "bottom": 517.25,
+          "left": 874
+        },
+        "notice": null,
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [345, 345],
+        "trialChips": []
+      },
+      {
+        "kind": "normal",
+        "viewport": [390, 844],
+        "document": [390, 844],
+        "board": {
+          "x": 10,
+          "y": 98,
+          "width": 370,
+          "height": 196.390625,
+          "top": 98,
+          "right": 380,
+          "bottom": 294.390625,
+          "left": 10
+        },
+        "hud": {
+          "x": 10,
+          "y": 393.375,
+          "width": 370,
+          "height": 303.828125,
+          "top": 393.375,
+          "right": 380,
+          "bottom": 697.203125,
+          "left": 10
+        },
+        "notice": null,
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [304, 311],
+        "trialChips": []
+      },
+      {
+        "kind": "flight",
+        "viewport": [1280, 720],
+        "document": [1280, 720],
+        "board": {
+          "x": 16,
+          "y": 102,
+          "width": 840,
+          "height": 558,
+          "top": 102,
+          "right": 856,
+          "bottom": 660,
+          "left": 16
+        },
+        "hud": {
+          "x": 874,
+          "y": 164.234375,
+          "width": 390,
+          "height": 413.765625,
+          "top": 164.234375,
+          "right": 1264,
+          "bottom": 578,
+          "left": 874
+        },
+        "notice": {
+          "x": 24,
+          "y": 110,
+          "width": 440,
+          "height": 45.6875,
+          "top": 110,
+          "right": 464,
+          "bottom": 155.6875,
+          "left": 24
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [414, 421],
+        "trialChips": [
+          {
+            "text": "시험 · 칠색조 · 도전 대기 · 0/3회",
+            "details": "칠색조 시험 · 시도 0회 · 재도전 0회 · 다음 1회차 · 3회차 성공 보장"
+          }
+        ]
+      },
+      {
+        "kind": "flight",
+        "viewport": [390, 844],
+        "document": [390, 844],
+        "board": {
+          "x": 10,
+          "y": 98,
+          "width": 370,
+          "height": 247.1875,
+          "top": 98,
+          "right": 380,
+          "bottom": 345.1875,
+          "left": 10
+        },
+        "hud": {
+          "x": 10,
+          "y": 444.171875,
+          "width": 370,
+          "height": 303.828125,
+          "top": 444.171875,
+          "right": 380,
+          "bottom": 748,
+          "left": 10
+        },
+        "notice": {
+          "x": 18,
+          "y": 106,
+          "width": 354,
+          "height": 45.6875,
+          "top": 106,
+          "right": 372,
+          "bottom": 151.6875,
+          "left": 18
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [304, 387],
+        "trialChips": [
+          {
+            "text": "시험 · 칠색조 · 도전 대기 · 0/3회",
+            "details": "칠색조 시험 · 시도 0회 · 재도전 0회 · 다음 1회차 · 3회차 성공 보장"
+          }
+        ]
+      },
+      {
+        "kind": "success",
+        "viewport": [1280, 720],
+        "document": [1280, 720],
+        "board": {
+          "x": 16,
+          "y": 102,
+          "width": 840,
+          "height": 558,
+          "top": 102,
+          "right": 856,
+          "bottom": 660,
+          "left": 16
+        },
+        "hud": {
+          "x": 874,
+          "y": 164.234375,
+          "width": 390,
+          "height": 344.578125,
+          "top": 164.234375,
+          "right": 1264,
+          "bottom": 508.8125,
+          "left": 874
+        },
+        "notice": {
+          "x": 24,
+          "y": 110,
+          "width": 440,
+          "height": 45.6875,
+          "top": 110,
+          "right": 464,
+          "bottom": 155.6875,
+          "left": 24
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [345, 421],
+        "trialChips": []
+      },
+      {
+        "kind": "success",
+        "viewport": [390, 844],
+        "document": [390, 844],
+        "board": {
+          "x": 10,
+          "y": 98,
+          "width": 370,
+          "height": 201.1875,
+          "top": 98,
+          "right": 380,
+          "bottom": 299.1875,
+          "left": 10
+        },
+        "hud": {
+          "x": 10,
+          "y": 398.171875,
+          "width": 370,
+          "height": 303.828125,
+          "top": 398.171875,
+          "right": 380,
+          "bottom": 702,
+          "left": 10
+        },
+        "notice": {
+          "x": 18,
+          "y": 106,
+          "width": 354,
+          "height": 45.6875,
+          "top": 106,
+          "right": 372,
+          "bottom": 151.6875,
+          "left": 18
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [304, 387],
+        "trialChips": []
+      },
+      {
+        "kind": "consumed",
+        "viewport": [1280, 720],
+        "document": [1280, 720],
+        "board": {
+          "x": 16,
+          "y": 102,
+          "width": 840,
+          "height": 558,
+          "top": 102,
+          "right": 856,
+          "bottom": 660,
+          "left": 16
+        },
+        "hud": {
+          "x": 874,
+          "y": 164.234375,
+          "width": 390,
+          "height": 277.390625,
+          "top": 164.234375,
+          "right": 1264,
+          "bottom": 441.625,
+          "left": 874
+        },
+        "notice": {
+          "x": 24,
+          "y": 110,
+          "width": 440,
+          "height": 67.375,
+          "top": 110,
+          "right": 464,
+          "bottom": 177.375,
+          "left": 24
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [277, 383],
+        "trialChips": []
+      },
+      {
+        "kind": "consumed",
+        "viewport": [390, 844],
+        "document": [390, 844],
+        "board": {
+          "x": 10,
+          "y": 98,
+          "width": 370,
+          "height": 126.40625,
+          "top": 98,
+          "right": 380,
+          "bottom": 224.40625,
+          "left": 10
+        },
+        "hud": {
+          "x": 10,
+          "y": 323.390625,
+          "width": 370,
+          "height": 303.828125,
+          "top": 323.390625,
+          "right": 380,
+          "bottom": 627.21875,
+          "left": 10
+        },
+        "notice": {
+          "x": 18,
+          "y": 106,
+          "width": 354,
+          "height": 67.375,
+          "top": 106,
+          "right": 372,
+          "bottom": 173.375,
+          "left": 18
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [304, 349],
+        "trialChips": []
+      },
+      {
+        "kind": "failed",
+        "viewport": [1280, 720],
+        "document": [1280, 720],
+        "board": {
+          "x": 16,
+          "y": 102,
+          "width": 840,
+          "height": 558,
+          "top": 102,
+          "right": 856,
+          "bottom": 660,
+          "left": 16
+        },
+        "hud": {
+          "x": 874,
+          "y": 179.59375,
+          "width": 390,
+          "height": 383.046875,
+          "top": 179.59375,
+          "right": 1264,
+          "bottom": 562.640625,
+          "left": 874
+        },
+        "notice": {
+          "x": 24,
+          "y": 110,
+          "width": 440,
+          "height": 67.375,
+          "top": 110,
+          "right": 464,
+          "bottom": 177.375,
+          "left": 24
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [383, 383],
+        "trialChips": [
+          {
+            "text": "시험 · 루기아 · 실패 대기 · 1/3회",
+            "details": "루기아 시험 · 시도 1회 · 재도전 0회 · 다음 2회차 · 3회차 성공 보장 · 실패 후 다음 내 차례 대기"
+          }
+        ]
+      },
+      {
+        "kind": "failed",
+        "viewport": [390, 844],
+        "document": [390, 844],
+        "board": {
+          "x": 10,
+          "y": 98,
+          "width": 370,
+          "height": 247.1875,
+          "top": 98,
+          "right": 380,
+          "bottom": 345.1875,
+          "left": 10
+        },
+        "hud": {
+          "x": 10,
+          "y": 444.171875,
+          "width": 370,
+          "height": 303.828125,
+          "top": 444.171875,
+          "right": 380,
+          "bottom": 748,
+          "left": 10
+        },
+        "notice": {
+          "x": 18,
+          "y": 106,
+          "width": 354,
+          "height": 67.375,
+          "top": 106,
+          "right": 372,
+          "bottom": 173.375,
+          "left": 18
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [304, 349],
+        "trialChips": [
+          {
+            "text": "시험 · 루기아 · 실패 대기 · 1/3회",
+            "details": "루기아 시험 · 시도 1회 · 재도전 0회 · 다음 2회차 · 3회차 성공 보장 · 실패 후 다음 내 차례 대기"
+          }
+        ]
+      },
+      {
+        "kind": "rope",
+        "viewport": [1280, 720],
+        "document": [1280, 720],
+        "board": {
+          "x": 16,
+          "y": 102,
+          "width": 840,
+          "height": 558,
+          "top": 102,
+          "right": 856,
+          "bottom": 660,
+          "left": 16
+        },
+        "hud": {
+          "x": 874,
+          "y": 164.234375,
+          "width": 390,
+          "height": 293.78125,
+          "top": 164.234375,
+          "right": 1264,
+          "bottom": 458.015625,
+          "left": 874
+        },
+        "notice": {
+          "x": 24,
+          "y": 110,
+          "width": 440,
+          "height": 67.375,
+          "top": 110,
+          "right": 464,
+          "bottom": 177.375,
+          "left": 24
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [294, 345],
+        "trialChips": []
+      },
+      {
+        "kind": "rope",
+        "viewport": [390, 844],
+        "document": [390, 844],
+        "board": {
+          "x": 10,
+          "y": 98,
+          "width": 370,
+          "height": 136,
+          "top": 98,
+          "right": 380,
+          "bottom": 234,
+          "left": 10
+        },
+        "hud": {
+          "x": 10,
+          "y": 332.984375,
+          "width": 370,
+          "height": 303.828125,
+          "top": 332.984375,
+          "right": 380,
+          "bottom": 636.8125,
+          "left": 10
+        },
+        "notice": {
+          "x": 18,
+          "y": 106,
+          "width": 354,
+          "height": 67.375,
+          "top": 106,
+          "right": 372,
+          "bottom": 173.375,
+          "left": 18
+        },
+        "hudBoardOverlap": 0,
+        "noticeHudOverlap": 0,
+        "noticeControlOverlaps": [],
+        "outsideControls": [],
+        "portraits": 4,
+        "hudScroll": [304, 311],
+        "trialChips": []
+      }
+    ],
+    "trialSprites": [
+      {
+        "width": 1280,
+        "height": 720,
+        "bounds": {
+          "x": 580,
+          "y": 44.59375,
+          "width": 480,
+          "height": 512
+        },
+        "authoritativeTrial": "ho-oh",
+        "loaded": true
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "bounds": {
+          "x": 126,
+          "y": 247.5,
+          "width": 240,
+          "height": 256
+        },
+        "authoritativeTrial": "ho-oh",
+        "loaded": true
+      }
+    ]
+  },
+  "board": {
+    "errors": [],
+    "checks": [
+      {
+        "width": 1280,
+        "height": 720,
+        "measurements": [
+          {
+            "zoom": 1,
+            "canvas": {
+              "width": 775,
+              "height": 558
+            },
+            "sprites": 4,
+            "foregroundOverlaps": [],
+            "fontSizes": [
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px"
+            ],
+            "viewport": [1280, 720],
+            "document": [1280, 720]
+          },
+          {
+            "zoom": 1.25,
+            "canvas": {
+              "width": 775,
+              "height": 558
+            },
+            "sprites": 4,
+            "foregroundOverlaps": [],
+            "fontSizes": [
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px",
+              "14px"
+            ],
+            "viewport": [1280, 720],
+            "document": [1280, 720]
+          }
+        ],
+        "cityListCount": 32,
+        "pan": true,
+        "sameCanvas": true
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "measurements": [
+          {
+            "zoom": 1,
+            "canvas": {
+              "width": 272.75,
+              "height": 196.390625
+            },
+            "sprites": 4,
+            "foregroundOverlaps": [],
+            "fontSizes": ["14px"],
+            "viewport": [390, 844],
+            "document": [390, 844]
+          },
+          {
+            "zoom": 1.25,
+            "canvas": {
+              "width": 272.75,
+              "height": 196.390625
+            },
+            "sprites": 4,
+            "foregroundOverlaps": [],
+            "fontSizes": ["14px"],
+            "viewport": [390, 844],
+            "document": [390, 844]
+          }
+        ],
+        "cityListCount": 32,
+        "pan": true,
+        "sameCanvas": true
+      }
+    ]
+  },
+  "fullscreenTurns": [
+    {
+      "width": 1280,
+      "height": 720,
+      "state": {
+        "document": [1280, 720],
+        "viewport": [1280, 720],
+        "canvas": {
+          "x": 48,
+          "y": 102,
+          "width": 775,
+          "height": 558,
+          "top": 102,
+          "right": 823,
+          "bottom": 660,
+          "left": 48
+        },
+        "portraits": [44, 44, 44, 44],
+        "dice": "이동 7칸 · 완료",
+        "buttons": [
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 379.265625
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 379.265625
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 538.640625
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 538.640625
+          },
+          {
+            "text": "자산 현황",
+            "bottom": 618
+          },
+          {
+            "text": "여행 기록",
+            "bottom": 658
+          }
+        ],
+        "dialogs": [
+          "이번 방문 선택확정 견적 · 선택하면 이번 방문 결정을 마칩니다.명소 구매 · 250 ₽건너뛰기"
+        ],
+        "bodyOverflow": "visible"
+      },
+      "errors": [],
+      "humanAndThreeComputerTurns": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": {
+        "document": [390, 844],
+        "viewport": [390, 844],
+        "canvas": {
+          "x": 23,
+          "y": 98,
+          "width": 343.3125,
+          "height": 247.1875,
+          "top": 98,
+          "right": 366.3125,
+          "bottom": 345.1875,
+          "left": 23
+        },
+        "portraits": [44, 44, 44, 44],
+        "dice": "이동 7칸 · 완료",
+        "buttons": [
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 595.65625
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 595.65625
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 750.140625
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 750.140625
+          },
+          {
+            "text": "자산 현황",
+            "bottom": 786
+          },
+          {
+            "text": "여행 기록",
+            "bottom": 786
+          }
+        ],
+        "dialogs": [
+          "이번 방문 선택확정 견적 · 선택하면 이번 방문 결정을 마칩니다.명소 구매 · 250 ₽건너뛰기"
+        ],
+        "bodyOverflow": "visible"
+      },
+      "errors": []
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "state": {
+        "document": [844, 390],
+        "viewport": [844, 390],
+        "canvas": {
+          "x": 52,
+          "y": 94,
+          "width": 338.875,
+          "height": 244,
+          "top": 94,
+          "right": 390.875,
+          "bottom": 338,
+          "left": 52
+        },
+        "portraits": [44, 44, 44, 44],
+        "dice": "이동 7칸 · 완료",
+        "buttons": [
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 195.875
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 195.875
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 305.65625
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 305.65625
+          },
+          {
+            "text": "자산 현황",
+            "bottom": 332
+          },
+          {
+            "text": "여행 기록",
+            "bottom": 332
+          }
+        ],
+        "dialogs": [
+          "이번 방문 선택확정 견적 · 선택하면 이번 방문 결정을 마칩니다.명소 구매 · 250 ₽건너뛰기"
+        ],
+        "bodyOverflow": "visible"
+      },
+      "errors": []
+    },
+    {
+      "width": 390,
+      "height": 667,
+      "state": {
+        "document": [390, 667],
+        "viewport": [390, 667],
+        "canvas": {
+          "x": 85,
+          "y": 98,
+          "width": 219.5,
+          "height": 158.046875,
+          "top": 98,
+          "right": 304.5,
+          "bottom": 256.046875,
+          "left": 85
+        },
+        "portraits": [44, 44, 44, 44],
+        "dice": "이동 7칸 · 완료",
+        "buttons": [
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 450.96875
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 450.96875
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 574.046875
+          },
+          {
+            "text": "도시 0 · 특별 명소 0  ›",
+            "bottom": 574.046875
+          },
+          {
+            "text": "자산 현황",
+            "bottom": 609
+          },
+          {
+            "text": "여행 기록",
+            "bottom": 609
+          }
+        ],
+        "dialogs": [
+          "이번 방문 선택확정 견적 · 선택하면 이번 방문 결정을 마칩니다.명소 구매 · 250 ₽건너뛰기"
+        ],
+        "bodyOverflow": "visible"
+      },
+      "errors": []
+    }
+  ],
+  "spritePresentation": {
+    "origin": "http://127.0.0.1:5197",
+    "reports": [
+      {
+        "viewportWidth": 1280,
+        "viewportHeight": 900,
+        "bird": "lugia",
+        "width": 480,
+        "height": 512,
+        "inside": true,
+        "visible": "1",
+        "opaque": 1233,
+        "transparent": 14127
+      },
+      {
+        "viewportWidth": 1280,
+        "viewportHeight": 900,
+        "bird": "ho-oh",
+        "width": 480,
+        "height": 512,
+        "inside": true,
+        "visible": "1",
+        "opaque": 1218,
+        "transparent": 14142
+      },
+      {
+        "viewportWidth": 1280,
+        "flight": {
+          "beforeFlight": {
+            "x": 153.375,
+            "y": 288,
+            "width": 240,
+            "height": 256
+          },
+          "afterFlight": {
+            "x": 482,
+            "y": 288,
+            "width": 240,
+            "height": 256
+          },
+          "arrival": true,
+          "completed": true
+        }
+      },
+      {
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "bird": "lugia",
+        "width": 240,
+        "height": 256,
+        "inside": true,
+        "visible": "1",
+        "opaque": 1233,
+        "transparent": 14127
+      },
+      {
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "bird": "ho-oh",
+        "width": 240,
+        "height": 256,
+        "inside": true,
+        "visible": "1",
+        "opaque": 1376,
+        "transparent": 13984
+      },
+      {
+        "viewportWidth": 390,
+        "flight": {
+          "beforeFlight": {
+            "x": -113.515625,
+            "y": 260,
+            "width": 240,
+            "height": 256
+          },
+          "afterFlight": {
+            "x": 56.84375,
+            "y": 260,
+            "width": 240,
+            "height": 256
+          },
+          "arrival": true,
+          "completed": true
+        }
+      }
+    ],
+    "summary": {
+      "phase": "3",
+      "reduced": true,
+      "text": "루기아의 시험피카츄VS이미지 로딩 중루기아피카츄 VS 루기아연출 스킵 · Enter / Space / Esc"
+    },
+    "flightSummary": {
+      "phase": "3",
+      "text": "SKY PASSAGE / 공중날기이미지 로딩 중방울탑나 · 방울탑 도착연출 스킵 · Enter / Space / Esc",
+      "animation": "none",
+      "position": "static"
+    },
+    "lifecycle": "skip/cancel/reset/restart/destroy/late-load/failure/reduced/flight passed"
+  },
+  "trialPawn": {
+    "checks": [
+      "1280/lugia-trial/1: feet in front of own model; sprite/shadow aligned",
+      "1280/lugia-trial/4: feet in front of own model; sprite/shadow aligned",
+      "1280/lugia-trial/intro: returned/stayed visible",
+      "1280/lugia-trial/failure: returned/stayed visible",
+      "1280/lugia-trial/rope: returned/stayed visible",
+      "1280/lugia-trial/depart: 16 moving frames; max lift 0.0; no depth mismatch",
+      "1280/lugia-trial/depart: completed with grounded depth",
+      "1280/lugia-trial/walk: 30 moving frames; max lift 0.0; no depth mismatch",
+      "1280/lugia-trial/walk: completed with grounded depth",
+      "1280/lugia-trial/fly: 202 moving frames; max lift 75.0; no depth mismatch",
+      "1280/lugia-trial/fly: completed with grounded depth",
+      "1280/lugia-trial: zoom/reset/reduced motion four-player capture",
+      "1280/ho-oh-trial/1: feet in front of own model; sprite/shadow aligned",
+      "1280/ho-oh-trial/4: feet in front of own model; sprite/shadow aligned",
+      "1280/ho-oh-trial/intro: returned/stayed visible",
+      "1280/ho-oh-trial/failure: returned/stayed visible",
+      "1280/ho-oh-trial/rope: returned/stayed visible",
+      "1280/ho-oh-trial/depart: 16 moving frames; max lift 0.0; no depth mismatch",
+      "1280/ho-oh-trial/depart: completed with grounded depth",
+      "1280/ho-oh-trial/walk: 32 moving frames; max lift 0.0; no depth mismatch",
+      "1280/ho-oh-trial/walk: completed with grounded depth",
+      "1280/ho-oh-trial/fly: 202 moving frames; max lift 75.0; no depth mismatch",
+      "1280/ho-oh-trial/fly: completed with grounded depth",
+      "1280/ho-oh-trial: zoom/reset/reduced motion four-player capture",
+      "390/lugia-trial/1: feet in front of own model; sprite/shadow aligned",
+      "390/lugia-trial/4: feet in front of own model; sprite/shadow aligned",
+      "390/lugia-trial/intro: returned/stayed visible",
+      "390/lugia-trial/failure: returned/stayed visible",
+      "390/lugia-trial/rope: returned/stayed visible",
+      "390/lugia-trial/depart: 17 moving frames; max lift 0.0; no depth mismatch",
+      "390/lugia-trial/depart: completed with grounded depth",
+      "390/lugia-trial/walk: 32 moving frames; max lift 0.0; no depth mismatch",
+      "390/lugia-trial/walk: completed with grounded depth",
+      "390/lugia-trial/fly: 202 moving frames; max lift 75.0; no depth mismatch",
+      "390/lugia-trial/fly: completed with grounded depth",
+      "390/lugia-trial: zoom/reset/reduced motion four-player capture",
+      "390/ho-oh-trial/1: feet in front of own model; sprite/shadow aligned",
+      "390/ho-oh-trial/4: feet in front of own model; sprite/shadow aligned",
+      "390/ho-oh-trial/intro: returned/stayed visible",
+      "390/ho-oh-trial/failure: returned/stayed visible",
+      "390/ho-oh-trial/rope: returned/stayed visible",
+      "390/ho-oh-trial/depart: 16 moving frames; max lift 0.0; no depth mismatch",
+      "390/ho-oh-trial/depart: completed with grounded depth",
+      "390/ho-oh-trial/walk: 32 moving frames; max lift 0.0; no depth mismatch",
+      "390/ho-oh-trial/walk: completed with grounded depth",
+      "390/ho-oh-trial/fly: 202 moving frames; max lift 75.0; no depth mismatch",
+      "390/ho-oh-trial/fly: completed with grounded depth",
+      "390/ho-oh-trial: zoom/reset/reduced motion four-player capture"
+    ],
+    "errors": [],
+    "geometryCases": 8
+  }
+}

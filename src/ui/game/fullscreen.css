@@ -57,9 +57,21 @@
   padding: 4px 12px;
 }
 .pm-shell .phaser-board-surface {
+  anchor-name: --pm-result-board;
   flex: 1;
   min-height: 0;
   aspect-ratio: auto;
+}
+/* Keep top-layer results inside the board instead of covering navigation/HUD.
+   CSS anchoring follows viewport and HUD reflow without delaying the ack. */
+@supports (top: anchor(top)) {
+  .pm-result-notice {
+    position-anchor: --pm-result-board;
+    inset: auto;
+    top: calc(anchor(top) + 8px);
+    left: calc(anchor(left) + 8px);
+    width: min(440px, calc(anchor-size(width) - 16px));
+  }
 }
 .pm-shell .pm-integrated-dice {
   top: auto;

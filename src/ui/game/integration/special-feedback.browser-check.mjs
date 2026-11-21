@@ -1,30 +1,130 @@
-/* global document, MutationObserver, innerWidth, window */
+/* global document, MutationObserver, innerWidth, innerHeight, window */
 import { chromium } from '../../../../../feat-board-art/artifacts/browser-tools/node_modules/playwright/index.mjs';
 import fs from 'node:fs/promises';
 import console from 'node:console';
 import assert from 'node:assert/strict';
+import process from 'node:process';
 import { plan } from '../../../game/ai/planner.ts';
 import { kantoJohtoMap } from '../../../data/maps/kanto-johto.ts';
 
 // Actual Chrome + seeded production adapter. Only legal UI inputs and timing skips.
-const dir = 'artifacts/special-feedback';
+const dir = process.env.SPECIAL_QA_DIR ?? 'artifacts/special-feedback';
 await fs.mkdir(dir, { recursive: true });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const page = await browser.newPage({
-  viewport: { width: 1280, height: 900 },
+  viewport: { width: 1280, height: 720 },
   reducedMotion: 'reduce',
 });
 const errors = [],
   receipts = [],
+  layouts = [],
+  trialSprites = [],
   captures = new Set();
+async function inspectLayout(kind) {
+  const layout = await page.evaluate(() => {
+    const rect = (node) => node.getBoundingClientRect().toJSON();
+    const board = rect(document.querySelector('.phaser-board-surface'));
+    const hud = rect(document.querySelector('.pm-integrated-hud'));
+    const noticeNode = document.querySelector('.pm-result-notice');
+    const notice = noticeNode.hidden ? null : rect(noticeNode);
+    const overlap = (a, b) =>
+      Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
+      Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+    const controls = [
+      ...document.querySelectorAll(
+        '.pm-header button, .pm-controls button, .pm-rail > button, dialog[open] button',
+      ),
+    ]
+      .filter((n) => n.checkVisibility())
+      .map((n) => ({
+        text: n.textContent,
+        bounds: rect(n),
+        modal: !!n.closest('dialog'),
+      }));
+    return {
+      viewport: [innerWidth, innerHeight],
+      document: [
+        document.documentElement.scrollWidth,
+        document.documentElement.scrollHeight,
+      ],
+      board,
+      hud,
+      notice,
+      hudBoardOverlap: overlap(board, hud),
+      noticeHudOverlap: notice ? overlap(notice, hud) : 0,
+      noticeControlOverlaps: notice
+        ? controls
+            .filter((c) => overlap(notice, c.bounds) > 0)
+            .map((c) => c.text)
+        : [],
+      outsideControls: controls
+        .filter(
+          (c) =>
+            !c.modal &&
+            (c.bounds.left < 0 ||
+              c.bounds.top < 0 ||
+              c.bounds.right > innerWidth + 1 ||
+              c.bounds.bottom > innerHeight + 1),
+        )
+        .map((c) => c.text),
+      portraits: [...document.querySelectorAll('.pm-hud-portrait')]
+        .map((n) => rect(n))
+        .filter(
+          (r) =>
+            r.left >= hud.left &&
+            r.right <= hud.right + 1 &&
+            r.top >= hud.top &&
+            r.bottom <= hud.bottom + 1,
+        ).length,
+      hudScroll: [
+        document.querySelector('.pm-integrated-hud').clientHeight,
+        document.querySelector('.pm-integrated-hud').scrollHeight,
+      ],
+      trialChips: [...document.querySelectorAll('.pm-hud-chip[title]')].map(
+        (n) => ({ text: n.textContent, details: n.title }),
+      ),
+    };
+  });
+  layouts.push({ kind, ...layout });
+  assert.deepEqual(
+    layout.document,
+    layout.viewport,
+    `${kind}: no outer scroll`,
+  );
+  assert.equal(layout.hudBoardOverlap, 0, `${kind}: HUD stays outside board`);
+  assert.equal(layout.noticeHudOverlap, 0, `${kind}: result stays outside HUD`);
+  assert.deepEqual(
+    layout.noticeControlOverlaps,
+    [],
+    `${kind}: notice leaves controls readable`,
+  );
+  assert.deepEqual(
+    layout.outsideControls,
+    [],
+    `${kind}: all outer controls fit`,
+  );
+  assert.equal(layout.portraits, 4, `${kind}: four portraits remain visible`);
+  assert.ok(layout.board.height > 100 && layout.board.width > 100);
+}
 page.on('pageerror', (error) => errors.push(error.message));
 try {
-  await page.goto('http://127.0.0.1:5196/?qa&fast&seed=1');
+  await page.goto(
+    `${process.env.SPECIAL_ORIGIN ?? 'http://127.0.0.1:5196'}/?qa&fast&seed=1`,
+  );
   await page.getByRole('button', { name: /NEW GAME/ }).click();
   await page.getByRole('button', { name: '꼬부기 선택', exact: true }).click();
   await page.getByRole('button', { name: /다음.*맵 선택/ }).click();
   await page.getByRole('button', { name: /게임 시작/ }).click();
   await page.locator('.phaser-board canvas').waitFor();
+  await page.waitForFunction(
+    () => document.querySelector('.phaser-board')?.dataset.locked === 'false',
+  );
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 720 });
+    await inspectLayout('normal');
+    await page.screenshot({ path: `${dir}/normal-${width}.png` });
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.evaluate(() => {
     window.__resultEvidence = [];
     new MutationObserver(() => {
@@ -95,8 +195,9 @@ try {
       for (const width of [1280, 390]) {
         await page.setViewportSize({
           width,
-          height: width === 390 ? 844 : 900,
+          height: width === 390 ? 844 : 720,
         });
+        await inspectLayout(kind);
         await page.screenshot({ path: `${dir}/${kind}-${width}.png` });
         if (width === 390 && kind !== 'failed') {
           await page
@@ -118,7 +219,7 @@ try {
           'notice fits viewport',
         );
       }
-      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.setViewportSize({ width: 1280, height: 720 });
       console.log('CAPTURE', kind, snap.turn, text);
     }
     const ropeReceipt = receipts.find((r) => r.action === 'use-escape-rope');
@@ -170,6 +271,8 @@ try {
           .locator('.pm-flight-card')
           .filter({ has: page.locator('strong', { hasText: tile.nameKo }) });
         if ((await destination.count()) && (await destination.isEnabled())) {
+          if (flights === 0)
+            await page.emulateMedia({ reducedMotion: 'no-preference' });
           const price = await destination
             .locator('.pm-flight-price')
             .innerText();
@@ -201,6 +304,48 @@ try {
             cashBefore: snap.cash,
             cashAfter: after.cash,
           });
+          if (flights === 0) {
+            await page
+              .locator('.pm-event-fly .pm-legendary-sprite[data-state="ready"]')
+              .waitFor();
+            await page.screenshot({ path: `${dir}/actual-flight-sprite.png` });
+            const trial = page.locator(
+              '.pm-event-trial-intro .pm-legendary-sprite[data-state="ready"]',
+            );
+            await trial.waitFor();
+            for (const width of [1280, 390]) {
+              const height = width === 390 ? 844 : 720;
+              await page.setViewportSize({ width, height });
+              const bounds = await trial.boundingBox();
+              assert.ok(
+                bounds.x >= 0 &&
+                  bounds.y >= 0 &&
+                  bounds.x + bounds.width <= width &&
+                  bounds.y + bounds.height <= height,
+              );
+              assert.equal(
+                await page
+                  .locator(
+                    '.pm-event-trial-intro .pm-event-wing, .pm-event-trial-intro .pm-event-feathers',
+                  )
+                  .count(),
+                0,
+              );
+              trialSprites.push({
+                width,
+                height,
+                bounds,
+                authoritativeTrial: 'ho-oh',
+                loaded: true,
+              });
+              await page.screenshot({
+                path: `${dir}/actual-trial-sprite-${width}.png`,
+              });
+            }
+            await page.locator('.pm-event-trial-intro button').click();
+            await page.emulateMedia({ reducedMotion: 'reduce' });
+            await page.setViewportSize({ width: 1280, height: 720 });
+          }
           flights++;
         }
       } else if (candidate) {
@@ -252,7 +397,15 @@ try {
   await fs.writeFile(
     `${dir}/report.json`,
     JSON.stringify(
-      { errors, captures: [...captures], duplicateChecks, receipts, evidence },
+      {
+        errors,
+        captures: [...captures],
+        duplicateChecks,
+        receipts,
+        evidence,
+        layouts,
+        trialSprites,
+      },
       null,
       2,
     ),
