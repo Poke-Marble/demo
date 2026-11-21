@@ -1,0 +1,30 @@
+.pm-result-notice {
+  position: fixed;
+  z-index: 90;
+  inset: 16px 16px auto auto;
+  margin: 0;
+  width: min(440px, calc(100vw - 32px));
+  box-sizing: border-box;
+  max-height: 35dvh;
+  overflow: auto;
+  padding: 10px 14px;
+  border: 2px solid #f7d77d;
+  border-radius: 10px;
+  background: #182638;
+  color: #fff7df;
+  box-shadow: 0 4px 16px #0006;
+  font:
+    14px/1.55 system-ui,
+    sans-serif;
+  pointer-events: none;
+}
+.pm-result-notice[hidden] {
+  display: none;
+}
+.pm-result-notice p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.pm-result-notice p + p {
+  margin-top: 6px;
+}

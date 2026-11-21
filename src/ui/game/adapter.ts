@@ -48,6 +48,8 @@ export interface GameView {
   actions: readonly UIChoice[];
   prompt?: GamePrompt;
   notice?: string;
+  /** Display metadata projected from the integration's authoritative state. */
+  hudMeta?: import('./hud/model').DisplayMeta;
   flightSelection?: FlightSelection;
   /** Extra asset notices supplied by integration; preserve explicit inline terms. */
   credits?: readonly UICredit[];
@@ -67,6 +69,10 @@ export interface UIUpdate {
   id?: string;
   view: GameView;
   events: readonly GameEvent[];
+  /** Core legendary outcomes, kept separate from the base board event vocabulary. */
+  specialEvents?: readonly import('../../game/legendary').LegendaryEvent[];
+  /** Committed outcomes only; stable IDs suppress repeated presentation. */
+  results?: readonly { id: string; text: string }[];
   /** Authoritative intermediate positions, including destination. No UI dice math. */
   movement?: { playerId: GameState['activePlayerId']; path: readonly TileId[] };
   /** Ordered, authoritative requests. No rules are resolved by presentation. */

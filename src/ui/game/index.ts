@@ -1,4 +1,5 @@
 import { createAbilityPresenter } from './abilities/presenter';
+import { mountResultNotice } from './result-notice';
 import { createConstructionPresenter } from './construction-effects/presenter';
 import { createConstructionGate } from './construction-effects/model';
 import { createGameplayFeedback } from './feedback/controller';
@@ -82,6 +83,7 @@ export function mountGameUI(
     }
   });
   root.append(host);
+  const resultNotice = mountResultNotice(root);
   const feedback = createGameplayFeedback(root, options.sfx);
   const abilityWaiters = new Map<string, () => void>();
   const ability = createAbilityPresenter(root, {
@@ -978,6 +980,7 @@ export function mountGameUI(
     feedbackLocked = pendingFeedback > 0;
     host.inert = effectsLocked || feedbackLocked;
     render();
+    resultNotice.show(update.results);
   }
   const completedPresentations = new WeakSet<() => void>();
   const hasConstruction = (u: UIUpdate) =>
@@ -1021,6 +1024,7 @@ export function mountGameUI(
       animating = true;
     }
     if (u.view.state.phase === 'setup') {
+      resultNotice.reset();
       cancelAbility();
       constructionGate.reset();
       feedbackGate.reset();
@@ -1086,6 +1090,7 @@ export function mountGameUI(
     destroy() {
       if (disposed) return;
       disposed = true;
+      resultNotice.destroy();
       ability.destroy();
       construction.destroy();
       constructionGate.reset();

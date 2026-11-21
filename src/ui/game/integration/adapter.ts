@@ -1,4 +1,5 @@
 import { settleAbilities } from './settlement.ts';
+import { specialHudMeta, specialFeedback } from './special-feedback.ts';
 import { kantoJohtoMap } from '../../../data/maps/kanto-johto.ts';
 import { createGame } from '../../../game/core/index.ts';
 import {
@@ -144,12 +145,17 @@ export function createIntegratedPreview(
         description += ` 잠금: ${[...new Set(reasons)].map((r) => reasonLabels[r] ?? r).join(', ') || '없음'}`;
       }
     }
+    const hudMeta = specialHudMeta(state);
+    const trial = state.legendary?.players[state.activePlayerId]?.trial;
+    if (trial)
+      description = `${hudMeta[state.activePlayerId]?.trialDetails} · 탈출로프 ${state.legendary!.players[state.activePlayerId]!.ropes}개`;
     const flights = set.actions.filter((a) => a.intent.type === 'fly');
     return {
       state,
       map: presentationMap,
       mapName: '관동·성도 여행',
       participants,
+      hudMeta,
       computer: { connected: true, status: '표준 AI · 실제 경제 견적 판단 중' },
       actions: choosing
         ? []
@@ -175,7 +181,11 @@ export function createIntegratedPreview(
                   ? ('liquidate' as const)
                   : ('purchase' as const),
               title:
-                set.phase === 'liquidating' ? '채무 정산' : '이번 방문 선택',
+                set.phase === 'liquidating'
+                  ? '채무 정산'
+                  : trial
+                    ? '전설시험'
+                    : '이번 방문 선택',
               description,
               choices,
             },
@@ -362,6 +372,7 @@ export function createIntegratedPreview(
         : '';
     publish({
       events,
+      ...specialFeedback(before, result),
       ...(movement ? { movement } : {}),
       abilityActivations: activations,
       effects: result.presentations.map((e, i) => ({
