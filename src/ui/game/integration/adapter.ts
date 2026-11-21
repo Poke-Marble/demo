@@ -1,9 +1,11 @@
+import { normalizeRulesPreset } from '../../../game/rulesets.ts';
 import { settleAbilities } from './settlement.ts';
 import { specialHudMeta, specialFeedback } from './special-feedback.ts';
 import { kantoJohtoMap } from '../../../data/maps/kanto-johto.ts';
 import { createGame } from '../../../game/core/index.ts';
 import {
   createEconomyContext,
+  economyProfileForPreset,
   initializeEconomy,
   dispatchEconomy,
   getLegalActions,
@@ -60,18 +62,15 @@ const labels: Partial<Record<EconomyIntent['type'], string>> = {
   'use-escape-rope': '탈출로프 사용',
   fly: '공중날기',
 };
-const reasonLabels: Readonly<Record<string, string>> = {
-  'stage-locked': '개인 바퀴 해금 필요',
-  'final-revisit-required': '센터 완성 후 재방문 필요',
-  'already-built': '이미 완성한 단계',
-  'insufficient-funds': '잔액 부족',
-  'not-owner': '다른 플레이어 소유',
-};
 /** One authority for human and computer commands. No fixture state mutation. */
 export function createIntegratedPreview(
   options: { computerDelayMs?: number; seed?: number } = {},
 ) {
-  const context = createEconomyContext(kantoJohtoMap);
+  let rulesPreset = normalizeRulesPreset();
+  let context = createEconomyContext(
+    kantoJohtoMap,
+    economyProfileForPreset(rulesPreset),
+  );
   const map = context.map;
   let participants = createInitialRoster('pokemon:0001');
   let session = 0,
@@ -81,6 +80,7 @@ export function createIntegratedPreview(
       createGame(map, participants, {
         seed: options.seed ?? 42,
         legendary: {},
+        ...{ rulesPreset },
       }),
       context,
       `game:${session}`,
@@ -130,19 +130,41 @@ export function createIntegratedPreview(
     if (set.phase === 'choosing-property' && state.economy.landing) {
       const tileId = state.economy.landing.tileId;
       if (context.properties[tileId]?.kind === 'city') {
-        const reasons = ([0, 1, 2, 3] as const)
-          .map((stage) =>
-            quoteConstruction(
-              state,
-              context,
-              state.activePlayerId,
-              tileId,
-              stage,
-            ),
+        const laps =
+          state.economy.completedLapsByPlayerId[state.activePlayerId]!;
+        const locked = ([0, 1, 2, 3] as const).flatMap((stage) => {
+          const quote = quoteConstruction(
+            state,
+            context,
+            state.activePlayerId,
+            tileId,
+            stage,
+          );
+          const conditions = quote.reasons.filter((reason) =>
+            ['stage-locked', 'final-revisit-required'].includes(reason),
+          );
+          if (
+            !conditions.length ||
+            quote.reasons.includes('not-owner') ||
+            quote.reasons.includes('already-built')
           )
-          .filter((q) => !q.eligible)
-          .flatMap((q) => q.reasons);
-        description += ` 잠금: ${[...new Set(reasons)].map((r) => reasonLabels[r] ?? r).join(', ') || '없음'}`;
+            return [];
+          const name =
+            stage === 3
+              ? (kantoJohtoMap.tiles.find((tile) => tile.id === tileId)
+                  ?.finalFacility?.nameKo ?? '최종시설')
+              : ['캠프', '숍', '센터'][stage];
+          return [
+            `${name}: ${conditions
+              .map((reason) =>
+                reason === 'stage-locked'
+                  ? `개인 ${context.profile.unlockLaps[stage]}주회 완료 필요 (현재 ${laps}주회)`
+                  : '센터 건설 후 이 도시에 다시 도착해야 함',
+              )
+              .join(' · ')}`,
+          ];
+        });
+        if (locked.length) description += ` 잠긴 건설 — ${locked.join(' / ')}`;
       }
     }
     const hudMeta = specialHudMeta(state);
@@ -572,9 +594,16 @@ export function createIntegratedPreview(
           3
       )
         throw new Error('플레이어 배정을 확인하세요.');
+      const nextPreset = normalizeRulesPreset(setup.rulesPreset);
+      const nextContext = createEconomyContext(
+        kantoJohtoMap,
+        economyProfileForPreset(nextPreset),
+      );
       executor.cancel();
       cancelPresentation();
       session++;
+      rulesPreset = nextPreset;
+      context = nextContext;
       participants = setup.participants.map((p) => ({ ...p }));
       state = fresh();
       notice = '';

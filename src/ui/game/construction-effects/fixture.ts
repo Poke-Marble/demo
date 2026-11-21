@@ -90,7 +90,7 @@ export function committedFinalFixture() {
       ...base.economy,
       completedLapsByPlayerId: {
         ...base.economy.completedLapsByPlayerId,
-        [playerId]: 1,
+        [playerId]: 2,
       },
       visitOrdinalByPlayerId: {
         ...base.economy.visitOrdinalByPlayerId,

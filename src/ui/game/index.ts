@@ -1,3 +1,5 @@
+import { createRulesPresetSelector } from './rules-preset';
+import type { RulesPreset } from '../../game/rulesets';
 import { createAbilityPresenter } from './abilities/presenter';
 import { mountResultNotice } from './result-notice';
 import { createConstructionPresenter } from './construction-effects/presenter';
@@ -146,6 +148,7 @@ export function mountGameUI(
     dice = diceLabel(null),
     errorMessage = '';
   let setupScreen: 'title' | 'starter' | 'map' = 'title';
+  let selectedRulesPreset: RulesPreset = 'standard';
   let selectedPartner: PokemonId = partners[0]!.id;
   let computerRunKey = '';
   let computerAbort: AbortController | null = null;
@@ -485,12 +488,19 @@ export function mountGameUI(
             ' · COMPUTER 3',
         ),
       );
+      content.append(
+        createRulesPresetSelector(selectedRulesPreset, (preset) => {
+          selectedRulesPreset = preset;
+          render();
+        }),
+      );
       const start = button(
         '게임 시작',
         () => {
           void invoke(() =>
             adapter.start({
               mapId: view.map.id,
+              rulesPreset: selectedRulesPreset,
               participants: createInitialRoster(selectedPartner),
             }),
           );
