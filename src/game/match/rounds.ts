@@ -1,14 +1,14 @@
 import type { GameState, MatchState } from '../contracts.ts';
+import { rulesPresets, normalizeRulesPreset } from '../rulesets.ts';
 
 export function createMatch(
   rulesPreset: 'standard' | 'quick' = 'standard',
   playerIds: readonly GameState['activePlayerId'][] = [],
 ): MatchState {
-  if (rulesPreset !== 'standard' && rulesPreset !== 'quick')
-    throw new RangeError('Unknown match preset');
+  normalizeRulesPreset(rulesPreset);
   return {
     rulesPreset,
-    roundLimit: rulesPreset === 'quick' ? 20 : 30,
+    roundLimit: rulesPresets[rulesPreset].roundLimit,
     completedRounds: 0,
     completedBasicTurnsByPlayerId: Object.fromEntries(
       playerIds.map((id) => [id, 0]),
@@ -22,11 +22,12 @@ export function validMatch(state: GameState): boolean {
   return (
     !m ||
     ((m.rulesPreset === 'standard' || m.rulesPreset === 'quick') &&
-      m.roundLimit === (m.rulesPreset === 'quick' ? 20 : 30) &&
+      m.roundLimit === rulesPresets[m.rulesPreset].roundLimit &&
       Number.isSafeInteger(m.completedRounds) &&
       m.completedRounds >= 0 &&
       m.completedRounds <= m.roundLimit &&
-    !!m.completedBasicTurnsByPlayerId && Object.keys(m.completedBasicTurnsByPlayerId).length ===
+      !!m.completedBasicTurnsByPlayerId &&
+      Object.keys(m.completedBasicTurnsByPlayerId).length ===
         state.players.length &&
       state.players.every(
         (p) =>

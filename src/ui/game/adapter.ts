@@ -40,6 +40,7 @@ export interface GamePrompt {
   dismissible?: boolean;
 }
 export interface GameView {
+  matchProgress?: import('../../game/match/index').MatchProgress;
   state: GameState;
   map: MapDefinition;
   mapName: string;
