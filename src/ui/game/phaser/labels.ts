@@ -1,5 +1,5 @@
 ﻿import type Phaser from 'phaser';
-import { layoutLabels } from './labels-layout';
+import { layoutLabels, type LabelObstacle } from './labels-layout';
 import './labels.css';
 
 interface Label {
@@ -103,6 +103,35 @@ export function createMapLabels(
       const bounds = canvas.getBoundingClientRect();
       const parent = surface.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
+      // Protect visible model and pawn silhouettes, including moving sprites.
+      // Bounds remain world coordinates until projected by the existing camera.
+      const obstacles: LabelObstacle[] = [];
+      for (const child of scene.children.list) {
+        const image = child as Phaser.GameObjects.Image;
+        if (
+          !image.visible ||
+          !image.texture ||
+          !(image.texture.key.startsWith('model:') || child.type === 'Sprite')
+        )
+          continue;
+        const b = image.getBounds();
+        const a = camera.matrixCombined.transformPoint(b.left, b.top);
+        const z = camera.matrixCombined.transformPoint(b.right, b.bottom);
+        obstacles.push({
+          left:
+            (a.x * bounds.width) / scene.scale.width +
+            bounds.left -
+            parent.left -
+            2,
+          top:
+            (a.y * bounds.height) / scene.scale.height +
+            bounds.top -
+            parent.top -
+            2,
+          width: ((z.x - a.x) * bounds.width) / scene.scale.width + 4,
+          height: ((z.y - a.y) * bounds.height) / scene.scale.height + 4,
+        });
+      }
       const next = [
         camera.scrollX,
         camera.scrollY,
@@ -114,6 +143,7 @@ export function createMapLabels(
         bounds.height,
         dpr,
         locked,
+        ...obstacles.flatMap((b) => [b.left, b.top, b.width, b.height]),
         document.activeElement?.getAttribute('data-tile-id'),
       ].join(':');
       if (next === signature || bounds.width <= 0 || bounds.height <= 0) return;
@@ -145,8 +175,8 @@ export function createMapLabels(
           y = p.y * sy + oy;
         const hidden = x < 0 || x > parent.width || y < 0 || y > parent.height;
         button.hidden = !compact && hidden;
-        line.style.display =
-          hidden || (compact && data.id !== activeId) ? 'none' : '';
+        button.dataset.active = String(data.id === activeId);
+        line.style.display = hidden || data.id !== activeId ? 'none' : '';
         button.setAttribute('aria-disabled', String(locked));
         if (compact && data.id === activeId && !hidden) {
           focused.hidden = false;
@@ -161,9 +191,25 @@ export function createMapLabels(
             y,
             width: target.offsetWidth,
             height: target.offsetHeight,
+            // The ring's upper two sides sit above models; lower sides sit
+            // below. Prefer the outside edge rather than the board interior.
+            preferredX:
+              x + (data.order < 16 ? -1 : 1) * (target.offsetWidth / 2 + 8),
+            preferredY:
+              y +
+              (data.order >= 8 && data.order < 24 ? -80 * sy * camera.zoom : 4),
           });
       }
-      for (const box of layoutLabels(visible, parent.width, parent.height)) {
+      // Reserve the selected name first. All labels retain browser-sized text.
+      visible.sort(
+        (a, b) => Number(b.id === activeId) - Number(a.id === activeId),
+      );
+      for (const box of layoutLabels(
+        visible,
+        parent.width,
+        parent.height,
+        obstacles,
+      )) {
         const entry = entries.get(box.id)!;
         const button = compact ? focused : entry.button;
         const line = entry.line;

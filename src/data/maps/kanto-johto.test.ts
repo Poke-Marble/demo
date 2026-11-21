@@ -39,10 +39,47 @@ test('32 slots, 8 groups, 19 settlements and 4 named landmarks', () => {
     board.tiles
       .filter((tile) => tile.kind === 'landmark')
       .map((tile) => tile.nameKo)
-      .join(',') === '무인발전소,쌍둥이섬,소용돌이섬,방울탑',
+      .join(',') === '무인발전소,쌍둥이섬,분노의호수,용의굴',
     'Landmark candidates',
   );
 });
+test('trial identities are unique while legacy landmark IDs and economics remain stable', () => {
+  for (const name of ['방울탑', '소용돌이섬']) {
+    const matches = board.tiles.filter((tile) => tile.nameKo.includes(name));
+    check(
+      matches.length === 1 && matches[0]!.kind === 'special',
+      `${name} is trial-only`,
+    );
+  }
+  for (const [slug, name, source] of [
+    ['whirl', '분노의호수', '분노의 호수'],
+    ['bell-tower', '용의굴', '용의 굴'],
+  ]) {
+    const tile = board.tiles.find((tile) => tile.id === `tile:kj:${slug}`)!;
+    check(
+      tile.nameKo === name && tile.kind === 'landmark',
+      'Stable landmark identity',
+    );
+    check(
+      decodeURIComponent(tile.sourceUrl).endsWith(source!.replaceAll(' ', '_')),
+      'Updated place source',
+    );
+    check(
+      JSON.stringify(tile.economy) ===
+        JSON.stringify({
+          purchasePrice: 250,
+          upgradeCosts: [],
+          tollByLevel: [50],
+        }),
+      'Unchanged landmark economy',
+    );
+  }
+  check(
+    board.assumptions.landmarksToMonopolize === 4,
+    'Unchanged victory condition',
+  );
+});
+
 test('all 56 triples of groups form independent attainable ownership sets', () => {
   const { groups } = validateMap(board).monopolyTargets;
   let combinations = 0;

@@ -227,10 +227,11 @@ export const kantoJohtoMap: BoardDefinition = {
     landmark('seafoam', '쌍둥이섬', 'kanto', 'west'),
     special('ho-oh-trial', '방울탑 · 칠색조 시험', 'north'),
     ...cities.slice(4, 6).flat(),
-    landmark('whirl', '소용돌이섬', 'johto', 'north'),
+    // Legacy IDs preserve saved holdings and the four-landmark victory target.
+    landmark('whirl', '분노의호수', 'johto', 'north', '분노의 호수'),
     special('fly', '공중날기', 'east'),
     ...cities.slice(6, 8).flat(),
-    landmark('bell-tower', '방울탑', 'johto', 'east'),
+    landmark('bell-tower', '용의굴', 'johto', 'east', '용의 굴'),
   ],
   cityGroups: groups.map((group) => ({
     id: groupId(group.slug),
