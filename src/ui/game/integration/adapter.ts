@@ -15,7 +15,7 @@ import {
   type EconomyCommand,
   type LegalActionSet,
 } from '../../../game/economy/index.ts';
-import { finalizeMatch } from '../../../game/match/index.ts';
+import { finalizeMatch, matchProgress } from '../../../game/match/index.ts';
 import {
   emptyLedger,
   type AbilityLedger,
@@ -154,6 +154,7 @@ export function createIntegratedPreview(
     const flights = set.actions.filter((a) => a.intent.type === 'fly');
     return {
       state,
+      matchProgress: matchProgress(state, context)!,
       map: presentationMap,
       mapName: '관동·성도 여행',
       participants,
