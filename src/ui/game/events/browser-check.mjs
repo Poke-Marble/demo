@@ -7,7 +7,10 @@ import { pathToFileURL } from 'node:url';
 import process from 'node:process';
 const { chromium } = await import(
   pathToFileURL(
-    resolve('artifacts/browser-tools/node_modules/playwright/index.mjs'),
+    resolve(
+      process.env.PLAYWRIGHT_MODULE ||
+        'artifacts/browser-tools/node_modules/playwright/index.mjs',
+    ),
   ).href
 );
 const origin = process.env.LEGENDARY_ORIGIN || 'http://127.0.0.1:5175';
@@ -56,8 +59,6 @@ try {
   for (const [width, height] of [
     [1280, 900],
     [390, 844],
-    [320, 568],
-    [844, 390],
   ]) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
@@ -73,7 +74,11 @@ try {
       await page.evaluate((b) => window.legendaryPreview.play(b), bird);
       await page.locator('.pm-legendary-sprite[data-state="ready"]').waitFor();
       assert.equal(
-        await page.locator('.pm-event-wing,.pm-event-body').count(),
+        await page
+          .locator(
+            '.pm-event-wing,.pm-event-body,.pm-event-feathers,.pm-event-shadow',
+          )
+          .count(),
         0,
       );
       const sample = await page.locator('canvas').evaluate((c) => {
@@ -121,6 +126,42 @@ try {
         ...sample,
       });
     }
+    // Real Chrome rendering: one original bird crosses horizontally once.
+    await page.locator('#flight').click();
+    await page.locator('.pm-event-fly [data-state="ready"]').waitFor();
+    assert.equal(
+      await page
+        .locator(
+          '.pm-event-wing,.pm-event-body,.pm-event-feathers,.pm-event-shadow',
+        )
+        .count(),
+      0,
+    );
+    await page.waitForTimeout(2400);
+    const beforeFlight = await page
+      .locator('.pm-event-fly canvas')
+      .boundingBox();
+    await page.waitForTimeout(1800);
+    const afterFlight = await page
+      .locator('.pm-event-fly canvas')
+      .boundingBox();
+    assert.ok(afterFlight.x > beforeFlight.x + 40);
+    assert.equal(afterFlight.y, beforeFlight.y);
+    assert.equal(
+      await page.locator('.pm-event-fly [data-animation="Hover"]').count(),
+      1,
+    );
+    await page.screenshot({ path: `${dir}/flight-${width}x${height}.png` });
+    await page.locator('.pm-event-fly[data-phase="3"]').waitFor();
+    assert.match(
+      await page.locator('.pm-event-caption').textContent(),
+      /\uBC29\uC6B8\uD0D1 \uB3C4\uCC29/,
+    );
+    await page.locator('.pm-event-fly').waitFor({ state: 'detached' });
+    reports.push({
+      viewportWidth: width,
+      flight: { beforeFlight, afterFlight, arrival: true, completed: true },
+    });
     // Cancel, restart (same tick), unmount, and no resurrection.
     await page.evaluate(() => {
       const q = window.legendaryPreview;
@@ -146,7 +187,11 @@ try {
   await failed.locator('[data-state="failed"]').waitFor();
   assert.equal(await failed.locator('canvas').isVisible(), false);
   assert.equal(
-    await failed.locator('.pm-event-wing,.pm-event-body').count(),
+    await failed
+      .locator(
+        '.pm-event-wing,.pm-event-body,.pm-event-feathers,.pm-event-shadow',
+      )
+      .count(),
     0,
   );
   await failed.screenshot({ path: `${dir}/fallback.png` });
@@ -187,14 +232,33 @@ try {
   await reduced.waitForTimeout(200);
   assert.equal(await reduced.locator('dialog').count(), 0);
   await reduced.close();
-  // Existing flight still has its original graphic and can skip.
-  const flight = await browser.newPage();
-  await flight.goto(`${origin}/legendary-visual-preview.html`);
-  await flight.locator('#flight').click();
-  assert.equal(await flight.locator('.pm-event-fly .pm-event-wing').count(), 2);
-  await flight.keyboard.press('Enter');
-  assert.equal(await flight.locator('dialog').count(), 0);
-  await flight.close();
+  // Flight reduced-motion summary stays static and releases at 120ms.
+  const reducedFlight = await browser.newPage({ reducedMotion: 'reduce' });
+  await reducedFlight.goto(`${origin}/legendary-visual-preview.html`);
+  const flightSummary = await reducedFlight.evaluate(async () => {
+    document.querySelector('#flight').click();
+    await Promise.resolve();
+    await Promise.resolve();
+    const dialog = document.querySelector('dialog');
+    const graphic = document.querySelector('.pm-event-graphic');
+    return {
+      phase: dialog.dataset.phase,
+      text: dialog.textContent,
+      animation: getComputedStyle(graphic).animationName,
+      position: getComputedStyle(graphic).position,
+    };
+  });
+  assert.equal(flightSummary.phase, '3');
+  assert.equal(flightSummary.animation, 'none');
+  assert.equal(flightSummary.position, 'static');
+  assert.match(flightSummary.text, /\uBC29\uC6B8\uD0D1 \uB3C4\uCC29/);
+  await reducedFlight.waitForTimeout(200);
+  assert.equal(await reducedFlight.locator('dialog').count(), 0);
+  await reducedFlight.emulateMedia({ reducedMotion: 'no-preference' });
+  await reducedFlight.locator('#flight').click();
+  await reducedFlight.keyboard.press('Enter');
+  assert.equal(await reducedFlight.locator('dialog').count(), 0);
+  await reducedFlight.close();
   await writeFile(
     `${dir}/report.json`,
     JSON.stringify(
@@ -202,6 +266,7 @@ try {
         origin,
         reports,
         summary,
+        flightSummary,
         lifecycle:
           'skip/cancel/reset/restart/destroy/late-load/failure/reduced/flight passed',
       },

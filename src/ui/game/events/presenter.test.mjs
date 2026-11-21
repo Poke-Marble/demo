@@ -132,9 +132,38 @@ test('presentation phases finish at 2600ms, remove the modal, and retain zero ru
   assert.equal(root.children[0].dataset.phase, '2');
   t.mock.timers.tick(1196);
   assert.equal(root.children[0].dataset.phase, '3');
+  assert.match(
+    root.children[0].children[0].children.at(-1).textContent,
+    /방울탑 도착/,
+  );
   t.mock.timers.tick(624);
   await pending;
   assert.equal(root.children.length, 0);
+  assert.deepEqual(locks, [true, false]);
+});
+
+test('destroy during flight releases the presentation once and cancels pending phases', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { presenter, root, locks } = fixture();
+  let completed = 0;
+  const pending = presenter.enqueue([fly, trial]).then(() => completed++);
+  await tick();
+  const stage = root.children[0].children[0];
+  assert.deepEqual(
+    stage.children.map((c) => c.className),
+    [
+      'pm-event-eyebrow',
+      'pm-event-graphic',
+      'pm-event-title',
+      'pm-event-caption',
+    ],
+  );
+  assert.equal(stage.children[1].children.length, 1);
+  presenter.destroy();
+  await pending;
+  t.mock.timers.tick(10000);
+  assert.equal(root.children.length, 0);
+  assert.equal(completed, 1);
   assert.deepEqual(locks, [true, false]);
 });
 

@@ -32,7 +32,7 @@ export function gameCredits(
         'https://github.com/PMDCollab/SpriteCollab/tree/6735193b9d6f499411171daf8d8b7adf1e2d8883',
       label: '전설·비행 연출',
       attribution:
-        '루기아·칠색조 Idle/Attack/Hover: CHUNSOFT 원작 추출. PMDCollab SpriteCollab revision 6735193b9d6f499411171daf8d8b7adf1e2d8883. 개별 credits: Unspecified; 원작 CC 허가 미확인. 저장소 비상업·출처표시 정책. 픽셀 크롭·확대. CSS 파도·깃털·기존 비행 도형은 자체 작성.',
+        '루기아·칠색조 Idle/Attack/Hover: CHUNSOFT 원작 추출. PMDCollab SpriteCollab revision 6735193b9d6f499411171daf8d8b7adf1e2d8883. 개별 credits: Unspecified; 원작 CC 허가 미확인. 저장소 비상업·출처표시 정책. 픽셀 크롭·정수 배율 확대. 공중날기: 기존 칠색조 Hover 동쪽 행 재사용, 단순 수평 이동. 추가 외부 에셋 없음.',
     },
     ...extra,
     ...portraitCredits,

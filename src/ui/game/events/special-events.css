@@ -1,12 +1,12 @@
+/* Event presentation only: original PMD pixels on a quiet, solid stage. */
 .pm-event,
 .pm-event-picker {
   box-sizing: border-box;
   color: #f5f2df;
   background: #101d30;
   border: 1px solid #a6c6d6;
-  border-radius: 20px;
+  border-radius: 16px;
   font-family: system-ui, sans-serif;
-  box-shadow: 0 28px 100px #0009;
 }
 .pm-event::backdrop,
 .pm-event-picker::backdrop {
@@ -14,7 +14,8 @@
 }
 .pm-event {
   width: min(900px, 94vw);
-  overflow: hidden;
+  max-height: 94dvh;
+  overflow: auto;
   padding: 0;
   text-align: center;
 }
@@ -43,195 +44,123 @@
 }
 .pm-event-stage {
   position: relative;
-  min-height: min(470px, 68vh);
+  min-height: 400px;
+  padding: 12px 20px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: radial-gradient(ellipse at 50% 70%, #2d6c95, #0b1328 76%);
+  background: #101d30;
   cursor: pointer;
 }
-.pm-event-stage::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-radial-gradient(
-    ellipse at 50% 140%,
-    transparent 0 24px,
-    #7cd8ee33 26px 29px,
-    transparent 32px 62px
-  );
-  transform: translateY(20px);
-  transition: transform 1.4s ease-out;
-}
-.pm-event-ho-oh .pm-event-stage {
-  background: radial-gradient(ellipse at 50% 70%, #ad703e, #28162e 80%);
-}
-.pm-event-ho-oh .pm-event-stage::before {
-  background: repeating-conic-gradient(
-    from 12deg at 50% 65%,
-    #ffd98522 0 3deg,
-    transparent 4deg 18deg
-  );
-}
 .pm-event-eyebrow {
-  z-index: 1;
-  font-size: 12px;
-  letter-spacing: 0.22em;
+  font-size: 17px;
   color: #e1d49b;
+  margin: 10px;
 }
 .pm-event-title {
-  z-index: 1;
-  margin: 10px;
-  font-size: clamp(26px, 5vw, 46px);
+  margin: 0;
+  font-size: 28px;
 }
-.pm-event-graphic {
-  position: relative;
-  width: 250px;
-  height: 120px;
-  margin: 16px 0;
-  filter: drop-shadow(0 0 24px #a4e9ffaa);
-  transition:
-    transform 0.7s ease,
-    opacity 0.3s;
-}
-.pm-event-wing {
-  position: absolute;
-  width: 112px;
-  height: 83px;
-  top: 0;
-  background: #d4eff4;
-  clip-path: polygon(0 0, 100% 75%, 85% 100%, 25% 66%, 35% 52%, 15% 35%);
-}
-.pm-event-wing.left {
-  left: 0;
-  transform: rotate(-8deg);
-}
-.pm-event-wing.right {
-  right: 0;
-  transform: scaleX(-1) rotate(-8deg);
-}
-.pm-event-body {
-  position: absolute;
-  width: 40px;
-  height: 108px;
-  left: 106px;
-  top: 26px;
-  background: linear-gradient(90deg, #d4eff4 50%, #6eb4d5 51%);
-  clip-path: polygon(40% 0, 90% 18%, 68% 45%, 90% 100%, 25% 85%, 0 30%);
-}
-.pm-event-ho-oh .pm-event-wing {
-  background: linear-gradient(135deg, #f7d771 25%, #d97c4b 50%, #a64e4e 75%);
-}
-.pm-event-ho-oh .pm-event-body {
-  background: #f6d387;
+.pm-event-caption {
+  font-size: 14px;
+  min-height: 24px;
+  margin: 12px 0 0;
 }
 .pm-event-versus {
-  z-index: 1;
-  display: flex;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) 64px 480px;
+  width: min(100%, 840px);
+  gap: 12px;
   align-items: center;
-  font-size: clamp(16px, 3vw, 24px);
+  font-size: 24px;
 }
 .pm-event-versus strong {
-  font-size: 40px;
-  font-style: italic;
-  color: #ffe18b;
-}
-.pm-event-versus {
-  transition:
-    opacity 0.2s,
-    transform 0.2s;
+  font-size: 32px;
+  color: #e1d49b;
 }
 .pm-event-partner {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pm-event-partner > .pm-sprite {
+  transform: scale(3);
+  margin: 45px 0;
+}
+.pm-preview-partner {
+  display: block;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+.pm-event-opponent {
+  display: flex;
+  flex-direction: column;
   align-items: center;
 }
-.pm-event-trial-intro[data-phase='1'] .pm-event-versus {
-  opacity: 0;
-  transform: scale(0.85);
+.pm-event-graphic {
+  width: 480px;
+  height: 512px;
 }
-.pm-event-trial-intro[data-phase='3']:not(.pm-event-reduced) .pm-event-stage {
-  opacity: 0.35;
+.pm-legendary-sprite {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
 }
-.pm-event-fly .pm-event-versus {
+.pm-legendary-sprite canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+.pm-legendary-sprite [hidden] {
   display: none;
 }
-.pm-event-feathers {
-  display: none;
+.pm-legendary-sprite small {
+  font-size: 12px;
+  color: #c7dbe2;
 }
-.pm-event-ho-oh .pm-event-feathers {
-  display: flex;
-  gap: 90px;
-  position: absolute;
-  inset: 25% 15% auto;
-  pointer-events: none;
-  transform: translateY(-25px) rotate(-10deg);
-  transition: transform 1.8s;
-}
-.pm-event-feathers span {
-  width: 16px;
-  height: 58px;
-  background: linear-gradient(100deg, #fff0, #ffde8b 45%, #a34f48 60%);
-  clip-path: polygon(50% 0, 100% 30%, 65% 85%, 20% 100%, 0 55%);
-}
-.pm-event-feathers span:nth-child(2) {
-  transform: rotate(50deg);
-  margin-top: 60px;
-}
-.pm-event-ho-oh[data-phase='2'] .pm-event-feathers {
-  transform: translateY(40px) rotate(12deg);
-}
-.pm-event-caption {
-  z-index: 1;
-  font-size: 14px;
-  min-height: 24px;
-}
-.pm-event[data-phase='0'] .pm-event-stage {
-  opacity: 0.1;
-}
-.pm-event[data-phase='0'] .pm-event-graphic {
-  transform: scale(0.6);
-  opacity: 0;
-}
-.pm-event[data-phase='2'] .pm-event-stage::before {
-  transform: translateY(-20px);
+/* One east-facing bird crosses once. Timing never dispatches game actions. */
+.pm-event-fly .pm-event-stage {
+  height: min(470px, 62dvh);
 }
 .pm-event-fly .pm-event-graphic {
-  width: 250px;
-  transform: scale(0.6);
+  width: 240px;
+  height: 256px;
+  position: absolute;
+  left: -240px;
+  top: 50%;
+  margin-top: -128px;
+  animation: pm-flight-cross var(--event-duration) linear both;
 }
-.pm-event-fly[data-phase='1'] .pm-event-graphic {
-  transform: translate(-36vw, 30px) scale(0.45);
+.pm-event-fly .pm-event-eyebrow {
+  position: absolute;
+  top: 12px;
 }
-.pm-event-fly[data-phase='2'] .pm-event-graphic {
-  transform: translate(32vw, -70px) scale(0.75);
+.pm-event-fly .pm-event-title {
+  margin-top: auto;
 }
-.pm-event-fly[data-phase='3'] .pm-event-graphic {
-  transform: translate(0, 18px) scale(0.45);
+@keyframes pm-flight-cross {
+  0%,
+  13% {
+    left: -240px;
+  }
+  76%,
+  100% {
+    left: 100%;
+  }
 }
-.pm-event-shadow {
-  display: none;
-  width: 110px;
-  height: 15px;
-  border-radius: 50%;
-  background: #020b1988;
-  filter: blur(4px);
-  transition:
-    transform 0.6s,
-    opacity 0.6s;
+.pm-event-fly.pm-event-reduced .pm-event-graphic {
+  position: static;
+  margin: 0;
 }
-.pm-event-fly .pm-event-shadow {
-  display: block;
-  transform: scale(0.2);
-  opacity: 0.3;
-}
-.pm-event-fly[data-phase='3'] .pm-event-shadow {
-  transform: scale(1);
-  opacity: 1;
+.pm-event-fly.pm-event-reduced .pm-event-title {
+  margin-top: 0;
 }
 .pm-event-picker {
   width: min(640px, 94vw);
@@ -281,171 +210,56 @@
     gap: 12px;
   }
 }
-/* Legendary trials: original sprite cells lead; effects stay behind the cast. */
-.pm-event-trial-intro .pm-event-stage {
-  min-height: 620px;
-  padding: 12px 20px;
-  box-sizing: border-box;
-}
-.pm-event-trial-intro .pm-event-stage::before {
-  opacity: 0.22;
-}
-.pm-event-trial-intro .pm-event-feathers {
-  opacity: 0.25;
-  z-index: 0;
-}
-.pm-event-trial-intro .pm-event-versus {
-  display: grid;
-  grid-template-columns: minmax(130px, 1fr) 64px 480px;
-  width: min(100%, 840px);
-  gap: 12px;
-  opacity: 1;
-  transform: none;
-}
-.pm-event-trial-intro .pm-event-partner {
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  gap: 36px;
-  overflow-wrap: anywhere;
-}
-.pm-event-trial-intro .pm-event-partner > .pm-sprite {
-  transform: scale(3);
-  margin: 45px 0;
-}
-.pm-preview-partner {
-  display: block;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-}
-.pm-event-opponent {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.pm-event-trial-intro .pm-event-graphic {
-  width: 480px;
-  height: 512px;
-  margin: 0;
-  filter: drop-shadow(0 12px 12px #0005);
-  transform: none;
-  opacity: 1;
-}
-.pm-legendary-sprite {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-}
-.pm-legendary-sprite canvas {
-  width: 480px;
-  height: 512px;
-  image-rendering: pixelated;
-}
-.pm-legendary-sprite [hidden] {
-  display: none;
-}
-.pm-legendary-sprite small {
-  font-size: 12px;
-  color: #c7dbe2;
-}
-.pm-event-trial-intro .pm-event-title {
-  font-size: 28px;
-  margin: 0;
-}
-.pm-event-trial-intro .pm-event-eyebrow {
-  font-size: 17px;
-  letter-spacing: 0.12em;
-  margin: 10px;
-}
-.pm-event-trial-intro[data-phase] .pm-event-stage {
-  opacity: 1;
-}
-.pm-event-trial-intro[data-phase] .pm-event-graphic {
-  opacity: 1;
-  transform: none;
-}
-.pm-event-trial-intro .pm-event-caption {
-  margin: 12px 0 0;
-}
+
 @media (max-width: 900px) {
-  .pm-event-trial-intro .pm-event-stage {
-    min-height: 400px;
+  .pm-event-stage {
     padding: 12px 4px;
   }
-  .pm-event-trial-intro .pm-event-versus {
+  .pm-event-versus {
     grid-template-columns: minmax(60px, 1fr) 28px 240px;
     gap: 0;
     font-size: 14px;
   }
-  .pm-event-trial-intro .pm-event-versus strong {
+  .pm-event-versus strong {
     font-size: 24px;
   }
-  .pm-event-trial-intro .pm-event-graphic,
-  .pm-legendary-sprite canvas {
+  .pm-event-trial-intro .pm-event-graphic {
     width: 240px;
     height: 256px;
   }
-  .pm-event-trial-intro .pm-event-partner > .pm-sprite {
+  .pm-event-partner > .pm-sprite {
     transform: scale(2);
     margin: 24px 0;
   }
   .pm-preview-partner {
     zoom: 0.66666667;
   }
-  .pm-event-trial-intro .pm-event-title {
+  .pm-event-title {
     font-size: 24px;
   }
 }
 @media (max-width: 360px), (max-height: 520px) {
-  .pm-event-trial-intro .pm-event-stage {
-    min-height: 260px;
+  .pm-event-stage {
+    min-height: 240px;
     padding: 6px;
   }
-  .pm-event-trial-intro .pm-event-versus {
+  .pm-event-versus {
     grid-template-columns: minmax(60px, 1fr) 30px 120px;
   }
-  .pm-event-trial-intro .pm-event-graphic,
-  .pm-legendary-sprite canvas {
+  .pm-event-trial-intro .pm-event-graphic {
     width: 120px;
     height: 128px;
   }
-  .pm-event-trial-intro .pm-event-eyebrow {
+  .pm-event-eyebrow {
     margin: 4px;
   }
+  .pm-event-fly .pm-event-stage {
+    min-height: 220px;
+  }
 }
-@media (min-width: 601px) and (max-height: 520px) {
-  .pm-event-trial-intro .pm-event-stage {
-    min-height: 280px;
-  }
-  .pm-event-trial-intro .pm-event-versus {
-    grid-template-columns: minmax(100px, 1fr) 42px 240px;
-  }
-  .pm-event-trial-intro .pm-event-graphic,
-  .pm-legendary-sprite canvas {
-    width: 240px;
-    height: 256px;
-  }
-  .pm-event-trial-intro .pm-event-eyebrow {
-    position: absolute;
-    top: 4px;
-    left: 12px;
-    font-size: 14px;
-  }
-  .pm-event-trial-intro .pm-event-caption {
-    position: absolute;
-    bottom: 0;
-    left: 12px;
-    font-size: 12px;
-  }
-  .pm-event-trial-intro .pm-event-partner {
-    gap: 12px;
-  }
-  .pm-event-trial-intro .pm-event-partner > .pm-sprite {
-    transform: scale(2);
-    margin: 20px 0;
-  }
-  .pm-preview-partner {
-    zoom: 0.66666667;
+@media (prefers-reduced-motion: reduce) {
+  .pm-event-fly .pm-event-graphic {
+    position: static;
+    margin: 0;
   }
 }

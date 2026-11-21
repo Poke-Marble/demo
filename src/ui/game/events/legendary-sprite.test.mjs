@@ -130,6 +130,33 @@ test('reduced motion decodes Idle once without requesting animation frames', asy
   sprite.dispose();
 });
 
+test('flight reuses the east-facing Hover cells through arrival and disposes its RAF', async () => {
+  const f = fixture(),
+    sprite = createLegendarySprite('ho-oh', false, true);
+  f.images.forEach((i) => i.onload());
+  await flush();
+  f.render();
+  assert.equal(sprite.element.dataset.animation, 'Hover');
+  assert.deepEqual(f.draws.at(-1).slice(2, 5), [2 * 112, 72, 112]);
+  sprite.phase(2);
+  sprite.phase(3);
+  f.render();
+  assert.equal(sprite.element.dataset.animation, 'Hover');
+  sprite.dispose();
+  assert.equal(f.callbacks.size, 0);
+});
+
+test('reduced flight draws a single east-facing Hover frame without motion', async () => {
+  const f = fixture(),
+    sprite = createLegendarySprite('ho-oh', true, true);
+  f.images[1].onload();
+  await flush();
+  assert.equal(sprite.element.dataset.animation, 'Hover');
+  assert.deepEqual(f.draws.at(-1).slice(1, 5), [0, 2 * 112, 72, 112]);
+  assert.equal(f.callbacks.size, 0);
+  sprite.dispose();
+});
+
 test('slow images reach explicit fallback at 1800ms and disposal clears the remaining work', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const f = fixture(),

@@ -16,8 +16,16 @@ revision, 파일별 원본 URL·SHA256·프레임 치수는 `assets/manifest.jso
 실패 대체는 작은 “이미지 없음 · 이름으로 표시” 문구이며 캐릭터 이름을 함께 유지한다.
 
 파트너는 기존 `findSprite`/`partnerVisual` 에셋과 크레딧을 따른다. 독립 프리뷰는 기존 피카츄 Idle을 참조한다.
-파도·깃털·빛과 기존 비행 실루엣은 자체 CSS다. 전설 시험에서는 CSS 새 몸통·날개를 생성하지 않는다.
-비행에는 허가 범위가 새롭게 확인된 팬 제작 새가 없으므로 기존 도형을 유지했다.
+파도·깃털·광선·CSS 새 몸통과 날개는 제거했다. 시험은 단색 무대와 기존 큰 스프라이트만 사용한다.
+공중날기는 기존 칠색조 Hover의 동쪽 행(0부터 2번)을 재사용해 화면을 수평으로 한 번 가로지른다.
+이는 표시 전용 새이며 칠색조 가호나 소유 여부를 뜻하지 않는다.
+
+비행 적합성 조사: 고정 revision의 [0250 AnimData.xml](https://raw.githubusercontent.com/PMDCollab/SpriteCollab/6735193b9d6f499411171daf8d8b7adf1e2d8883/sprite/0250/AnimData.xml)을 확인했다.
+해당 기본형에는 Fly라는 이름의 동작이 없고 Hover가 있다. 기존 Hover PNG의 8방향·20프레임을 직접 열어
+옆을 향한 날갯짓을 확인했으므로 새 다운로드 없이 이 동작을 선택했다. 셀은 72×112, 시트는 1440×896이며
+원본 duration 목록을 60Hz로 재생한다. 시험은 서쪽 행과 Hover/Attack/Idle 전환을 유지한다.
+감소 모션에서는 수평 이동·RAF 없이 Hover 첫 셀과 도착 요약을 120ms 표시한다.
+출처·개별 CHUNSOFT 크레딧·Unspecified 조건·원작 CC 허가 미확인 상태는 위와 동일하다.
 
 재수집: `python src/ui/game/events/collect-assets.py`
 
