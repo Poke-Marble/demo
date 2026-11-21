@@ -44,12 +44,16 @@ test('32 real tiles, legal quotes, presentation ack blocks finance and restart r
   update.presentationComplete();
   await tick();
   humanStep(p);
+  if (p.getState().core.pendingDice) {
+    assert.match(update.view.activeSkill.statusLabel, /공개된 눈/);
+    update.presentationComplete();
+    await tick();
+    humanStep(p);
+  }
   assert.ok(update.events.some((e) => e.type === 'dice-rolled'));
   assert.equal(
     update.movement.path.length,
-    update.events
-      .find((e) => e.type === 'dice-rolled')
-      .values.reduce((a, b) => a + b, 0),
+    update.events.find((e) => e.type === 'dice-rolled').distance,
   );
   const pending = update;
   const stale = p.adapter.getView().prompt;
@@ -115,7 +119,12 @@ for (const seed of [1, 42, 2026])
       assert.equal(computers.size, 3);
       assert.ok(commands > 100);
       assert.ok(changed);
-      assert.ok(abilities);
+      assert.equal(abilities, false);
+      assert.ok(
+        p
+          .getState()
+          .players.some((n) => p.getState().skills.players[n.id].pp < 3),
+      );
       console.log(
         JSON.stringify({
           seed,
