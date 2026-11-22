@@ -1,0 +1,89 @@
+/* Scoped to selection mode: the normal camera, labels and shell keep their layout. */
+.phaser-board[data-flight-selection='true'] {
+  position: fixed;
+  inset: 12px;
+  z-index: 70;
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: #17383e;
+  border: 1px solid #a8cbbb;
+  border-radius: 16px;
+  gap: 8px;
+  box-shadow: 0 0 0 24px #102b36dd;
+}
+.phaser-board[data-flight-selection='true'] .phaser-board-surface {
+  flex: 1;
+  min-height: 0;
+  aspect-ratio: auto;
+  touch-action: none;
+}
+.phaser-board[data-flight-selection='true'] .phaser-map-label {
+  pointer-events: none;
+}
+.pm-board-flight {
+  color: #eaf5e7;
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+.pm-board-flight[hidden] {
+  display: none;
+}
+.pm-board-flight p {
+  margin: 5px 0;
+}
+.pm-board-flight > .pm-flight-card {
+  position: absolute;
+  right: 24px;
+  top: 64px;
+  width: min(260px, calc(100% - 48px));
+  max-height: 160px;
+  overflow: auto;
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  text-align: left;
+  pointer-events: none;
+  font-size: 12px;
+  box-shadow: 0 3px 12px #19353844;
+}
+.pm-board-flight > .pm-flight-card[hidden] {
+  display: none;
+}
+.pm-board-flight-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.pm-board-flight-actions button {
+  flex: 1;
+  min-height: 42px;
+}
+.pm-board-flight-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 130px;
+  overflow: auto;
+  gap: 4px;
+}
+.pm-board-flight-list button[aria-pressed='true'] {
+  outline: 2px solid #fff286;
+}
+@media (max-width: 600px) {
+  .phaser-board[data-flight-selection='true'] {
+    inset: 6px;
+    padding: 8px;
+  }
+  .pm-board-flight > .pm-flight-card {
+    top: 54px;
+    right: 16px;
+    max-height: 130px;
+    font-size: 11px;
+  }
+}
+
+.pm-board-flight .pm-flight-price {
+  color: #33584b;
+}
