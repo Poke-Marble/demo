@@ -1,4 +1,4 @@
-﻿/* Product shell: allocate viewport space before sizing the board. Component
+/* Product shell: allocate viewport space before sizing the board. Component
    internals, world coordinates, sprite scale and presentation gates stay owned
    by their respective renderers. Long navigation lives in native dialogs. */
 .pm-game.pm-shell {
@@ -198,6 +198,45 @@
   max-height: calc(100dvh - 24px);
   padding: 20px;
   overscroll-behavior: contain;
+}
+.pm-shell .pm-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-wrap: anywhere;
+}
+.pm-shell .pm-dialog > h2,
+.pm-shell .pm-dialog-footer {
+  flex: 0 0 auto;
+}
+.pm-shell .pm-dialog-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 2px 4px;
+}
+.pm-shell .pm-dialog-footer button {
+  margin-top: 8px;
+}
+.pm-holdings-details input {
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid #7c9d9c;
+  border-radius: 8px;
+  font: inherit;
+}
+.pm-holdings-list {
+  padding-left: 24px;
+  margin: 0;
+}
+.pm-holdings-list li {
+  padding-block: 8px;
+  border-bottom: 1px solid #c6d6ca;
+}
+.pm-holdings-list [hidden] {
+  display: none;
 }
 .pm-dialog .phaser-board-tiles {
   grid-template-columns: repeat(2, minmax(0, 1fr));
