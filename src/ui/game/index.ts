@@ -36,6 +36,8 @@ import './theme/theme.css';
 import './integration/presentation.css';
 import './fullscreen.css';
 import { diceLabel } from './theme/dice';
+import { createSkillPresenter } from './skills/presenter';
+import { skillForPokemon } from '../../game/skills';
 export type {
   GameUIAdapter,
   GameView,
@@ -89,6 +91,8 @@ export function mountGameUI(
   const resultNotice = mountResultNotice(root);
   const feedback = createGameplayFeedback(root, options.sfx);
   const abilityWaiters = new Map<string, () => void>();
+  const skillWaiters = new Map<string, () => void>();
+  const skillFX = createSkillPresenter(root, (activation) => { skillWaiters.get(activation.id)?.(); skillWaiters.delete(activation.id); });
   const ability = createAbilityPresenter(root, {
     onEnd: (activation) => {
       abilityWaiters.get(activation.id)?.();
@@ -98,12 +102,16 @@ export function mountGameUI(
   const releaseAudio = feedback.audio.subscribe((settings) => {
     ability.audio.setMuted(settings.muted);
     ability.audio.setVolume(settings.volume * 0.35);
+    skillFX.audio.setMuted(settings.muted);
+    skillFX.audio.setVolume(settings.volume * 0.35);
   });
   const unlockAbility = () => {
     void ability.audio.unlock();
+    void skillFX.audio.unlock();
   };
   const cancelAbility = () => {
     ability.cancel();
+    skillFX.cancel();
     construction.cancel();
   };
   // This transient sibling stays usable while game input is inert.
@@ -453,8 +461,19 @@ export function mountGameUI(
           el('span', 'pm-starter-type', partner.type),
           portrait,
           el('strong', '', partner.name),
+          el('span', 'pm-starter-skill', skillForPokemon(partner.id)?.name ?? ''),
           el('small', '', selectedPartner === partner.id ? '선택됨 ✓' : '선택'),
         );
+        if (selectedPartner === partner.id) {
+          const definition = skillForPokemon(partner.id);
+          if (definition) {
+            const detail = el('div','pm-starter-skill-detail');
+            detail.append(el('strong','',`${definition.name} · 초기 PP 3회`),el('p','',definition.summary),el('p','',definition.detail));
+            for (const text of definition.pros) detail.append(el('p','',`장점 · ${text}`));
+            for (const text of definition.cons) detail.append(el('p','',`조건 · ${text}`));
+            content.append(detail);
+          }
+        }
         choices.append(b);
       });
       content.append(choices);
@@ -644,6 +663,23 @@ export function mountGameUI(
     hud ??= mountPlayerHud(hudHost, view, { emotions });
     hud.update(view);
     rail.append(hudHost);
+    if (view.activeSkill) {
+      const skill = view.activeSkill;
+      const card = el('section', 'pm-skill-hud');
+      card.setAttribute('aria-label', `${skill.definition.name} 기술 상태`);
+      card.append(el('strong', '', skill.definition.name), el('span', '', skill.cooldownLabel), el('span', '', skill.statusLabel));
+      const info = button('기술 정보', () => {
+        const detail = el('div', 'pm-dialog-skill');
+        detail.append(el('p', '', skill.definition.summary), el('p', '', skill.definition.detail));
+        skill.definition.pros.forEach((line) => detail.append(el('p', '', `장점 · ${line}`)));
+        skill.definition.cons.forEach((line) => detail.append(el('p', '', `사용 조건 · ${line}`)));
+        modal(skill.definition.name, '', [detail], true);
+      }, 'pm-secondary');
+      card.append(info);
+      if (skill.choice && humanTurn()) card.append(choiceButton(skill.choice));
+      else card.append(el('span', 'pm-skill-unavailable', skill.unavailableReason ?? '사용할 수 없습니다.'));
+      rail.append(card);
+    }
     const controls = el('div', 'pm-controls');
     view.actions.forEach((a) => {
       const b = choiceButton(a);
@@ -935,7 +971,7 @@ export function mountGameUI(
       render();
       await feedback.roll(roll.values);
       if (current !== generation || disposed) return;
-      dice = diceLabel(roll.values, movement ? 'moving' : 'complete');
+      dice = `주사위 ${roll.values.join(' + ')} · 실제 이동 ${roll.distance ?? roll.values.reduce((sum, value) => sum + value, 0)}칸${movement ? ' · 이동 중…' : ''}`;
     }
     // Confirmed numbers enter text and records only after the dice have settled.
     log = [...log, ...update.events.map(eventText)].slice(-30);
@@ -956,7 +992,7 @@ export function mountGameUI(
     // Release the synchronous receipt lock after both presenters have settled.
     if (effectsLocked) lockEffects(false);
     animating = false;
-    if (roll?.type === 'dice-rolled') dice = diceLabel(roll.values);
+    if (roll?.type === 'dice-rolled') dice = `주사위 ${roll.values.join(' + ')} · 실제 이동 ${roll.distance ?? roll.values.reduce((sum, value) => sum + value, 0)}칸`;
     if (constructionCues.length && !feedback.suppressed) {
       animating = true;
       render();
@@ -978,12 +1014,23 @@ export function mountGameUI(
       if (current !== generation || disposed) return;
       animating = false;
     }
+    for (const activation of update.skillActivations ?? []) {
+      if (feedback.suppressed) continue;
+      animating = true; render();
+      await new Promise<void>((resolve) => {
+        skillWaiters.set(activation.id, resolve);
+        if (!skillFX.enqueue(activation)) { skillWaiters.delete(activation.id); resolve(); }
+      });
+      if (current !== generation || disposed) return;
+      animating = false;
+    }
     for (const cue of cues) if (cue.reaction !== 'acting') emotions.apply(cue);
     if (
       roll ||
       movement ||
       hasConstruction(update) ||
       update.abilityActivations?.length
+      || update.skillActivations?.length
     )
       pendingFeedback = Math.max(0, pendingFeedback - 1);
     feedbackLocked = pendingFeedback > 0;
@@ -1025,6 +1072,7 @@ export function mountGameUI(
       u.movement ||
       hasConstruction(u) ||
       u.abilityActivations?.length
+      || u.skillActivations?.length
     ) {
       // Synchronous input lock, including computer updates before queue delivery.
       feedbackLocked = true;
@@ -1102,6 +1150,7 @@ export function mountGameUI(
       resultNotice.destroy();
       turnHeader.destroy();
       ability.destroy();
+      skillFX.destroy();
       construction.destroy();
       constructionGate.reset();
       releaseAudio();
