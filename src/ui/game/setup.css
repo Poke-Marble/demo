@@ -70,9 +70,12 @@
   gap: 3px;
   max-width: 780px;
   margin: 6px auto;
-  color: #f5f8ff;
+  color: #214c56;
   font-size: 12px;
   line-height: 1.35;
+}
+.pm-shell .pm-setup-starter .pm-starter-skill {
+  color: #28596a;
 }
 .pm-shell .pm-setup-info-content {
   max-height: min(55dvh, 460px);
