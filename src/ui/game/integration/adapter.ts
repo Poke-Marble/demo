@@ -399,7 +399,6 @@ export function createIntegratedPreview(
     const events = result.events.filter(
       (e): e is GameEvent =>
         ![
-          'dice-revealed',
           'skill-activated',
           'trial-resolved',
           'rope-used',

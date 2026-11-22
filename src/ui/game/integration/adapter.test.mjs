@@ -13,6 +13,18 @@ const start = (p) =>
   });
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
+function keepRevealedDice(p) {
+  if (!p.getState().core.pendingDice) return;
+  const keep = p.snapshot().candidates.find(
+    (candidate) =>
+      candidate.action.type === 'resolve-dice' &&
+      candidate.action.adjustment === 0,
+  );
+  assert.ok(keep, 'authoritative free keep choice');
+  const view = p.adapter.getView();
+  p.adapter.choose(view.actions.find((a) => a.id === keep.id).selectionId, keep.id);
+}
+
 test('new games select isolated standard/quick profiles and invalid setup preserves session', () => {
   const p = createIntegratedPreview({ computerDelayMs: 0, seed: 1 });
   const setup = {
@@ -25,6 +37,7 @@ test('new games select isolated standard/quick profiles and invalid setup preser
   assert.equal(standard.phase, 'playing');
   p.adapter.dispatch({ type: 'roll-dice', playerId: 'player:1' });
   assert.equal(p.getState().economy.revision, 1);
+  keepRevealedDice(p);
   assert.match(
     p.adapter.getView().prompt.description,
     /개인 1주회 완료 필요 \(현재 0주회\)/,
@@ -51,6 +64,7 @@ test('new games select isolated standard/quick profiles and invalid setup preser
     standard.economy.configurationKey,
   );
   p.adapter.dispatch({ type: 'roll-dice', playerId: 'player:1' });
+  keepRevealedDice(p);
   assert.match(p.adapter.getView().prompt.description, /개인 1주회 완료 필요/);
   assert.doesNotMatch(p.adapter.getView().prompt.description, /개인 2주회/);
   p.adapter.restart();
@@ -91,6 +105,8 @@ test('32 real tiles, legal quotes, presentation ack blocks finance and restart r
   await tick();
   humanStep(p);
   if (p.getState().core.pendingDice) {
+    assert.ok(update.events.some((e) => e.type === 'dice-revealed'));
+    assert.equal(update.movement, undefined);
     assert.match(update.view.activeSkill.statusLabel, /공개된 눈/);
     update.presentationComplete();
     await tick();
