@@ -10,7 +10,7 @@
 2. 관동·성도 맵에서 표준 또는 짧은 경기 규칙을 선택합니다.
 3. 주사위를 굴려 이동하고 도시 구매·시설 건설·통행료 지불·인수 등을 선택합니다. 필요한 금액과 가능한 행동은 화면에서 확인할 수 있습니다.
 4. 기술을 쓸 기회가 오면 효과와 남은 PP를 확인하고 사용 여부를 정합니다. 내 차례를 마치면 AI가 같은 규칙으로 진행합니다.
-5. 도시 목록에서 보드를 살펴보고 자산 화면에서 소유지를 확인하세요. 공중날기 카드를 얻으면 목적지를 골라 이동할 수 있습니다.
+5. 도시 목록에서 보드를 살펴보고 자산 화면에서 소유지를 검색하세요. 공중날기 칸에서는 보드에서 목적지를 고른 뒤 별도로 확정합니다. 선택한 파트너가 아머까오를 타고 도착합니다.
 
 관동·성도에는 도시와 특별 명소, START, 공중날기와 루기아·칠색조를 만나는 칸이 있습니다. 다른 지방, 온라인 대전, 저장·이어하기는 지원하지 않습니다.
 
@@ -32,6 +32,10 @@
 ## 주요 규칙
 
 도시의 시설은 캠프→상점→포켓몬센터→최종시설 순서로 발전합니다. 개인 주회에 따라 건설 단계가 열리며 최종시설은 센터를 보유한 도시를 다시 방문해야 지을 수 있습니다.
+
+일반 주사위 이동으로 START에 정확히 도착하면 소유 도시 한 곳의 다음 시설을 유료로 건설하거나 기회를 건너뛸 수 있습니다. 기술로 조정한 실제 이동도 포함하지만, START를 지나치거나 비행으로 도착한 경우는 제외합니다. 단계 해금과 비용은 유지하며, 이전 착지 때부터 센터가 완성돼 있었다면 이 START 기회가 최종시설의 재방문 조건을 대신합니다. 월급과 건설 결제는 별개입니다.
+
+루기아·칠색조 칸에 도착하면 50을 받습니다. 각 칸에 서로 다른 세 참가자가 방문하면 집계가 초기화되고 전역 이벤트가 발동합니다. 루기아는 도시 통행료, 칠색조는 도시 시설 건설비를 25% 줄이며 발동 라운드와 다음 라운드가 끝날 때까지 유지됩니다. 토지·인수·명소에는 이 할인을 적용하지 않습니다. 시험 감금이나 탈출로프 대신 함께 만드는 맵 이벤트입니다.
 
 | 규칙           | 표준               | 짧은 경기          |
 | -------------- | ------------------ | ------------------ |
@@ -82,6 +86,7 @@ OS의 동작 줄이기 설정을 반영하며 연출을 건너뛸 수 있습니�
 - **Pokémon** 원작·캐릭터·명칭 관련 권리는 Nintendo / Creatures Inc. / GAME FREAK inc. 등 원 권리자에게 있습니다. Pokémon Mystery Dungeon 원작 자료에는 Chunsoft / Spike Chunsoft 등 관련 제작자와 권리자의 권리가 있습니다.
 - **PMD 이미지** 제공 경로는 [PMD Sprite Repository](https://sprites.pmdcollab.org/)와 [PMDCollab/SpriteCollab](https://github.com/PMDCollab/SpriteCollab)입니다. 기본 네 파트너의 이동·대기 시트와 사용한 36개 초상화, 루기아·칠색조 시트의 개별 제작자 기록은 `CHUNSOFT`, 개별 라이선스 기록은 `Unspecified`입니다. 원작 추출물과 팬 제작 기여를 구별하며 저장소의 일반 CC BY-NC 정책을 원작 자료의 개별 허가로 간주하지 않습니다.
 - **파일별 PMD 근거**: [기본 스프라이트 manifest](src/assets/generated/sprites.json), [초상화 manifest](src/ui/game/portraits/manifest.json), [전설 이미지 manifest](src/ui/game/events/assets/manifest.json)에 원본 URL·제작자·조건·변경 여부·해시를 기록했습니다. [정책 원문](src/assets/vendor/policy/LICENSE.md), [초상화 출처 안내](src/ui/game/portraits/README.md), [전설 이미지 출처 안내](src/ui/game/events/ASSETS.md), [권리 검토 기록](docs/rights.md)도 함께 보존합니다. 게임의 `크레딧`에서도 개별 자료를 확인할 수 있습니다.
+- **탑승 아머까오**: SpriteCollab 0823의 팬 제작 Idle/Hover 시트입니다. Soulja의 두 동작 기여는 개별 기록에서 `CC_BY-NC_4`(CC BY-NC 4.0)로 명시돼 있으며, Idle의 이전 기여자 NATANIEL_SAMA, ◥θ┴θ◤, G〜도 원본 크레딧에 보존합니다. [개별 출처·해시](src/ui/game/events/mounted/assets/manifest.json), [원본 credits](src/ui/game/events/mounted/assets/sprite/0823/credits.txt), [라이선스 원문](src/ui/game/events/mounted/assets/license_history/LICENSE.CC_BY-NC_4.md)을 참고하세요. 원본 픽셀은 수정하지 않고 실행 중 승객과 합성합니다. 기존 CHUNSOFT 원작 추출물의 `Unspecified`를 이 허가로 바꾸지 않습니다.
 - **Galmuri11 글꼴**: Lee Minseo 제작, [Galmuri 원 출처](https://github.com/quiple/galmuri). SIL Open Font License 1.1에 따라 사용하며 [라이선스 원문](src/ui/game/theme/fonts/LICENSE.txt)과 [고정 버전·원본 URL·해시](src/ui/game/theme/fonts/provenance.json)를 보관합니다.
 - **한국어 명칭·포켓몬 데이터**: [PokeAPI](https://pokeapi.co/docs/v2/)의 저장된 응답을 사용합니다. API 서버 코드의 라이선스가 Pokémon 콘텐츠 전체의 이용 허락을 의미하지는 않습니다.
 - 보드의 별도 시각 자료 출처는 [보드 아트 크레딧](src/ui/game/art/credits.ts), [지방 자료 크레딧](src/ui/game/assets/regional/credits.json), [Tiny Town 크레딧](src/ui/game/assets/tiny-town/credits.json)에 기록합니다.

@@ -9,6 +9,12 @@ const moduleURL = (source) =>
 const queueURL = moduleURL(
   await readFile(new URL('./queue.ts', import.meta.url), 'utf8'),
 );
+const worldURL = moduleURL(
+  await readFile(
+    new URL('../../../game/world-events/index.ts', import.meta.url),
+    'utf8',
+  ),
+);
 const mountedURL = moduleURL(
   (await readFile(new URL('./mounted/presenter.ts', import.meta.url), 'utf8'))
     .replace(/^import .*;\r?\n/gm, '')
@@ -28,6 +34,10 @@ const { createSpecialEventPresenter } = await import(
         "const createLegendarySprite = () => ({ element: document.createElement('div'), phase() {}, dispose() {} });",
       )
       .replaceAll("from './queue'", `from '${queueURL}'`)
+      .replaceAll(
+        "from '../../../game/world-events/index.ts'",
+        `from '${worldURL}'`,
+      )
       .replace("import './special-events.css';", '')
       .replace("import './flight-picker/picker.css';", '')
       .replace(

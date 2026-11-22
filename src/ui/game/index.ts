@@ -427,10 +427,7 @@ export function mountGameUI(
     host.append(d);
     d.showModal();
   }
-  function setupInfoDialog(
-    title: string,
-    sections: [string, ...string[]][],
-  ) {
+  function setupInfoDialog(title: string, sections: [string, ...string[]][]) {
     const content = el('div', 'pm-setup-info-content');
     for (const [label, ...lines] of sections) {
       const section = el('section', 'pm-setup-info-section');
@@ -525,20 +522,22 @@ export function mountGameUI(
               button(
                 '기술 정보',
                 () =>
-                  setupInfoDialog(
-                    definition.name,
+                  setupInfoDialog(definition.name, [
                     [
-                      ['공통 규칙', '경기당 3회, 내 차례에 1회 사용할 수 있어요.'],
-                      ['좋은 점', ...definition.pros],
-                      ['사용 조건', ...definition.cons],
-                      [
-                        '상성과 기술 돌파',
-                        definition.type === 'fire' || definition.type === 'electric'
-                          ? '공통 기술 돌파로 통행료를 15% 아껴요(최대 60). 상성이 유리하면 이 기술의 할인율은 10%p, 할인 한도는 25 올라가요.\n' + definition.detail
-                          : definition.detail,
-                      ],
+                      '공통 규칙',
+                      '경기당 3회, 내 차례에 1회 사용할 수 있어요.',
                     ],
-                  ),
+                    ['좋은 점', ...definition.pros],
+                    ['사용 조건', ...definition.cons],
+                    [
+                      '상성과 기술 돌파',
+                      definition.type === 'fire' ||
+                      definition.type === 'electric'
+                        ? '공통 기술 돌파로 통행료를 15% 아껴요(최대 60). 상성이 유리하면 이 기술의 할인율은 10%p, 할인 한도는 25 올라가요.\n' +
+                          definition.detail
+                        : definition.detail,
+                    ],
+                  ]),
                 'pm-setup-info-button',
               ),
             );

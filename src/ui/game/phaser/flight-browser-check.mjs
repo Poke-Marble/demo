@@ -118,7 +118,7 @@ try {
     document.querySelector('#app').hidden=true;
     window.host=document.createElement('div'); document.body.append(host);
     window.eventsSeen=[];window.effectsSeen=[];
-    a.subscribe(u=>{eventsSeen.push(...u.events);effectsSeen.push(...(u.effects??[]));});
+    a.subscribe(u=>{eventsSeen.push(...u.events);effectsSeen.push(...(u.effects??[]));u.presentationComplete?.();});
     const original=a.selectFlightDestination.bind(a);
     window.submissions=0;
     a.selectFlightDestination=(...args)=>{submissions++;return original(...args)};
@@ -307,12 +307,30 @@ try {
     if (arrival.settled) break;
     await pause(100);
   }
-  assert.equal(arrival.trialIntros, 1);
+  const worldMode = await evaluate('!!runtime.getState().worldEvents');
+  assert.equal(arrival.trialIntros, worldMode ? 0 : 1);
   assert.equal(arrival.position, selected);
   assert.equal(arrival.flightEvents, 1);
   assert.equal(arrival.selectionGone, true);
   assert.equal(arrival.stateChanged, true);
   assert.equal(arrival.settled, true);
+  await send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+  });
+  const returnTurn = await evaluate('runtime.getState().turnNumber + 4');
+  await evaluate(
+    'runtime.adapter.dispatch({type:"end-turn",playerId:runtime.getState().activePlayerId})',
+  );
+  let aiReturned = false;
+  for (let i = 0; i < 200; i++) {
+    aiReturned = await evaluate(
+      `runtime.getState().turnNumber>=${returnTurn}&&runtime.getState().activePlayerId===flight.playerId`,
+    );
+    if (aiReturned) break;
+    await pause(100);
+  }
+  assert.equal(aiReturned, true, 'all three AI seats return after flight ACK');
+  arrival.aiReturned = aiReturned;
   await evaluate('game.destroy()');
   await pause(200);
   const boardLifecycle = await evaluate(`(async()=>{

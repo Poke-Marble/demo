@@ -14,9 +14,12 @@ const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const folder = 'artifacts/start-build';
 await mkdir(folder, { recursive: true });
 const report = [];
+const general = process.env.START_GENERAL === '1';
 try {
   for (const width of [1280, 390]) {
-    for (const mode of ['skip', 'build', 'final']) {
+    for (const mode of general
+      ? ['skip', 'build']
+      : ['skip', 'build', 'final']) {
       const page = await browser.newPage({ viewport: { width, height: 844 } });
       const errors = [];
       page.on('pageerror', (e) => errors.push(e.message));
@@ -24,7 +27,7 @@ try {
         r.fulfill({ contentType: 'text/javascript', body: '' }),
       );
       await page.goto(process.env.GAME_URL ?? 'http://127.0.0.1:5221');
-      await page.evaluate(async () => {
+      await page.evaluate(async (general) => {
         await import('/src/ui/game/integration/preview.css');
         const { createIntegratedPreview } =
           await import('/src/ui/game/integration/adapter.ts');
@@ -42,7 +45,7 @@ try {
         // Reach the opportunity through real commands; no positions, holdings or balances are injected.
         for (
           let i = 0;
-          i < 150 && runtime.getState().phase === 'playing';
+          i < (general ? 400 : 150) && runtime.getState().phase === 'playing';
           i++
         ) {
           const s = runtime.getState();
@@ -56,7 +59,26 @@ try {
           if (s.economy.pendingStartBuild) break;
           const v = runtime.adapter.getView(),
             candidates = runtime.snapshot().candidates;
+          const startChoice =
+            general &&
+            s.core.pendingDice &&
+            candidates.find((candidate) => {
+              if (candidate.action.type !== 'resolve-dice') return false;
+              const index = v.map.tiles.findIndex(
+                (t) =>
+                  t.id ===
+                  s.players.find((p) => p.id === s.activePlayerId).position,
+              );
+              const distance =
+                s.core.pendingDice.values.reduce((sum, n) => sum + n, 0) +
+                candidate.action.adjustment;
+              return (
+                v.map.tiles[(index + distance) % v.map.tiles.length].kind ===
+                'start'
+              );
+            });
           const a =
+            (startChoice || undefined) ??
             candidates.find(
               (a) =>
                 a.action.type === 'resolve-dice' && a.action.adjustment === 0,
@@ -92,7 +114,7 @@ try {
           runComputerTurn: undefined,
         });
         window.startQA = { runtime, before, stale, candidates, ui };
-      });
+      }, general);
       const dialog = page.locator('dialog[open]');
       await dialog.waitFor();
       assert.match(await dialog.innerText(), /START 특별 건설/);
@@ -116,33 +138,37 @@ try {
       );
       assert.equal(geometry.scrollWidth, width);
       await page.screenshot({ path: `${folder}/${mode}-${width}.png` });
-      const choice = await page.evaluate((mode) => {
-        const { candidates, before, stale } = window.startQA;
-        const c = candidates.find((c) =>
-          mode === 'skip'
-            ? c.action.type === 'skip-start-build'
-            : c.action.type === 'start-build' &&
-              before.holdings.find((h) => h.tileId === c.action.tileId)
-                .facilityLevel === (mode === 'final' ? 2 : 1),
-        );
-        return {
-          id: c.id,
-          cost: c.quote.debit,
-          tileId: c.action.tileId,
-          selection: stale.id,
-        };
-      }, mode);
-      const button = page
-        .locator('button[data-choice-id]')
-        .filter({
-          hasText:
+      const choice = await page.evaluate(
+        ({ mode, general }) => {
+          const { candidates, before, stale } = window.startQA;
+          const c = candidates.find((c) =>
             mode === 'skip'
-              ? '이번 기회 건너뛰기'
-              : mode === 'final'
-                ? '태초마을'
-                : '갈색시티',
-        });
-      assert.equal(await button.count(), 1);
+              ? c.action.type === 'skip-start-build'
+              : c.action.type === 'start-build' &&
+                (general ||
+                  before.holdings.find((h) => h.tileId === c.action.tileId)
+                    .facilityLevel === (mode === 'final' ? 2 : 1)),
+          );
+          return {
+            id: c.id,
+            cost: c.quote.debit,
+            tileId: c.action.tileId,
+            selection: stale.id,
+            expectedStage: c.action.tileId
+              ? before.holdings.find((h) => h.tileId === c.action.tileId)
+                  .facilityLevel + 1
+              : null,
+          };
+        },
+        { mode, general },
+      );
+      const buttons = page.locator('button[data-choice-id]');
+      const index = await buttons.evaluateAll(
+        (nodes, id) => nodes.findIndex((n) => n.dataset.choiceId === id),
+        choice.id,
+      );
+      assert.ok(index >= 0);
+      const button = buttons.nth(index);
       await button.evaluate((b) => {
         b.click();
         b.click();
@@ -183,8 +209,7 @@ try {
       assert.equal(outcome.sameAfterStale, true);
       assert.equal(outcome.landingPreserved, true);
       assert.equal(outcome.pendingDebt, null);
-      if (mode !== 'skip')
-        assert.equal(outcome.stage, mode === 'final' ? 3 : 2);
+      if (mode !== 'skip') assert.equal(outcome.stage, choice.expectedStage);
       assert.deepEqual(errors, []);
       report.push({ width, mode, geometry, ...outcome, errors });
       console.log(JSON.stringify(report.at(-1)));

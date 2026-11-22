@@ -3,18 +3,8 @@
   "browser": "157.0.8103.80",
   "mode": {
     "world": true,
-    "ropes": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "trials": [
-      null,
-      null,
-      null,
-      null
-    ],
+    "ropes": [0, 0, 0, 0],
+    "trials": [null, null, null, null],
     "projected": true
   },
   "imageAudit": [
