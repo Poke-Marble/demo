@@ -14,6 +14,7 @@ import type { GameUIAdapter, UIChoice, UIUpdate } from './adapter';
 import type { GameView } from './adapter';
 import type { PhaserBoardRenderer } from './phaser';
 import { mountPlayerHud, cashEventsFromGameEvents } from './hud';
+import { createHoldingsDetails } from './holdings-details';
 import {
   startingPartners as partners,
   createInitialRoster,
@@ -395,7 +396,12 @@ export function mountGameUI(
     const h = el('h2', '', title);
     h.id = `pm-dialog-${crypto.randomUUID()}`;
     d.setAttribute('aria-labelledby', h.id);
-    d.append(h, el('p', '', description), ...choices);
+    const body = el('div', 'pm-dialog-body');
+    body.tabIndex = 0;
+    body.setAttribute('role', 'region');
+    body.setAttribute('aria-label', `${title} 내용`);
+    body.append(el('p', '', description), ...choices);
+    d.append(h, body);
     d.addEventListener('cancel', (event) => {
       if (!dismissible) event.preventDefault();
     });
@@ -404,7 +410,11 @@ export function mountGameUI(
       d.remove();
       previous?.focus();
     });
-    if (dismissible) d.append(button('닫기', () => d.close(), 'pm-secondary'));
+    if (dismissible) {
+      const footer = el('footer', 'pm-dialog-footer');
+      footer.append(button('닫기', () => d.close(), 'pm-secondary'));
+      d.append(footer);
+    }
     host.append(d);
     d.showModal();
   }
@@ -674,7 +684,16 @@ export function mountGameUI(
     );
     diceResult.setAttribute('role', 'status');
     rail.append(diceResult);
-    hud ??= mountPlayerHud(hudHost, view, { emotions });
+    hud ??= mountPlayerHud(hudHost, view, {
+      emotions,
+      onAssetDetails: ({ playerId, view: detailsView }) =>
+        modal(
+          `${detailsView.state.players.find((p) => p.id === playerId)?.name ?? ''}의 소유 자산`,
+          '보유한 도시와 시설을 확인합니다.',
+          [createHoldingsDetails(detailsView, playerId)],
+          true,
+        ),
+    });
     hud.update(view);
     rail.append(hudHost);
     if (view.activeSkill) {
@@ -786,13 +805,7 @@ export function mountGameUI(
             view.state.holdings.length
               ? '보유한 도시와 시설을 확인합니다.'
               : '아직 보유한 도시가 없습니다.',
-            view.state.holdings.map((h) =>
-              el(
-                'p',
-                '',
-                `${view.map.tiles.find((t) => t.id === h.tileId)?.nameKo ?? h.tileId} · ${view.state.players.find((p) => p.id === h.ownerId)?.name ?? ''} · Lv.${h.facilityLevel}`,
-              ),
-            ),
+            [createHoldingsDetails(view)],
             true,
           ),
         'pm-secondary',
