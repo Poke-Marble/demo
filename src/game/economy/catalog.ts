@@ -351,6 +351,20 @@ export function validateEconomyState(s: EconomyState, c: EconomyContext): void {
         typeof l.propertyDecisionUsed === 'boolean',
     );
   }
+  if (e.pendingStartBuild) {
+    const b = e.pendingStartBuild;
+    check(
+      !!b.id &&
+        b.playerId === s.activePlayerId &&
+        b.landingId === e.landing?.id &&
+        c.map.tiles.find((t) => t.id === e.landing?.tileId)?.kind === 'start' &&
+        s.core.turnStage === 'awaiting-end' &&
+        !e.pendingDebt &&
+        !e.pendingToll &&
+        !s.core.pendingDice,
+      'invalid-start-build',
+    );
+  }
   if (e.pendingToll) {
     check(
       !e.pendingDebt &&

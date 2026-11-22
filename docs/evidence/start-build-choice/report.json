@@ -1,0 +1,141 @@
+{
+  "browser": "157.0.8103.80",
+  "cases": [
+    {
+      "width": 1280,
+      "mode": "skip",
+      "geometry": {
+        "left": 335,
+        "right": 945,
+        "top": 155.1875,
+        "bottom": 688.8125,
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "balance": 318,
+      "beforeBalance": 318,
+      "revisionDelta": 1,
+      "sameAfterStale": true,
+      "landingPreserved": true,
+      "cost": 0,
+      "pendingDebt": null,
+      "laps": 3,
+      "turn": 45,
+      "errors": []
+    },
+    {
+      "width": 1280,
+      "mode": "build",
+      "geometry": {
+        "left": 335,
+        "right": 945,
+        "top": 155.1875,
+        "bottom": 688.8125,
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "balance": 238,
+      "beforeBalance": 318,
+      "revisionDelta": 1,
+      "sameAfterStale": true,
+      "landingPreserved": true,
+      "stage": 2,
+      "cost": 80,
+      "pendingDebt": null,
+      "laps": 3,
+      "turn": 45,
+      "errors": []
+    },
+    {
+      "width": 1280,
+      "mode": "final",
+      "geometry": {
+        "left": 335,
+        "right": 945,
+        "top": 155.1875,
+        "bottom": 688.8125,
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "balance": 268,
+      "beforeBalance": 318,
+      "revisionDelta": 1,
+      "sameAfterStale": true,
+      "landingPreserved": true,
+      "stage": 3,
+      "cost": 50,
+      "pendingDebt": null,
+      "laps": 3,
+      "turn": 45,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "mode": "skip",
+      "geometry": {
+        "left": 18,
+        "right": 372,
+        "top": 145.8125,
+        "bottom": 698.1875,
+        "width": 390,
+        "scrollWidth": 390
+      },
+      "balance": 318,
+      "beforeBalance": 318,
+      "revisionDelta": 1,
+      "sameAfterStale": true,
+      "landingPreserved": true,
+      "cost": 0,
+      "pendingDebt": null,
+      "laps": 3,
+      "turn": 45,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "mode": "build",
+      "geometry": {
+        "left": 18,
+        "right": 372,
+        "top": 145.8125,
+        "bottom": 698.1875,
+        "width": 390,
+        "scrollWidth": 390
+      },
+      "balance": 238,
+      "beforeBalance": 318,
+      "revisionDelta": 1,
+      "sameAfterStale": true,
+      "landingPreserved": true,
+      "stage": 2,
+      "cost": 80,
+      "pendingDebt": null,
+      "laps": 3,
+      "turn": 45,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "mode": "final",
+      "geometry": {
+        "left": 18,
+        "right": 372,
+        "top": 145.8125,
+        "bottom": 698.1875,
+        "width": 390,
+        "scrollWidth": 390
+      },
+      "balance": 268,
+      "beforeBalance": 318,
+      "revisionDelta": 1,
+      "sameAfterStale": true,
+      "landingPreserved": true,
+      "stage": 3,
+      "cost": 50,
+      "pendingDebt": null,
+      "laps": 3,
+      "turn": 45,
+      "errors": []
+    }
+  ]
+}

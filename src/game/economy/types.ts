@@ -73,6 +73,13 @@ export interface Debt {
 export type EconomyIntent =
   | GameAction
   | {
+      readonly type: 'start-build';
+      readonly opportunityId: string;
+      readonly tileId: TileId;
+      readonly quoteId: string;
+    }
+  | { readonly type: 'skip-start-build'; readonly opportunityId: string }
+  | {
       readonly type: 'use-skill';
       readonly mode: 'signature' | 'breakthrough';
       readonly tileId: TileId;
@@ -155,6 +162,11 @@ export interface EconomyExtension {
   readonly visitOrdinalByPlayerId: Readonly<Record<PlayerId, number>>;
   readonly developmentByTileId: Readonly<Record<TileId, Development>>;
   readonly landing: Landing | null;
+  readonly pendingStartBuild?: {
+    readonly id: string;
+    readonly playerId: PlayerId;
+    readonly landingId: string;
+  } | null;
   readonly pendingDebt: Debt | null;
   readonly pendingToll?: {
     readonly tileId: TileId;
@@ -208,7 +220,12 @@ export type EconomyTransition<S extends EconomyState = EconomyState> =
 export interface LegalActionSet {
   readonly revision: number;
   readonly playerId: PlayerId;
-  readonly phase: 'inactive' | 'liquidating' | 'choosing-property' | 'core';
+  readonly phase:
+    | 'inactive'
+    | 'liquidating'
+    | 'choosing-property'
+    | 'choosing-start-build'
+    | 'core';
   readonly actions: readonly {
     readonly actionKey: string;
     readonly intent: EconomyIntent;
