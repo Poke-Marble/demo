@@ -1,3 +1,8 @@
+import {
+  arriveWorldEvent,
+  clearWorldEvents,
+  worldEventRules,
+} from './world-events/index.ts';
 import type {
   PlayerId,
   TileId,
@@ -55,6 +60,13 @@ export type PresentationRequest =
       readonly legendary: Legendary;
       readonly playerId: PlayerId;
       readonly tileId: TileId;
+    }
+  | {
+      readonly type: 'world-event';
+      readonly legendary: Legendary;
+      readonly playerId: PlayerId;
+      readonly tileId: TileId;
+      readonly expiresAfterRound: number;
     }
   | {
       readonly type: 'fly';
@@ -150,6 +162,7 @@ export function enterSpecial(
         : state,
       presentations: [],
     };
+  if (state.worldEvents) return arriveWorldEvent(state, tile);
   const legendary = tile.special === 'lugia-trial' ? 'lugia' : 'ho-oh';
   return {
     state: updatePlayer(state, id, {
@@ -283,6 +296,7 @@ export function legendaryAction(
   if (!player) return reject('invalid-legendary-state');
   const trial = player.trial;
   if (action.type === 'attempt-trial' || action.type === 'use-escape-rope') {
+    if (state.worldEvents) return reject('legendary-disabled');
     if (!trial) return reject('trial-required');
     if (action.type === 'use-escape-rope') {
       if (player.ropes < 1) return reject('no-escape-rope');
@@ -342,6 +356,16 @@ export function legendaryAction(
       return reject('invalid-destination');
     const from = state.players.find((p) => p.id === id)!.position;
     const tile = map.tiles.find((t) => t.id === action.to)!;
+    if (
+      state.worldEvents &&
+      tile.kind === 'special' &&
+      tile.special !== 'fly' &&
+      !Number.isSafeInteger(
+        state.players.find((p) => p.id === id)!.balance +
+          worldEventRules.arrivalReward,
+      )
+    )
+      return reject('invalid-legendary-state');
     const moved: CoreState = {
       ...state,
       players: state.players.map((p) =>
@@ -355,7 +379,7 @@ export function legendaryAction(
       return { ok: false, state, events: [], error: 'invalid-hook-effect' };
     return {
       ok: true,
-      state: landed.state,
+      state: clearWorldEvents(landed.state),
       events: [
         { type: 'player-moved', playerId: id, from, to: action.to },
         { type: 'tile-landed', playerId: id, tileId: action.to },

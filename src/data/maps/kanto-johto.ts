@@ -222,10 +222,10 @@ export const kantoJohtoMap: BoardDefinition = {
       'south',
       '무인 발전소 (관동)',
     ),
-    special('lugia-trial', '소용돌이섬 · 루기아 시험', 'west'),
+    special('lugia-trial', '소용돌이섬 · 루기아', 'west'),
     ...cities.slice(2, 4).flat(),
     landmark('seafoam', '쌍둥이섬', 'kanto', 'west'),
-    special('ho-oh-trial', '방울탑 · 칠색조 시험', 'north'),
+    special('ho-oh-trial', '방울탑 · 칠색조', 'north'),
     ...cities.slice(4, 6).flat(),
     // Legacy IDs preserve saved holdings and the four-landmark victory target.
     landmark('whirl', '분노의호수', 'johto', 'north', '분노의 호수'),

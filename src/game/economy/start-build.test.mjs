@@ -40,52 +40,84 @@ test('actual water +1 can reach START, but raw dice exact START adjusted away ca
 });
 
 test('START quote and charge share modifiers and blessing; zero amount does not consume blessing', () => {
-  for (const multiplierBps of [5000, 0]) {
-    const context = {
-      ...c,
-      modifiers: [
-        { id: 'start-discount', kind: 'upgrade', playerId: id, multiplierBps },
-      ],
-    };
-    const base = fresh();
-    const configured = initializeEconomy(
-      createGame(map, roster, { seed: 1, legendary: {}, skills: true }),
-      context,
-      'discount-start',
-    );
-    let s = {
-      ...base,
-      economy: {
-        ...base.economy,
-        configurationKey: configured.economy.configurationKey,
-      },
-    };
-    s.legendary = {
-      ...s.legendary,
-      players: {
-        ...s.legendary.players,
-        [id]: { ...s.legendary.players[id], hoOh: true },
-      },
-    };
-    const arrived = dispatchEconomy(
-      s,
-      context,
-      command(s, { type: 'resolve-dice', playerId: id, adjustment: 0 }),
-    );
-    assert.equal(arrived.ok, true, arrived.error);
-    s = arrived.state;
-    const a = getLegalActions(s, context, id).actions.find(
-      (a) => a.intent.type === 'start-build',
-    );
-    assert.ok(a.quote.modifierIds.includes('start-discount'));
-    assert.equal(a.quote.consumesBlessing, multiplierBps !== 0);
-    const result = dispatchEconomy(s, context, command(s, a.intent));
-    assert.equal(result.ok, true, result.error);
-    assert.equal(
-      result.state.players[0].balance,
-      s.players[0].balance - a.quote.total,
-    );
-    assert.equal(result.state.legendary.players[id].hoOh, multiplierBps === 0);
+  for (const worldActive of [false, true]) {
+    for (const multiplierBps of [5000, 0]) {
+      const context = {
+        ...c,
+        modifiers: [
+          {
+            id: 'start-discount',
+            kind: 'upgrade',
+            playerId: id,
+            multiplierBps,
+          },
+        ],
+      };
+      const base = fresh();
+      if (worldActive)
+        base.worldEvents = {
+          visitors: {},
+          arrivals: [],
+          active: { 'ho-oh': { expiresAfterRound: 2 } },
+        };
+      const configured = initializeEconomy(
+        createGame(map, roster, { seed: 1, legendary: {}, skills: true }),
+        context,
+        'discount-start',
+      );
+      let s = {
+        ...base,
+        economy: {
+          ...base.economy,
+          configurationKey: configured.economy.configurationKey,
+        },
+      };
+      s.legendary = {
+        ...s.legendary,
+        players: {
+          ...s.legendary.players,
+          [id]: { ...s.legendary.players[id], hoOh: true },
+        },
+      };
+      const arrived = dispatchEconomy(
+        s,
+        context,
+        command(s, { type: 'resolve-dice', playerId: id, adjustment: 0 }),
+      );
+      assert.equal(arrived.ok, true, arrived.error);
+      s = arrived.state;
+      const a = getLegalActions(s, context, id).actions.find(
+        (a) => a.intent.type === 'start-build',
+      );
+      assert.ok(a.quote.modifierIds.includes('start-discount'));
+      const afterWorld = worldActive
+        ? a.quote.upgradeSubtotal - Math.floor(a.quote.upgradeSubtotal * 0.25)
+        : a.quote.upgradeSubtotal;
+      assert.equal(
+        a.quote.total,
+        Math.ceil(Math.floor((afterWorld * multiplierBps) / 10000) * 0.5),
+        'world then modifier then one blessing uses the canonical construction quote',
+      );
+      assert.equal(a.quote.consumesBlessing, multiplierBps !== 0);
+      const result = dispatchEconomy(s, context, command(s, a.intent));
+      assert.equal(result.ok, true, result.error);
+      assert.equal(
+        result.state.players[0].balance,
+        s.players[0].balance - a.quote.total,
+      );
+      assert.equal(
+        result.state.legendary.players[id].hoOh,
+        multiplierBps === 0,
+      );
+      const replay = dispatchEconomy(
+        result.state,
+        context,
+        command(s, a.intent),
+      );
+      assert.equal(replay.ok, true);
+      assert.equal(replay.replayed, true);
+      assert.deepEqual(replay.state.players, result.state.players);
+    }
   }
 });
 const map = c.map,

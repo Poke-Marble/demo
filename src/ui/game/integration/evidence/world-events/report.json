@@ -1,0 +1,874 @@
+{
+  "origin": "http://127.0.0.1:5218",
+  "browser": "157.0.8103.80",
+  "mode": {
+    "world": true,
+    "ropes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "trials": [
+      null,
+      null,
+      null,
+      null
+    ],
+    "projected": true
+  },
+  "imageAudit": [
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Idle-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Walk-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Idle-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Walk-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Idle-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Walk-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Idle-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Walk-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0249/Attack-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0249/Hover-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0249/Idle-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0250/Attack-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0250/Hover-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0250/Idle-Anim.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Angry.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Determined.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Happy.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Joyous.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Normal.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Pain.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Surprised.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Sad.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Worried.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Angry.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Determined.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Happy.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Joyous.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Normal.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Pain.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Sad.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Surprised.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Angry.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Worried.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Determined.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Happy.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Joyous.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Normal.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Pain.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Sad.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Surprised.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Worried.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Angry.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Determined.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Joyous.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Happy.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Normal.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Pain.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Sad.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Surprised.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Worried.png?import&url",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Idle-Anim.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Idle-Anim.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Idle-Anim.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Idle-Anim.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Normal.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Normal.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Normal.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Normal.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/assets/tiny-town/tile_0001.png?import",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/ui/game/assets/tiny-town/tile_0002.png?import",
+      "contentType": "text/javascript"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Walk-Anim.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Walk-Anim.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Walk-Anim.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Walk-Anim.png",
+      "contentType": "image/png"
+    }
+  ],
+  "sprites": [
+    {
+      "src": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Normal.png",
+      "ok": true
+    },
+    {
+      "src": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Normal.png",
+      "ok": true
+    },
+    {
+      "src": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Normal.png",
+      "ok": true
+    },
+    {
+      "src": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Normal.png",
+      "ok": true
+    },
+    {
+      "src": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Normal.png",
+      "ok": true
+    },
+    {
+      "src": "",
+      "ok": false
+    }
+  ],
+  "report": [
+    {
+      "legendary": "lugia",
+      "width": 900,
+      "left": 190,
+      "right": 1090,
+      "viewport": 1280,
+      "spriteWidth": 480,
+      "clipped": false,
+      "drawn": true
+    },
+    {
+      "legendary": "ho-oh",
+      "width": 900,
+      "left": 190,
+      "right": 1090,
+      "viewport": 1280,
+      "spriteWidth": 480,
+      "clipped": false,
+      "drawn": true
+    },
+    {
+      "legendary": "lugia",
+      "width": 352,
+      "left": 19,
+      "right": 371,
+      "viewport": 390,
+      "spriteWidth": 312,
+      "clipped": false,
+      "drawn": true
+    },
+    {
+      "legendary": "ho-oh",
+      "width": 352,
+      "left": 19,
+      "right": 371,
+      "viewport": 390,
+      "spriteWidth": 312,
+      "clipped": false,
+      "drawn": true
+    }
+  ],
+  "errors": [],
+  "imageTargets": [
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Idle-Anim.png?import&url",
+      "source": "/src/assets/vendor/sprite/0001/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Walk-Anim.png?import&url",
+      "source": "/src/assets/vendor/sprite/0001/Walk-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Walk-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Idle-Anim.png?import&url",
+      "source": "/src/assets/vendor/sprite/0004/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Walk-Anim.png?import&url",
+      "source": "/src/assets/vendor/sprite/0004/Walk-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Walk-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Idle-Anim.png?import&url",
+      "source": "/src/assets/vendor/sprite/0007/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Walk-Anim.png?import&url",
+      "source": "/src/assets/vendor/sprite/0007/Walk-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Walk-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Idle-Anim.png?import&url",
+      "source": "/src/assets/vendor/sprite/0025/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Walk-Anim.png?import&url",
+      "source": "/src/assets/vendor/sprite/0025/Walk-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Walk-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0249/Attack-Anim.png?import&url",
+      "source": "/src/ui/game/events/assets/sprite/0249/Attack-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0249/Attack-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0249/Hover-Anim.png?import&url",
+      "source": "/src/ui/game/events/assets/sprite/0249/Hover-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0249/Hover-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0249/Idle-Anim.png?import&url",
+      "source": "/src/ui/game/events/assets/sprite/0249/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0249/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0250/Attack-Anim.png?import&url",
+      "source": "/src/ui/game/events/assets/sprite/0250/Attack-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0250/Attack-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0250/Hover-Anim.png?import&url",
+      "source": "/src/ui/game/events/assets/sprite/0250/Hover-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0250/Hover-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0250/Idle-Anim.png?import&url",
+      "source": "/src/ui/game/events/assets/sprite/0250/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/events/assets/sprite/0250/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Angry.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0001/Angry.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Angry.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Determined.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0001/Determined.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Determined.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Happy.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0001/Happy.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Happy.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Joyous.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0001/Joyous.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Joyous.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Normal.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0001/Normal.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Normal.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Pain.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0001/Pain.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Pain.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Surprised.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0001/Surprised.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Surprised.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Sad.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0001/Sad.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Sad.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Worried.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0001/Worried.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Worried.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Angry.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0004/Angry.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Angry.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Determined.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0004/Determined.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Determined.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Happy.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0004/Happy.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Happy.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Joyous.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0004/Joyous.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Joyous.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Normal.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0004/Normal.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Normal.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Pain.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0004/Pain.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Pain.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Sad.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0004/Sad.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Sad.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Surprised.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0004/Surprised.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Surprised.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Angry.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0007/Angry.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Angry.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Worried.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0004/Worried.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Worried.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Determined.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0007/Determined.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Determined.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Happy.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0007/Happy.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Happy.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Joyous.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0007/Joyous.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Joyous.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Normal.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0007/Normal.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Normal.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Pain.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0007/Pain.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Pain.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Sad.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0007/Sad.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Sad.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Surprised.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0007/Surprised.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Surprised.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Worried.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0007/Worried.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Worried.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Angry.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0025/Angry.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Angry.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Determined.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0025/Determined.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Determined.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Joyous.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0025/Joyous.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Joyous.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Happy.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0025/Happy.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Happy.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Normal.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0025/Normal.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Normal.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Pain.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0025/Pain.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Pain.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Sad.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0025/Sad.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Sad.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Surprised.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0025/Surprised.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Surprised.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Worried.png?import&url",
+      "source": "/src/ui/game/portraits/assets/0025/Worried.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Worried.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Idle-Anim.png",
+      "source": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Idle-Anim.png",
+      "source": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Idle-Anim.png",
+      "source": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Idle-Anim.png",
+      "source": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Idle-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Idle-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Normal.png",
+      "source": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Normal.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0007/Normal.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Normal.png",
+      "source": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Normal.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0001/Normal.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Normal.png",
+      "source": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Normal.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0004/Normal.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Normal.png",
+      "source": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Normal.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/portraits/assets/0025/Normal.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/assets/tiny-town/tile_0001.png?import",
+      "source": "/src/ui/game/assets/tiny-town/tile_0001.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/assets/tiny-town/tile_0001.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/ui/game/assets/tiny-town/tile_0002.png?import",
+      "source": "/src/ui/game/assets/tiny-town/tile_0002.png",
+      "currentSrc": "http://127.0.0.1:5218/src/ui/game/assets/tiny-town/tile_0002.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Walk-Anim.png",
+      "source": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Walk-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0001/Walk-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Walk-Anim.png",
+      "source": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Walk-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0004/Walk-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Walk-Anim.png",
+      "source": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Walk-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0007/Walk-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    },
+    {
+      "module": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Walk-Anim.png",
+      "source": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Walk-Anim.png",
+      "currentSrc": "http://127.0.0.1:5218/src/assets/vendor/sprite/0025/Walk-Anim.png",
+      "contentType": "image/png",
+      "status": 200,
+      "decoded": true
+    }
+  ],
+  "unsourcedPlaceholders": 1,
+  "decodeObservationCount": 64,
+  "uniqueDecodedAssetCount": 52,
+  "placeholderDOM": [
+    {
+      "element": "<img alt=\"\" width=\"64\" height=\"64\">",
+      "role": "status",
+      "parentClass": "ability-hud",
+      "parentHidden": true,
+      "parentDisplay": "none",
+      "visibleRects": 0
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { startBuildReasons } from './start-build.ts';
+import { quoteWorldEvent } from '../world-events/index.ts';
 import {
   economicSkillRule,
   skillDiscountedAmount,
@@ -15,6 +16,26 @@ import {
   tollBase,
 } from './catalog.ts';
 import type { EconomyState, EconomyContext, Quote, Stage } from './types.ts';
+
+/** Canonical pre-blessing amount shared by the quote and inventory commit. */
+export function quotePreBlessingAmount(
+  s: EconomyState,
+  c: EconomyContext,
+  playerId: PlayerId,
+  tileId: TileId,
+  kind: 'upgrade' | 'toll',
+  base: number,
+): { amount: number; ids: string[] } {
+  return modifiedAmount(
+    c,
+    kind,
+    playerId,
+    tileId,
+    c.properties[tileId]?.kind === 'city'
+      ? quoteWorldEvent(s, kind, base)
+      : base,
+  );
+}
 
 export function propertyCapital(
   s: EconomyState,
@@ -55,18 +76,6 @@ export function decisionReasons(
   if (s.legendary?.players[playerId]?.trial || s.legendary?.pendingFly)
     reasons.push('special-pending');
   return reasons;
-}
-/** Canonical amount before blessing; world-event integration extends this helper. */
-export function quotePreBlessingAmount(
-  s: EconomyState,
-  c: EconomyContext,
-  playerId: PlayerId,
-  tileId: TileId,
-  kind: 'upgrade' | 'toll',
-  base: number,
-): { amount: number; ids: string[] } {
-  void s;
-  return modifiedAmount(c, kind, playerId, tileId, base);
 }
 function makeQuote(
   s: EconomyState,
