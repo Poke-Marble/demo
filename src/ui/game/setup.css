@@ -74,6 +74,12 @@
   font-size: 12px;
   line-height: 1.35;
 }
+.pm-shell .pm-setup-info-content {
+  max-height: min(55dvh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+}
 .pm-shell .pm-setup-info-dialog {
   color: #f5f8ff;
   background: #101c2f;
@@ -85,9 +91,8 @@
 .pm-shell .pm-setup-info-section p {
   margin: 4px 0;
 }
-.pm-shell .pm-setup-info-dialog > .pm-primary {
-  display: block;
-  margin: 12px auto 0;
+.pm-shell .pm-setup-info-content p {
+  white-space: pre-line;
 }
 @media (max-width: 700px) {
   .pm-shell .pm-setup-starter .pm-starter-choices {
@@ -111,9 +116,8 @@
   .pm-shell .pm-setup-steps {
     margin-block: 2px 6px;
   }
-  .pm-shell .pm-setup-info-dialog {
-    max-height: calc(100dvh - 16px);
-    overflow-y: auto;
+  .pm-shell .pm-setup-info-content {
+    max-height: calc(100dvh - 140px);
   }
   .pm-shell .pm-setup-starter .pm-assignment {
     display: none;

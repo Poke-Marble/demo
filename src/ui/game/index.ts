@@ -413,30 +413,15 @@ export function mountGameUI(
     title: string,
     sections: [string, ...string[]][],
   ) {
-    if (dialog) closeDialog();
-    const previous = document.activeElement as HTMLElement | null;
-    const d = el('dialog', 'pm-dialog pm-setup-info-dialog');
-    const heading = el('h2', '', title + ' 기술 정보');
-    heading.id = `pm-dialog-${crypto.randomUUID()}`;
-    d.setAttribute('aria-labelledby', heading.id);
+    const content = el('div', 'pm-setup-info-content');
     for (const [label, ...lines] of sections) {
       const section = el('section', 'pm-setup-info-section');
       section.append(el('h3', '', label));
       for (const line of lines) section.append(el('p', '', line));
-      d.append(section);
+      content.append(section);
     }
-    const close = button('닫기', () => d.close(), 'pm-primary');
-    d.append(heading, close);
-    d.addEventListener('cancel', () => {});
-    d.addEventListener('close', () => {
-      if (dialog === d) dialog = null;
-      d.remove();
-      previous?.focus();
-    });
-    host.append(d);
-    dialog = d;
-    d.showModal();
-    close.focus();
+    modal(title + ' 기술 정보', '', [content], true);
+    dialog?.classList.add('pm-setup-info-dialog');
   }
   function renderSetup(content: HTMLElement) {
     content.classList.add('pm-setup-' + setupScreen);
@@ -528,7 +513,12 @@ export function mountGameUI(
                       ['공통 규칙', '경기당 3회, 내 차례에 1회 사용할 수 있어요.'],
                       ['좋은 점', ...definition.pros],
                       ['사용 조건', ...definition.cons],
-                      ['상성과 기술 돌파', definition.detail],
+                      [
+                        '상성과 기술 돌파',
+                        definition.type === 'fire' || definition.type === 'electric'
+                          ? '공통 기술 돌파로 통행료를 15% 아껴요(최대 60). 상성이 유리하면 이 기술의 할인율은 10%p, 할인 한도는 25 올라가요.\n' + definition.detail
+                          : definition.detail,
+                      ],
                     ],
                   ),
                 'pm-setup-info-button',

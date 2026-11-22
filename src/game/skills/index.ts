@@ -15,7 +15,7 @@ export interface SkillDefinition {
   readonly detail: string;
 }
 const detail =
-  '공통 기술돌파: 통행료 15% 감면(최대 60). 상성 우위면 불꽃세례·전기쇼크 할인율은 10%p, 할인 한도는 25 올라갑니다. 불→풀, 물→불, 풀→물, 전기→물만 우위입니다. 열세 불이익은 없고, 이동 기술에는 상성 추가 효과가 없습니다. 가호와 함께 써도 할인 한도를 넘지 않습니다. 시험·비행·강제이동 중에는 사용할 수 없습니다.';
+  '공통 기술 돌파로 통행료를 15% 아껴요(최대 60). 상성이 유리하면 경제 기술 할인율이 10%p, 할인 한도가 25 올라가요. 불→풀, 물→불, 풀→물, 전기→물만 유리해요. 열세 불이익은 없고, 이동 기술에는 상성 추가 효과가 없어요. 가호와 함께 써도 할인 한도를 넘지 않아요. 시험·비행·강제이동 중에는 사용할 수 없어요.';
 export const skillCatalog: readonly SkillDefinition[] = [
   {
     id: 'vine-whip',
@@ -52,7 +52,7 @@ export const skillCatalog: readonly SkillDefinition[] = [
     pokemonId: 'pokemon:0025',
     type: 'electric',
     name: '전기쇼크',
-    summary: '일반 도시를 살 때 20% 아껴요 (최대 100)',
+    summary: '일반 도시를 인수할 때 20% 아껴요 (최대 100)',
     pros: ['실제 인수 견적으로 선택', '상성 우위 시 30% · 최대 125'],
     cons: ['최종시설·명소 인수 면역 유지', '통행료에는 고유 효과 적용 안 됨'],
     detail,
