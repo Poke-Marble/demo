@@ -113,6 +113,19 @@
     padding-inline: 10px;
   }
 }
+@media (max-width: 380px) and (min-height: 501px) {
+  .pm-shell .pm-setup-starter .pm-partner-portrait {
+    height: 32px;
+  }
+  .pm-shell .pm-setup-starter .pm-starter {
+    padding: 3px;
+  }
+  .pm-shell .pm-setup-starter .pm-assignment {
+    gap: 4px;
+    margin-block: 2px;
+    padding-block: 0;
+  }
+}
 @media (max-height: 500px) {
   .pm-shell .pm-setup-starter,
   .pm-shell .pm-setup-map {
