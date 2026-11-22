@@ -15,14 +15,14 @@ export interface SkillDefinition {
   readonly detail: string;
 }
 const detail =
-  '초기 3PP · 자동 충전 없음 · 본인 기본차례당 1회. 공통 기술돌파: 통행료 15% 감면, 최대 60. 상성 우위 시 경제 기술만 +10%p·상한 +25. 불→풀, 물→불, 풀→물, 전기→물만 우위이며 열세 벌금이나 이동 기술의 추가 할인은 없습니다. 가호와 함께 써도 기술의 추가 절약은 상한 이내입니다. 시험·비행·강제이동에는 사용할 수 없습니다.';
+  '공통 기술 돌파로 통행료를 15% 아껴요(최대 60). 상성이 유리하면 경제 기술 할인율이 10%p, 할인 한도가 25 올라가요. 불→풀, 물→불, 풀→물, 전기→물만 유리해요. 열세 불이익은 없고, 이동 기술에는 상성 추가 효과가 없어요. 가호와 함께 써도 할인 한도를 넘지 않아요. 시험·비행·강제이동 중에는 사용할 수 없어요.';
 export const skillCatalog: readonly SkillDefinition[] = [
   {
     id: 'vine-whip',
     pokemonId: 'pokemon:0001',
     type: 'grass',
     name: '덩굴채찍',
-    summary: '눈 공개 후 이동 전 합계 유지 또는 -1 (최소 2)',
+    summary: '이동 전 눈 합계를 1 줄여요 (최소 2칸)',
     pros: ['공개된 눈으로 착지 조정', '원래 합계 유지는 PP 무료'],
     cons: ['합계를 늘릴 수 없음', '조정 시 1PP'],
     detail,
@@ -32,7 +32,7 @@ export const skillCatalog: readonly SkillDefinition[] = [
     pokemonId: 'pokemon:0007',
     type: 'water',
     name: '물대포',
-    summary: '눈 공개 후 이동 전 합계 유지 또는 +1 (최대 12)',
+    summary: '이동 전 눈 합계를 1 늘려요 (최대 12칸)',
     pros: ['공개된 눈으로 착지 조정', '원래 합계 유지는 PP 무료'],
     cons: ['합계를 줄일 수 없음', '조정 시 1PP'],
     detail,
@@ -42,7 +42,7 @@ export const skillCatalog: readonly SkillDefinition[] = [
     pokemonId: 'pokemon:0004',
     type: 'fire',
     name: '불꽃세례',
-    summary: '착지 의무 통행료 25% 감면 · 최대 100',
+    summary: '이번 착지 통행료를 25% 아껴요 (최대 100)',
     pros: ['착지 후 실제 견적으로 선택', '상성 우위 시 35% · 최대 125'],
     cons: ['인수비에는 적용 안 됨', '가호 중첩 후 순절약도 상한 적용'],
     detail,
@@ -52,7 +52,7 @@ export const skillCatalog: readonly SkillDefinition[] = [
     pokemonId: 'pokemon:0025',
     type: 'electric',
     name: '전기쇼크',
-    summary: '합법 일반도시 인수비 20% 감면 · 최대 100',
+    summary: '일반 도시를 인수할 때 20% 아껴요 (최대 100)',
     pros: ['실제 인수 견적으로 선택', '상성 우위 시 30% · 최대 125'],
     cons: ['최종시설·명소 인수 면역 유지', '통행료에는 고유 효과 적용 안 됨'],
     detail,
