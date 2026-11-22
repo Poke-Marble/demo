@@ -35,6 +35,7 @@ import './isometric.css';
 import './theme/theme.css';
 import './integration/presentation.css';
 import './fullscreen.css';
+import './setup.css';
 import { diceLabel } from './theme/dice';
 import { createSkillPresenter } from './skills/presenter';
 import { skillForPokemon } from '../../game/skills';
@@ -408,6 +409,35 @@ export function mountGameUI(
     host.append(d);
     d.showModal();
   }
+  function setupInfoDialog(
+    title: string,
+    sections: [string, ...string[]][],
+  ) {
+    if (dialog) closeDialog();
+    const previous = document.activeElement as HTMLElement | null;
+    const d = el('dialog', 'pm-dialog pm-setup-info-dialog');
+    const heading = el('h2', '', title + ' 기술 정보');
+    heading.id = `pm-dialog-${crypto.randomUUID()}`;
+    d.setAttribute('aria-labelledby', heading.id);
+    for (const [label, ...lines] of sections) {
+      const section = el('section', 'pm-setup-info-section');
+      section.append(el('h3', '', label));
+      for (const line of lines) section.append(el('p', '', line));
+      d.append(section);
+    }
+    const close = button('닫기', () => d.close(), 'pm-primary');
+    d.append(heading, close);
+    d.addEventListener('cancel', () => {});
+    d.addEventListener('close', () => {
+      if (dialog === d) dialog = null;
+      d.remove();
+      previous?.focus();
+    });
+    host.append(d);
+    dialog = d;
+    d.showModal();
+    close.focus();
+  }
   function renderSetup(content: HTMLElement) {
     content.classList.add('pm-setup-' + setupScreen);
     const intro = el('div', 'pm-lobby-intro');
@@ -475,17 +505,36 @@ export function mountGameUI(
         if (selectedPartner === partner.id) {
           const definition = skillForPokemon(partner.id);
           if (definition) {
-            const detail = el('div', 'pm-starter-skill-detail');
-            detail.append(
-              el('strong', '', `${definition.name} · 초기 PP 3회`),
-              el('p', '', definition.summary),
-              el('p', '', definition.detail),
+            const summary = el('div', 'pm-starter-skill-summary');
+            summary.append(
+              el('strong', '', definition.name),
+              el('span', '', `효과 · ${definition.summary}`),
+              el(
+                'span',
+                '',
+                definition.type === 'grass' || definition.type === 'water'
+                  ? '사용 시점 · 눈을 굴린 뒤 이동하기 전'
+                  : definition.type === 'fire'
+                    ? '사용 시점 · 통행료를 낼 때'
+                    : '사용 시점 · 도시를 인수할 때',
+              ),
+              el('span', '', '횟수 · 경기당 3회, 내 차례에 1회'),
+              button(
+                '기술 정보',
+                () =>
+                  setupInfoDialog(
+                    definition.name,
+                    [
+                      ['공통 규칙', '경기당 3회, 내 차례에 1회 사용할 수 있어요.'],
+                      ['좋은 점', ...definition.pros],
+                      ['사용 조건', ...definition.cons],
+                      ['상성과 기술 돌파', definition.detail],
+                    ],
+                  ),
+                'pm-setup-info-button',
+              ),
             );
-            for (const text of definition.pros)
-              detail.append(el('p', '', `장점 · ${text}`));
-            for (const text of definition.cons)
-              detail.append(el('p', '', `조건 · ${text}`));
-            content.append(detail);
+            content.append(summary);
           }
         }
         choices.append(b);
