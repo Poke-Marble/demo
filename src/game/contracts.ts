@@ -118,7 +118,6 @@ export type GameAction =
 
 /** 처리 결과의 최소 어휘만 선언한다. 이벤트 로그·리플레이 프로토콜은 아직 미정. */
 export type GameEvent =
-  | { readonly type: 'dice-revealed'; readonly playerId: PlayerId; readonly values: readonly [number, number] }
   | {
       readonly type: 'dice-revealed';
       readonly playerId: PlayerId;

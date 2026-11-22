@@ -249,6 +249,12 @@ try {
         },
         42,
       )?.candidate;
+      // This regression targets legendary receipts; keep the original dice route.
+      // Skill resource use is covered separately by check-skill-ui.mjs.
+      candidate =
+        snap.candidates.find(
+          (c) => c.action.type === 'resolve-dice' && c.action.adjustment === 0,
+        ) ?? candidate;
       if (Number(snap.turn) < 9)
         candidate = snap.candidates.find((c) => c.kind === 'pass') ?? candidate;
       if (!ropeUsed && !snap.candidates.some((c) => c.kind === 'trial'))

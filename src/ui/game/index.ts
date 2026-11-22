@@ -92,7 +92,10 @@ export function mountGameUI(
   const feedback = createGameplayFeedback(root, options.sfx);
   const abilityWaiters = new Map<string, () => void>();
   const skillWaiters = new Map<string, () => void>();
-  const skillFX = createSkillPresenter(root, (activation) => { skillWaiters.get(activation.id)?.(); skillWaiters.delete(activation.id); });
+  const skillFX = createSkillPresenter(root, (activation) => {
+    skillWaiters.get(activation.id)?.();
+    skillWaiters.delete(activation.id);
+  });
   const ability = createAbilityPresenter(root, {
     onEnd: (activation) => {
       abilityWaiters.get(activation.id)?.();
@@ -147,6 +150,7 @@ export function mountGameUI(
   const feedbackGate = createUpdateGate();
   let feedbackLocked = false;
   let pendingFeedback = 0;
+  let revealedPlayer: string | undefined;
   let view = adapter.getView();
   let disposed = false,
     busy = false,
@@ -461,16 +465,26 @@ export function mountGameUI(
           el('span', 'pm-starter-type', partner.type),
           portrait,
           el('strong', '', partner.name),
-          el('span', 'pm-starter-skill', skillForPokemon(partner.id)?.name ?? ''),
+          el(
+            'span',
+            'pm-starter-skill',
+            skillForPokemon(partner.id)?.name ?? '',
+          ),
           el('small', '', selectedPartner === partner.id ? '선택됨 ✓' : '선택'),
         );
         if (selectedPartner === partner.id) {
           const definition = skillForPokemon(partner.id);
           if (definition) {
-            const detail = el('div','pm-starter-skill-detail');
-            detail.append(el('strong','',`${definition.name} · 초기 PP 3회`),el('p','',definition.summary),el('p','',definition.detail));
-            for (const text of definition.pros) detail.append(el('p','',`장점 · ${text}`));
-            for (const text of definition.cons) detail.append(el('p','',`조건 · ${text}`));
+            const detail = el('div', 'pm-starter-skill-detail');
+            detail.append(
+              el('strong', '', `${definition.name} · 초기 PP 3회`),
+              el('p', '', definition.summary),
+              el('p', '', definition.detail),
+            );
+            for (const text of definition.pros)
+              detail.append(el('p', '', `장점 · ${text}`));
+            for (const text of definition.cons)
+              detail.append(el('p', '', `조건 · ${text}`));
             content.append(detail);
           }
         }
@@ -667,25 +681,67 @@ export function mountGameUI(
       const skill = view.activeSkill;
       const card = el('section', 'pm-skill-hud');
       card.setAttribute('aria-label', `${skill.definition.name} 기술 상태`);
-      card.append(el('strong', '', skill.definition.name), el('span', '', skill.cooldownLabel), el('span', '', skill.statusLabel));
-      const info = button('기술 정보', () => {
-        const detail = el('div', 'pm-dialog-skill');
-        detail.append(el('p', '', skill.definition.summary), el('p', '', skill.definition.detail));
-        skill.definition.pros.forEach((line) => detail.append(el('p', '', `장점 · ${line}`)));
-        skill.definition.cons.forEach((line) => detail.append(el('p', '', `사용 조건 · ${line}`)));
-        modal(skill.definition.name, '', [detail], true);
-      }, 'pm-secondary');
+      card.append(
+        el('strong', '', skill.definition.name),
+        el('span', '', skill.cooldownLabel),
+        el('span', '', skill.statusLabel),
+      );
+      const info = button(
+        '기술 정보',
+        () => {
+          const detail = el('div', 'pm-dialog-skill');
+          detail.append(
+            el('p', '', skill.definition.summary),
+            el('p', '', skill.definition.detail),
+          );
+          skill.definition.pros.forEach((line) =>
+            detail.append(el('p', '', `장점 · ${line}`)),
+          );
+          skill.definition.cons.forEach((line) =>
+            detail.append(el('p', '', `사용 조건 · ${line}`)),
+          );
+          modal(skill.definition.name, '', [detail], true);
+        },
+        'pm-secondary',
+      );
       card.append(info);
-      if (skill.choice && humanTurn()) card.append(choiceButton(skill.choice));
-      else card.append(el('span', 'pm-skill-unavailable', skill.unavailableReason ?? '사용할 수 없습니다.'));
+      if (skill.choice && humanTurn() && !view.prompt)
+        card.append(choiceButton(skill.choice));
+      else
+        card.append(
+          el(
+            'span',
+            'pm-skill-unavailable',
+            skill.choice && view.prompt
+              ? '방문 선택창에서 사용'
+              : (skill.unavailableReason ?? '사용할 수 없습니다.'),
+          ),
+        );
       rail.append(card);
     }
     const controls = el('div', 'pm-controls');
+    const sales = view.actions.filter((a) => a.group === 'asset-sale');
     view.actions.forEach((a) => {
+      if (a.group === 'asset-sale') return;
+      if (humanTurn() && a.id === view.activeSkill?.choice?.id) return;
       const b = choiceButton(a);
       b.dataset.focus = a.id;
       controls.append(b);
     });
+    if (sales.length)
+      controls.append(
+        button(
+          '매각 선택',
+          () =>
+            modal(
+              '자산 매각',
+              '확정 견적 · 매각할 자산을 선택하세요.',
+              sales.map((choice) => choiceButton(choice)),
+              true,
+            ),
+          'pm-secondary',
+        ),
+      );
     rail.append(controls);
     if (!humanTurn() && view.state.phase === 'playing') {
       const connected = view.computer.connected && !!adapter.runComputerTurn;
@@ -882,6 +938,8 @@ export function mountGameUI(
           '트레이너')
         : '';
     switch (event.type) {
+      case 'dice-revealed':
+        return `${name}: 주사위 ${event.values.join(' + ')} 공개 · 이동 선택`;
       case 'dice-rolled':
         return `${name}: 주사위 ${event.values.join(' · ')}`;
       case 'player-moved':
@@ -952,11 +1010,15 @@ export function mountGameUI(
       setupScreen = 'title';
       log = [];
       dice = diceLabel(null);
+      revealedPlayer = undefined;
     }
     const current = generation;
     feedback.begin();
     const movement = update.movement;
     const roll = update.events.find((event) => event.type === 'dice-rolled');
+    const reveal = update.events.find(
+      (event) => event.type === 'dice-revealed',
+    );
     const renderer =
       view.state.phase === 'setup'
         ? undefined
@@ -964,13 +1026,19 @@ export function mountGameUI(
             beforeView.state.phase === 'setup' ? view : beforeView,
           );
     if (current !== generation || disposed) return;
-    if (roll?.type === 'dice-rolled') {
+    if (reveal || (roll && revealedPlayer !== roll.playerId)) {
+      const values = (reveal ?? roll)!.values;
       animating = true;
       dice = diceLabel(null, 'rolling');
       closeDialog();
       render();
-      await feedback.roll(roll.values);
+      await feedback.roll(values);
       if (current !== generation || disposed) return;
+      dice = `주사위 ${values.join(' + ')} = ${values.reduce((sum, value) => sum + value, 0)}${reveal ? ' · 이동 선택' : ''}`;
+    }
+    if (reveal) revealedPlayer = reveal.playerId;
+    if (roll) {
+      revealedPlayer = undefined;
       dice = `주사위 ${roll.values.join(' + ')} · 실제 이동 ${roll.distance ?? roll.values.reduce((sum, value) => sum + value, 0)}칸${movement ? ' · 이동 중…' : ''}`;
     }
     // Confirmed numbers enter text and records only after the dice have settled.
@@ -992,7 +1060,8 @@ export function mountGameUI(
     // Release the synchronous receipt lock after both presenters have settled.
     if (effectsLocked) lockEffects(false);
     animating = false;
-    if (roll?.type === 'dice-rolled') dice = `주사위 ${roll.values.join(' + ')} · 실제 이동 ${roll.distance ?? roll.values.reduce((sum, value) => sum + value, 0)}칸`;
+    if (roll?.type === 'dice-rolled')
+      dice = `주사위 ${roll.values.join(' + ')} · 실제 이동 ${roll.distance ?? roll.values.reduce((sum, value) => sum + value, 0)}칸`;
     if (constructionCues.length && !feedback.suppressed) {
       animating = true;
       render();
@@ -1016,10 +1085,14 @@ export function mountGameUI(
     }
     for (const activation of update.skillActivations ?? []) {
       if (feedback.suppressed) continue;
-      animating = true; render();
+      animating = true;
+      render();
       await new Promise<void>((resolve) => {
         skillWaiters.set(activation.id, resolve);
-        if (!skillFX.enqueue(activation)) { skillWaiters.delete(activation.id); resolve(); }
+        if (!skillFX.enqueue(activation)) {
+          skillWaiters.delete(activation.id);
+          resolve();
+        }
       });
       if (current !== generation || disposed) return;
       animating = false;
@@ -1027,10 +1100,11 @@ export function mountGameUI(
     for (const cue of cues) if (cue.reaction !== 'acting') emotions.apply(cue);
     if (
       roll ||
+      reveal ||
       movement ||
       hasConstruction(update) ||
-      update.abilityActivations?.length
-      || update.skillActivations?.length
+      update.abilityActivations?.length ||
+      update.skillActivations?.length
     )
       pendingFeedback = Math.max(0, pendingFeedback - 1);
     feedbackLocked = pendingFeedback > 0;
@@ -1068,11 +1142,14 @@ export function mountGameUI(
       return;
     }
     if (
-      u.events.some((event) => event.type === 'dice-rolled') ||
+      u.events.some(
+        (event) =>
+          event.type === 'dice-rolled' || event.type === 'dice-revealed',
+      ) ||
       u.movement ||
       hasConstruction(u) ||
-      u.abilityActivations?.length
-      || u.skillActivations?.length
+      u.abilityActivations?.length ||
+      u.skillActivations?.length
     ) {
       // Synchronous input lock, including computer updates before queue delivery.
       feedbackLocked = true;

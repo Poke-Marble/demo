@@ -48,6 +48,7 @@ type Legal = LegalActionSet['actions'][number];
 const labels: Partial<Record<EconomyIntent['type'], string>> = {
   'roll-dice': '주사위 굴리기',
   'end-turn': '턴 마치기',
+  'pay-toll': '통행료 정산',
   'buy-landmark': '명소 구매',
   'takeover-property': '인수',
   'sell-property': '매각',
@@ -120,7 +121,13 @@ export function createIntegratedPreview(
     const set = legal();
     const choices = set.actions
       .filter((a) => a.intent.type !== 'fly')
-      .map((a) => ({ id: a.actionKey, label: label(a) }));
+      .map((a) => ({
+        id: a.actionKey,
+        label: label(a),
+        ...(a.intent.type === 'sell-property'
+          ? { group: 'asset-sale' as const }
+          : {}),
+      }));
     const choosing =
       set.phase === 'choosing-property' ||
       set.phase === 'liquidating' ||

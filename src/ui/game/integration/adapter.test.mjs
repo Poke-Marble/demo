@@ -15,14 +15,19 @@ const tick = () => new Promise((resolve) => setImmediate(resolve));
 
 function keepRevealedDice(p) {
   if (!p.getState().core.pendingDice) return;
-  const keep = p.snapshot().candidates.find(
-    (candidate) =>
-      candidate.action.type === 'resolve-dice' &&
-      candidate.action.adjustment === 0,
-  );
+  const keep = p
+    .snapshot()
+    .candidates.find(
+      (candidate) =>
+        candidate.action.type === 'resolve-dice' &&
+        candidate.action.adjustment === 0,
+    );
   assert.ok(keep, 'authoritative free keep choice');
   const view = p.adapter.getView();
-  p.adapter.choose(view.actions.find((a) => a.id === keep.id).selectionId, keep.id);
+  p.adapter.choose(
+    view.actions.find((a) => a.id === keep.id).selectionId,
+    keep.id,
+  );
 }
 
 test('new games select isolated standard/quick profiles and invalid setup preserves session', () => {

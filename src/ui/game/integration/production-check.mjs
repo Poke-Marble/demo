@@ -1,4 +1,4 @@
-/* global document, innerWidth, Image, performance */
+/* global document, innerWidth, Image, performance, window, MutationObserver */
 import process from 'node:process';
 import console from 'node:console';
 import { resolve } from 'node:path';
@@ -40,6 +40,18 @@ try {
   await page.getByRole('button', { name: /게임 시작/ }).click();
   await page.locator('.phaser-board canvas').waitFor();
   assert.equal(await page.locator('.phaser-board canvas').count(), 1);
+  await page.evaluate(() => {
+    window.qaSkills = [];
+    const node = document.querySelector('.pm-skill-presentation');
+    if (node)
+      new MutationObserver(() => {
+        if (!node.hidden)
+          window.qaSkills.push({
+            type: node.dataset.type,
+            text: node.textContent,
+          });
+      }).observe(node, { attributes: true, attributeFilter: ['hidden'] });
+  });
   const roll = page.getByRole('button', { name: /주사위 굴리기/ });
   await roll.waitFor();
   await page.waitForFunction(() => !document.querySelector('.pm-game').inert);
@@ -170,6 +182,16 @@ try {
               .click();
           }
         } else {
+          if (
+            choice.action.type === 'sell-property' &&
+            !(await page.locator('dialog[open]').count())
+          ) {
+            const sales = page.getByRole('button', {
+              name: '매각 선택',
+              exact: true,
+            });
+            if (await sales.count()) await sales.click();
+          }
           const nodes = page.locator('button[data-choice-id]');
           const index = await nodes.evaluateAll(
             (ns, id) => ns.findIndex((n) => n.dataset.choiceId === id),
@@ -245,6 +267,7 @@ try {
     'artifacts/presentation-integration/production-report.json',
     JSON.stringify(
       {
+        skillPresentations: await page.evaluate(() => window.qaSkills),
         errors,
         failed,
         ended,

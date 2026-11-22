@@ -15,7 +15,7 @@ export interface SkillDefinition {
   readonly detail: string;
 }
 const detail =
-  '초기 3PP · 자동 충전 없음 · 본인 기본차례당 1회. 공통 기술돌파: 통행료 15% 감면, 최대 60. 상성 우위 시 경제 기술만 +10%p·상한 +25. 가호와 함께 써도 기술의 추가 절약은 상한 이내입니다.';
+  '초기 3PP · 자동 충전 없음 · 본인 기본차례당 1회. 공통 기술돌파: 통행료 15% 감면, 최대 60. 상성 우위 시 경제 기술만 +10%p·상한 +25. 불→풀, 물→불, 풀→물, 전기→물만 우위이며 열세 벌금이나 이동 기술의 추가 할인은 없습니다. 가호와 함께 써도 기술의 추가 절약은 상한 이내입니다. 시험·비행·강제이동에는 사용할 수 없습니다.';
 export const skillCatalog: readonly SkillDefinition[] = [
   {
     id: 'vine-whip',

@@ -29,6 +29,8 @@ export interface UIChoice {
   selectionId?: string;
   label: string;
   description?: string;
+  /** Presentation grouping only; the selection remains opaque. */
+  group?: 'asset-sale';
   disabled?: boolean;
   action?: GameAction;
 }
