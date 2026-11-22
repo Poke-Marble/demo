@@ -1,0 +1,63 @@
+{
+  "setup": {
+    "steps": 145,
+    "destinations": 31,
+    "ownership": [null, "unowned", "opponent", "self"],
+    "canvas": true
+  },
+  "checks": [
+    {
+      "width": 1280,
+      "dragSuppressed": true,
+      "candidate": "tile:kj:viridian",
+      "inside": true,
+      "cardBounded": true,
+      "listCollapsed": true,
+      "cities": 31,
+      "canvasHeight": 639.59375
+    },
+    {
+      "width": 390,
+      "dragSuppressed": true,
+      "candidate": "tile:kj:viridian",
+      "inside": true,
+      "cardBounded": true,
+      "listCollapsed": true,
+      "cities": 31,
+      "canvasHeight": 659.8125
+    }
+  ],
+  "touch": {
+    "candidate": "tile:kj:viridian",
+    "submissions": 0
+  },
+  "lifecycle": {
+    "invalidated": true,
+    "reset": true,
+    "calls": 0
+  },
+  "boardLifecycle": {
+    "skipped": true,
+    "reconciled": true,
+    "destroyed": true
+  },
+  "economy": {
+    "tile": "tile:kj:viridian",
+    "quote": 100,
+    "balance": 314,
+    "calls": 1,
+    "paid": 100,
+    "recovered": 100,
+    "position": "tile:kj:viridian"
+  },
+  "selected": "tile:kj:lugia-trial",
+  "arrival": {
+    "position": "tile:kj:lugia-trial",
+    "flightEvents": 1,
+    "selectionGone": true,
+    "trialIntros": 0,
+    "settled": true,
+    "stateChanged": true,
+    "aiReturned": true
+  }
+}

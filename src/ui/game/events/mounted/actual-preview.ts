@@ -4,11 +4,11 @@ import { createInitialRoster } from '../../setup';
 import { plan } from '../../../../game/ai/planner';
 import type { GameAction } from '../../../../game/contracts';
 import type { GameUIAdapter } from '../../adapter';
-const runtime = createIntegratedPreview({ seed: 1, computerDelayMs: 0 });
+const runtime = createIntegratedPreview({ seed: 42, computerDelayMs: 0 });
 const base = runtime.adapter;
 base.start({
   mapId: base.getView().map.id,
-  participants: createInitialRoster('pokemon:0001'),
+  participants: createInitialRoster('pokemon:0007'),
 });
 // Advance only through legal production commands; no subscriber exists during warmup.
 let steps = 0;
@@ -23,7 +23,7 @@ while (steps++ < 500 && !base.getView().flightSelection) {
       new AbortController().signal,
     );
   } else {
-    let c = plan(
+    const c = plan(
       {
         ...s,
         players: s.players.map((p) => ({
@@ -33,12 +33,6 @@ while (steps++ < 500 && !base.getView().flightSelection) {
       },
       42,
     )?.candidate;
-    c =
-      s.candidates.find(
-        (c) => c.action.type === 'resolve-dice' && c.action.adjustment === 0,
-      ) ?? c;
-    if (Number(s.turn) < 9)
-      c = s.candidates.find((c) => c.kind === 'pass') ?? c;
     if (!c)
       throw new Error(
         'No legal warmup action ' +

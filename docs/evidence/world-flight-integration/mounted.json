@@ -1,0 +1,86 @@
+[
+  {
+    "width": 1280,
+    "cross": {
+      "mounted": "player:1",
+      "pokemon": "pokemon:0007",
+      "rect": {
+        "x": 467.3828125,
+        "y": 41.109375,
+        "width": 294.734375,
+        "height": 270.171875,
+        "top": 41.109375,
+        "right": 762.1171875,
+        "bottom": 311.28125,
+        "left": 467.3828125
+      },
+      "board": {
+        "x": 16,
+        "y": 130,
+        "width": 839.921875,
+        "height": 530,
+        "top": 130,
+        "right": 855.921875,
+        "bottom": 660,
+        "left": 16
+      },
+      "opaque": {
+        "x": 555.803125,
+        "y": 163.91477272727275,
+        "right": 673.696875,
+        "bottom": 306.3690340909091
+      }
+    },
+    "receipt": {
+      "id": "game:1:human:1:307:0",
+      "from": "tile:kj:fly",
+      "to": "tile:kj:pallet",
+      "ack": 1,
+      "revision": 308,
+      "actualPosition": "tile:kj:pallet"
+    },
+    "errors": []
+  },
+  {
+    "width": 390,
+    "cross": {
+      "mounted": "player:1",
+      "pokemon": "pokemon:0007",
+      "rect": {
+        "x": 131.0078125,
+        "y": -33.359375,
+        "width": 296.140625,
+        "height": 271.453125,
+        "top": -33.359375,
+        "right": 427.1484375,
+        "bottom": 238.09375,
+        "left": 131.0078125
+      },
+      "board": {
+        "x": 10,
+        "y": 134.6875,
+        "width": 370,
+        "height": 331.515625,
+        "top": 134.6875,
+        "right": 380,
+        "bottom": 466.203125,
+        "left": 10
+      },
+      "opaque": {
+        "x": 214.91432291666666,
+        "y": 75.221875,
+        "right": 343.24192708333334,
+        "bottom": 233.15823863636365
+      }
+    },
+    "receipt": {
+      "id": "game:1:human:1:307:0",
+      "from": "tile:kj:fly",
+      "to": "tile:kj:pallet",
+      "ack": 1,
+      "revision": 308,
+      "actualPosition": "tile:kj:pallet"
+    },
+    "errors": []
+  }
+]
