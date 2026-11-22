@@ -1,3 +1,4 @@
+import { startBuildCandidates, quoteStartBuild } from './start-build.ts';
 import {
   clearFinishedSkills,
   completeSkillBasicTurn,
@@ -11,15 +12,10 @@ import {
 import type { PlayerId, TileId } from '../contracts.ts';
 import { dispatch as dispatchCore } from '../core/index.ts';
 import { quoteBlessing, legalFlyDestinations } from '../legendary.ts';
-import {
-  check,
-  facilities,
-  money,
-  validateEconomyState,
-  modifiedAmount,
-} from './catalog.ts';
+import { check, facilities, money, validateEconomyState } from './catalog.ts';
 import {
   decisionReasons,
+  quotePreBlessingAmount,
   propertyCapital,
   quoteConstruction,
   quoteLandmark,
@@ -44,6 +40,7 @@ import type {
 export * from './types.ts';
 export * from './catalog.ts';
 export * from './quotes.ts';
+export * from './start-build.ts';
 
 function fingerprint(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(fingerprint).join(',')}]`;
@@ -289,6 +286,7 @@ export function dispatchEconomy<S extends EconomyState>(
         original.match.completedRounds < original.match.roundLimit ||
         !!original.economy.pendingDebt ||
         !!original.economy.pendingToll ||
+        !!original.economy.pendingStartBuild ||
         !!original.core.pendingDice,
       'round-limit-reached',
     );
@@ -323,6 +321,14 @@ export function dispatchEconomy<S extends EconomyState>(
         (intent.type === 'pay-toll' || intent.type === 'use-skill') &&
           intent.landingId === s.economy.pendingToll.landingId,
         'toll-decision-required',
+      );
+    }
+    const startBuild = s.economy.pendingStartBuild;
+    if (startBuild) {
+      check(
+        (intent.type === 'start-build' || intent.type === 'skip-start-build') &&
+          intent.opportunityId === startBuild.id,
+        'start-build-decision-required',
       );
     }
     if (intent.type === 'use-skill') {
@@ -416,11 +422,12 @@ export function dispatchEconomy<S extends EconomyState>(
       ensureQuote(quote);
       const old = s.holdings.find((h) => h.tileId === intent.tileId);
       if (intent.type === 'construct-property') {
-        const amount = modifiedAmount(
+        const amount = quotePreBlessingAmount(
+          s,
           c,
-          'upgrade',
           actor.id,
           intent.tileId,
+          'upgrade',
           quote.upgradeSubtotal,
         ).amount;
         s = consume(s, actor.id, 'upgrade', amount, quote.consumesBlessing);
@@ -478,6 +485,65 @@ export function dispatchEconomy<S extends EconomyState>(
           level: stage,
         });
       s = clearPreparedSkill(s, actor.id);
+    } else if (intent.type === 'start-build') {
+      check(
+        startBuild && intent.opportunityId === startBuild.id,
+        'wrong-start-build',
+      );
+      quote = quoteStartBuild(
+        s,
+        c,
+        actor.id,
+        intent.tileId,
+        intent.opportunityId,
+      );
+      check(intent.quoteId === quote.quoteId, 'wrong-quote');
+      ensureQuote(quote);
+      const stage = quote.toStage!;
+      const oldDevelopment = s.economy.developmentByTileId[intent.tileId]!;
+      const amount = quotePreBlessingAmount(
+        s,
+        c,
+        actor.id,
+        intent.tileId,
+        'upgrade',
+        quote.upgradeSubtotal,
+      ).amount;
+      s = consume(s, actor.id, 'upgrade', amount, quote.consumesBlessing);
+      s = transfer(s, actor.id, null, quote.total);
+      s = patch(
+        {
+          ...s,
+          holdings: s.holdings.map((h) =>
+            h.tileId === intent.tileId ? { ...h, facilityLevel: stage } : h,
+          ),
+        },
+        {
+          pendingStartBuild: null,
+          developmentByTileId: {
+            ...s.economy.developmentByTileId,
+            [intent.tileId]: {
+              stage,
+              facilities: facilities.slice(0, stage),
+              centerReadyVisitOrdinal:
+                stage === 2
+                  ? s.economy.landing!.visitOrdinal
+                  : oldDevelopment.centerReadyVisitOrdinal,
+            },
+          },
+        },
+      );
+      events.push({
+        type: 'facility-upgraded',
+        tileId: intent.tileId,
+        level: stage,
+      });
+    } else if (intent.type === 'skip-start-build') {
+      check(
+        startBuild && intent.opportunityId === startBuild.id,
+        'wrong-start-build',
+      );
+      s = patch(s, { pendingStartBuild: null });
     } else if (intent.type === 'pay-toll' || intent.type === 'use-skill') {
       check(
         s.economy.pendingToll &&
@@ -584,6 +650,23 @@ export function dispatchEconomy<S extends EconomyState>(
             events,
             intent.type === 'roll-dice' || intent.type === 'resolve-dice',
           );
+      }
+      if (
+        (intent.type === 'roll-dice' || intent.type === 'resolve-dice') &&
+        result.events.some((e) => e.type === 'dice-rolled') &&
+        s.economy.landing &&
+        c.map.tiles.find((t) => t.id === s.economy.landing!.tileId)?.kind ===
+          'start'
+      ) {
+        s = patch(s, {
+          pendingStartBuild: {
+            id: `${command.commandId}:start-build`,
+            playerId: actor.id,
+            landingId: s.economy.landing.id,
+          },
+        });
+        if (!startBuildCandidates(s, c, actor.id).length)
+          s = patch(s, { pendingStartBuild: null });
       }
     }
     // A bankrupt actor cannot supply another action; core advances to the next survivor.
@@ -712,6 +795,26 @@ export function getLegalActions(
           ...(quote ? { quote } : {}),
         });
     };
+    const startBuild = s.economy.pendingStartBuild;
+    if (startBuild) {
+      for (const q of startBuildCandidates(s, c, playerId))
+        add(
+          {
+            type: 'start-build',
+            opportunityId: startBuild.id,
+            tileId: q.tileId,
+            quoteId: q.quoteId,
+          },
+          q,
+        );
+      add({ type: 'skip-start-build', opportunityId: startBuild.id });
+      return {
+        revision: s.economy.revision,
+        playerId,
+        phase: 'choosing-start-build',
+        actions,
+      };
+    }
     const toll = s.economy.pendingToll;
     if (toll) {
       add(

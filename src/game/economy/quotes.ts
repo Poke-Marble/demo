@@ -1,3 +1,4 @@
+import { startBuildReasons } from './start-build.ts';
 import {
   economicSkillRule,
   skillDiscountedAmount,
@@ -55,6 +56,18 @@ export function decisionReasons(
     reasons.push('special-pending');
   return reasons;
 }
+/** Canonical amount before blessing; world-event integration extends this helper. */
+export function quotePreBlessingAmount(
+  s: EconomyState,
+  c: EconomyContext,
+  playerId: PlayerId,
+  tileId: TileId,
+  kind: 'upgrade' | 'toll',
+  base: number,
+): { amount: number; ids: string[] } {
+  void s;
+  return modifiedAmount(c, kind, playerId, tileId, base);
+}
 function makeQuote(
   s: EconomyState,
   c: EconomyContext,
@@ -71,7 +84,7 @@ function makeQuote(
   check(p, 'wrong-player');
   const base = blessingKind === 'upgrade' ? upgrade : land;
   const modified = blessingKind
-    ? modifiedAmount(c, blessingKind, playerId, tileId, base)
+    ? quotePreBlessingAmount(s, c, playerId, tileId, blessingKind, base)
     : { amount: base, ids: [] };
   const blessed = blessingKind
     ? quoteBlessing(s, playerId, blessingKind, modified.amount)
@@ -132,6 +145,7 @@ export function quoteConstruction(
   playerId: PlayerId,
   tileId: TileId,
   targetStage: Stage,
+  opportunityId?: string,
 ): Quote {
   validateEconomyState(s, c);
   check(
@@ -141,7 +155,10 @@ export function quoteConstruction(
   const prop = c.properties[tileId];
   check(prop?.kind === 'city', 'not-purchasable');
   const h = s.holdings.find((h) => h.tileId === tileId);
-  const reasons = decisionReasons(s, playerId, tileId);
+  const reasons =
+    opportunityId === undefined
+      ? decisionReasons(s, playerId, tileId)
+      : startBuildReasons(s, c, playerId, tileId, targetStage, opportunityId);
   if (h && h.ownerId !== playerId) reasons.push('not-owner');
   if (h && targetStage <= h.facilityLevel) reasons.push('already-built');
   if (

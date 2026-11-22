@@ -54,6 +54,7 @@ const labels: Partial<Record<EconomyIntent['type'], string>> = {
   'sell-property': '매각',
   'declare-bankruptcy': '파산 선언',
   'pass-property': '건너뛰기',
+  'skip-start-build': '이번 기회 건너뛰기',
   'attempt-trial': '시험에 도전',
   'use-escape-rope': '탈출로프 사용',
   fly: '공중날기',
@@ -100,9 +101,11 @@ export function createIntegratedPreview(
   const label = (a: Legal) => {
     const intent = a.intent;
     const title =
-      intent.type === 'construct-property'
+      intent.type === 'construct-property' || intent.type === 'start-build'
         ? ['캠프 구매', '숍 건설', '센터 건설', '대표 시설 완성'][
-            intent.targetStage
+            intent.type === 'start-build'
+              ? a.quote!.toStage!
+              : intent.targetStage
           ]!
         : (labels[intent.type] ?? intent.type);
     const tile =
@@ -115,7 +118,7 @@ export function createIntegratedPreview(
         : `${skillForPokemon(state.players.find((p) => p.id === state.activePlayerId)!.pokemonId)?.name} · 합계 ${intent.adjustment > 0 ? '+1' : '-1'} · 1PP`;
     if (intent.type === 'use-skill')
       return `${intent.mode === 'breakthrough' ? '기술돌파' : skillForPokemon(state.players.find((p) => p.id === state.activePlayerId)!.pokemonId)?.name} · 1PP · ${a.quote?.total} ₽`;
-    return `${title}${intent.type === 'sell-property' ? ` · ${tile}` : ''}${a.quote ? ` · ${intent.type === 'sell-property' ? '+' : ''}${a.quote.total} ₽` : ''}`;
+    return `${title}${['sell-property', 'start-build'].includes(intent.type) ? ` · ${tile}` : ''}${a.quote ? ` · ${intent.type === 'sell-property' ? '+' : ''}${a.quote.total} ₽` : ''}`;
   };
   const getView = (): GameView => {
     const set = legal();
@@ -130,6 +133,7 @@ export function createIntegratedPreview(
       }));
     const choosing =
       set.phase === 'choosing-property' ||
+      set.phase === 'choosing-start-build' ||
       set.phase === 'liquidating' ||
       !!state.legendary?.players[state.activePlayerId]?.trial;
     let description =
@@ -176,6 +180,9 @@ export function createIntegratedPreview(
         if (locked.length) description += ` 잠긴 건설 — ${locked.join(' / ')}`;
       }
     }
+    if (set.phase === 'choosing-start-build')
+      description =
+        'START 정확 도착 · 소유 도시 한 곳에 다음 시설 1단계. 표시된 건설비를 지불하거나 이번 기회를 건너뛰세요.';
     const hudMeta = specialHudMeta(state);
     const trial = state.legendary?.players[state.activePlayerId]?.trial;
     if (trial)
@@ -258,9 +265,11 @@ export function createIntegratedPreview(
               title:
                 set.phase === 'liquidating'
                   ? '채무 정산'
-                  : trial
-                    ? '전설시험'
-                    : '이번 방문 선택',
+                  : set.phase === 'choosing-start-build'
+                    ? 'START 특별 건설'
+                    : trial
+                      ? '전설시험'
+                      : '이번 방문 선택',
               description,
               choices,
             },

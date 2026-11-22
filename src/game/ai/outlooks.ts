@@ -46,6 +46,8 @@ const kinds: Partial<Record<EconomyIntent['type'], ActionKind>> = {
   'use-skill': 'pay-toll',
   'end-turn': 'end-turn',
   'construct-property': 'build',
+  'start-build': 'build',
+  'skip-start-build': 'pass',
   'buy-landmark': 'buy',
   'takeover-property': 'takeover',
   'sell-property': 'sell',
@@ -92,6 +94,9 @@ function projection(s: PublicState): EconomyState {
       developmentByTileId: e.developmentByTileId,
       landing: e.landing,
       pendingDebt: e.pendingDebt,
+      ...(e.pendingStartBuild
+        ? { pendingStartBuild: e.pendingStartBuild }
+        : {}),
       ...(e.pendingToll ? { pendingToll: e.pendingToll } : {}),
       processedCommands: {},
     },
@@ -101,9 +106,12 @@ function projection(s: PublicState): EconomyState {
 function investment(a: Legal) {
   return (
     (a.intent.type === 'use-skill' && a.quote?.kind === 'takeover') ||
-    ['construct-property', 'buy-landmark', 'takeover-property'].includes(
-      a.intent.type,
-    )
+    [
+      'construct-property',
+      'start-build',
+      'buy-landmark',
+      'takeover-property',
+    ].includes(a.intent.type)
   );
 }
 

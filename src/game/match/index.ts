@@ -20,7 +20,8 @@ export function hasPendingSettlement(state: EconomyState): boolean {
   return !!(
     state.core.pendingDice ||
     state.economy.pendingDebt ||
-    state.economy.pendingToll
+    state.economy.pendingToll ||
+    state.economy.pendingStartBuild
   );
 }
 
