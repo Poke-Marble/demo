@@ -427,7 +427,7 @@ export function mountGameUI(
     content.classList.add('pm-setup-' + setupScreen);
     const intro = el('div', 'pm-lobby-intro');
     if (setupScreen === 'title')
-      intro.append(el('h1', 'pm-title', 'Poke Marble'));
+      intro.append(el('h1', 'pm-title', 'Poké Marble'));
     if (setupScreen === 'title') content.append(intro);
     const navigate = (screen: typeof setupScreen) => {
       setupScreen = screen;
