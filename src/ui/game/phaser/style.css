@@ -4,6 +4,7 @@
   font-family: var(--pm-font-game, system-ui, sans-serif);
 }
 .phaser-board-surface {
+  position: relative;
   width: 100%;
   aspect-ratio: 1000/720;
   overflow: hidden;
@@ -13,11 +14,6 @@
 }
 .phaser-board-surface canvas {
   display: block;
-}
-.phaser-board-controls {
-  display: flex;
-  gap: 8px;
-  margin: 8px 0;
 }
 .phaser-board button {
   font: inherit;

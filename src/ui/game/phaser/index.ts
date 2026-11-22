@@ -68,9 +68,6 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
   element.setAttribute('aria-label', 'Phaser 보드');
   const surface = document.createElement('div');
   surface.className = 'phaser-board-surface';
-  const controls = document.createElement('nav');
-  controls.className = 'phaser-board-controls';
-  controls.setAttribute('aria-label', '보드 카메라');
   const alternatives = document.createElement('details');
   const summary = document.createElement('summary');
   summary.textContent = '키보드로 칸 선택 · 32칸 목록';
@@ -79,7 +76,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
   alternatives.append(summary, tileList);
   const credits = document.createElement('div');
   credits.className = 'phaser-board-credits';
-  element.append(controls, surface, alternatives, credits);
+  element.append(surface, alternatives, credits);
   const media = matchMedia('(prefers-reduced-motion: reduce)');
   let view = options.view;
   let latestView = view;
@@ -232,7 +229,6 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
           ),
           true,
         );
-      ground.fillStyle(0x09283c, 0.2).fillEllipse(500, 604, 660, 50);
       polygon([100, 350, 500, 580, 500, 608, 100, 378], 0x647e69);
       polygon([500, 580, 900, 350, 900, 378, 500, 608], 0x49666a);
       polygon([500, 120, 900, 350, 500, 580, 100, 350], 0xb1cd97);
@@ -365,20 +361,6 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
   }
   const observer = new ResizeObserver(fit);
   observer.observe(surface);
-  for (const [label, value] of [
-    ['축소', -0.25],
-    ['확대', 0.25],
-    ['전체 보기', 0],
-  ] as const) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = label;
-    button.onclick = () => {
-      zoom = value ? Phaser.Math.Clamp(zoom + value, 1, 2.5) : 1;
-      fit();
-    };
-    controls.append(button);
-  }
   const textureJobs = new Map<string, Promise<string>>();
   async function svgTexture(svg: SVGSVGElement, key: string): Promise<string> {
     if (scene.textures.exists(key)) return key;
@@ -983,7 +965,6 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
       flight.destroy();
       labels.destroy();
       media.removeEventListener('change', onMotion);
-      controls.querySelectorAll('button').forEach((b) => (b.onclick = null));
       tileList.querySelectorAll('button').forEach((b) => (b.onclick = null));
       await tail;
       await new Promise<void>((resolve) => {
