@@ -10,6 +10,10 @@ import { createEffectQueue } from './queue';
 import './special-events.css';
 import { decorateDestination } from './flight-picker/card';
 import './flight-picker/picker.css';
+import {
+  presentMountedFlight,
+  type MountedFlightOptions,
+} from './mounted/presenter';
 
 function node<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -35,6 +39,7 @@ export function createSpecialEventPresenter(options: {
   lock: (locked: boolean) => void;
   /** Adjustable presentation assumption, not a game-rule duration. */
   durationMs?: number;
+  mountedFlight?: MountedFlightOptions;
 }) {
   const media = matchMedia('(prefers-reduced-motion: reduce)');
   let picker: HTMLDialogElement | undefined;
@@ -53,6 +58,18 @@ export function createSpecialEventPresenter(options: {
   const queue = createEffectQueue(
     (request, signal) =>
       new Promise<void>((resolve) => {
+        const flight = request.type === 'fly' ? request : undefined;
+        if (flight) {
+          closePicker();
+          void presentMountedFlight(
+            options.root,
+            flight,
+            options.describe(flight),
+            signal,
+            options.mountedFlight,
+          ).then(resolve, resolve);
+          return;
+        }
         if (signal.aborted) {
           resolve();
           return;
@@ -262,6 +279,8 @@ export function createSpecialEventPresenter(options: {
       selection.destinations.forEach((destination) => {
         const button = action(destination.label, () => {
           if (submitting || !live) return;
+          if (selected !== destination.tileId)
+            options.mountedFlight?.audio?.playFlight?.('select');
           selected = destination.tileId;
           list
             .querySelectorAll('button')
@@ -271,6 +290,19 @@ export function createSpecialEventPresenter(options: {
           confirm.disabled = false;
           status.textContent = `${destination.label} 선택됨 · 확정하면 이동합니다.`;
         });
+        button.onpointerenter = (event) => {
+          if (
+            !submitting &&
+            live &&
+            event.buttons === 0 &&
+            event.pointerType !== 'touch'
+          )
+            options.mountedFlight?.audio?.playFlight?.('hover');
+        };
+        button.onfocus = () => {
+          if (!submitting && live)
+            options.mountedFlight?.audio?.playFlight?.('hover');
+        };
         button.setAttribute('aria-pressed', 'false');
         decorateDestination(button, destination);
         button.onkeydown = (event) => {

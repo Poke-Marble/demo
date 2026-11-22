@@ -14,3 +14,7 @@ src/ui/game/events/assets/README.md
 src/ui/game/events/assets/tracker.json
 src/ui/game/events/assets/credit_names.txt
 src/ui/game/events/assets/manifest.json
+
+# Preserve upstream source bytes and license notices.
+src/ui/game/events/mounted/assets/
+src/ui/game/events/mounted/evidence/

@@ -9,6 +9,17 @@ const moduleURL = (source) =>
 const queueURL = moduleURL(
   await readFile(new URL('./queue.ts', import.meta.url), 'utf8'),
 );
+const mountedURL = moduleURL(
+  (await readFile(new URL('./mounted/presenter.ts', import.meta.url), 'utf8'))
+    .replace(/^import .*;\r?\n/gm, '')
+    .replace(
+      'const hoverDurations =',
+      `const manifest = ${await readFile(new URL('./mounted/assets/manifest.json', import.meta.url), 'utf8')};
+const findSprite = () => ({});
+const hoverUrl = ''; const idleUrl = '';
+const hoverDurations =`,
+    ),
+);
 const { createSpecialEventPresenter } = await import(
   moduleURL(
     (await readFile(new URL('./presenter.ts', import.meta.url), 'utf8'))
@@ -17,7 +28,13 @@ const { createSpecialEventPresenter } = await import(
         "const createLegendarySprite = () => ({ element: document.createElement('div'), phase() {}, dispose() {} });",
       )
       .replaceAll("from './queue'", `from '${queueURL}'`)
-      .replace("import './special-events.css';", ''),
+      .replace("import './special-events.css';", '')
+      .replace("import './flight-picker/picker.css';", '')
+      .replace(
+        "import { decorateDestination } from './flight-picker/card';",
+        'const decorateDestination = () => {};',
+      )
+      .replaceAll("from './mounted/presenter'", `from '${mountedURL}'`),
   )
 );
 
@@ -53,6 +70,9 @@ class Element {
       );
     this.parent = null;
   }
+  getContext() {
+    return null;
+  }
   showModal() {
     this.open = true;
   }
@@ -72,8 +92,9 @@ class Element {
     return this.querySelectorAll().find((child) => !child.disabled);
   }
 }
-function fixture(reduced = false) {
+function fixture(reduced = false, audio) {
   globalThis.HTMLElement = Element;
+  globalThis.cancelAnimationFrame = () => {};
   globalThis.document = {
     createElement: (tag) => new Element(tag),
     activeElement: null,
@@ -85,6 +106,7 @@ function fixture(reduced = false) {
   const locks = [];
   const presenter = createSpecialEventPresenter({
     root,
+    ...(audio ? { mountedFlight: { audio } } : {}),
     lock: (value) => locks.push(value),
     describe: () => ({
       playerName: '나',
@@ -120,23 +142,15 @@ const tick = async () => {
 };
 const buttons = (root) => root.querySelectorAll('button');
 
-test('presentation phases finish at 2600ms, remove the modal, and retain zero rule callbacks', async (t) => {
+test('missing rider metadata falls back by name and releases queue after 500ms', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const { presenter, root, locks } = fixture();
   const pending = presenter.enqueue([fly]);
   await tick();
-  assert.equal(root.children[0].dataset.phase, '0');
-  t.mock.timers.tick(338);
-  assert.equal(root.children[0].dataset.phase, '1');
-  t.mock.timers.tick(442);
-  assert.equal(root.children[0].dataset.phase, '2');
-  t.mock.timers.tick(1196);
-  assert.equal(root.children[0].dataset.phase, '3');
-  assert.match(
-    root.children[0].children[0].children.at(-1).textContent,
-    /방울탑 도착/,
-  );
-  t.mock.timers.tick(624);
+  assert.equal(root.children[0].dataset.state, 'failed');
+  assert.equal(root.children[0].dataset.playerId, fly.playerId);
+  assert.equal(root.children[0].dataset.to, fly.to);
+  t.mock.timers.tick(500);
   await pending;
   assert.equal(root.children.length, 0);
   assert.deepEqual(locks, [true, false]);
@@ -148,17 +162,8 @@ test('destroy during flight releases the presentation once and cancels pending p
   let completed = 0;
   const pending = presenter.enqueue([fly, trial]).then(() => completed++);
   await tick();
-  const stage = root.children[0].children[0];
-  assert.deepEqual(
-    stage.children.map((c) => c.className),
-    [
-      'pm-event-eyebrow',
-      'pm-event-graphic',
-      'pm-event-title',
-      'pm-event-caption',
-    ],
-  );
-  assert.equal(stage.children[1].children.length, 1);
+  assert.equal(root.children[0].className, 'pm-mounted-flight');
+  assert.equal(root.children[0].children[0].className, 'pm-mounted-sprite');
   presenter.destroy();
   await pending;
   t.mock.timers.tick(10000);
@@ -181,15 +186,15 @@ test('keyboard skip advances flight to trial once and reset removes every timer/
   assert.equal(root.children.length, 0);
 });
 
-test('reduced-motion uses a static landing summary and finishes in 120ms', async (t) => {
+test('reduced-motion uses a static landing summary and finishes in 160ms', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const { presenter, root } = fixture(true);
   const pending = presenter.enqueue([fly]);
   await tick();
-  assert.equal(root.children[0].dataset.phase, '3');
-  const stage = root.children[0].children[0];
-  assert.match(stage.children.at(-1).textContent, /방울탑 도착/);
-  t.mock.timers.tick(120);
+  assert.equal(root.children[0].dataset.phase, 'land');
+  const stage = root.children[0].children[2];
+  assert.match(stage.children[1].textContent, /방울탑 도착/);
+  t.mock.timers.tick(160);
   await pending;
   assert.equal(root.children.length, 0);
 });
@@ -277,5 +282,22 @@ test('native trial cancel and live reduced-motion change each finish cleanly', a
   await changed;
   assert.equal(root.children.length, 0);
   assert.deepEqual(locks, [true, false, true, false]);
+  presenter.destroy();
+});
+
+test('fallback picker ignores drag/touch hover and repeated selected destination ticks', () => {
+  const cues = [];
+  const { presenter, root } = fixture(false, {
+    playFlight: (cue) => cues.push(cue),
+  });
+  presenter.select(selection, () => {});
+  const card = buttons(root)[0];
+  card.onpointerenter({ buttons: 1, pointerType: 'mouse' });
+  card.onpointerenter({ buttons: 0, pointerType: 'touch' });
+  assert.deepEqual(cues, []);
+  card.onpointerenter({ buttons: 0, pointerType: 'mouse' });
+  card.onclick();
+  card.onclick();
+  assert.deepEqual(cues, ['hover', 'select']);
   presenter.destroy();
 });

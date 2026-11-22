@@ -1,0 +1,94 @@
+{
+  "repository": "https://github.com/PMDCollab/SpriteCollab",
+  "revision": "948c79de39e3fe3067f1fd26294e19d864325cc9",
+  "species": "0823",
+  "license": "CC_BY-NC_4 (CC BY-NC 4.0), per 2024-10-07 credits entry for Idle and Hover",
+  "modifications": "None. Original byte-for-byte sheets; runtime frame selection and composition only.",
+  "files": [
+    {
+      "path": "credit_names.txt",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/credit_names.txt",
+      "sha256": "3fb38a81fb5db6bdde699598f9092e86c37c315889dff4adf74b2a97a56a0dc6"
+    },
+    {
+      "path": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/LICENSE.md",
+      "sha256": "284233a8bc62ac54d878552845ef66ab94b25112e6fc8f902fcdfa6149748c31"
+    },
+    {
+      "path": "README.md",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/README.md",
+      "sha256": "a3da413054b0cf19427bf87a1ab1401f153fce9aaa9e27e865b91ef589d37b92"
+    },
+    {
+      "path": "sprite/0823/AnimData.xml",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/sprite/0823/AnimData.xml",
+      "sha256": "a58b030081ec8809dbe92e5236b2e3bdbf3cebe88956ad78c551b5f22829db90"
+    },
+    {
+      "path": "sprite/0823/credits.txt",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/sprite/0823/credits.txt",
+      "sha256": "59eda27d65a41d5140a8096cae18ef49aeb64df43ddd3d70a2c415dd2e9db1fd"
+    },
+    {
+      "path": "sprite/0823/Hover-Anim.png",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/sprite/0823/Hover-Anim.png",
+      "sha256": "6d50e7475f1ef21e4adf9345a141cbc433852954a786aa3ab3006f0317e0f656"
+    },
+    {
+      "path": "sprite/0823/Idle-Anim.png",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/sprite/0823/Idle-Anim.png",
+      "sha256": "9b9254db3e1ca487648de7866cf043ac4aff580b5a79bce403eaeb6895b9b14c"
+    },
+    {
+      "path": "license_history/LICENSE.CC_BY-NC_4.md",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/license_history/LICENSE.CC_BY-NC_4.md",
+      "sha256": "284233a8bc62ac54d878552845ef66ab94b25112e6fc8f902fcdfa6149748c31"
+    },
+    {
+      "path": "license_history/LICENSE.PMDCollab_1.md",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/license_history/LICENSE.PMDCollab_1.md",
+      "sha256": "d23a8e091132ca12bd047a9a8f330d9e6b3439fe144c750129cb14d05e7bfc2b"
+    },
+    {
+      "path": "license_history/LICENSE.PMDCollab_2.md",
+      "url": "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/948c79de39e3fe3067f1fd26294e19d864325cc9/license_history/LICENSE.PMDCollab_2.md",
+      "sha256": "6c813bd34e45d7798b5c11426ba7a29dc5ba498b6fc14423cd29d211bd5bd074"
+    }
+  ],
+  "creators": {
+    "Hover": "Soulja",
+    "Idle": "Soulja; prior history NATANIEL_SAMA, ◥θ┴θ◤, G〜 retained in original credits.txt"
+  },
+  "animations": [
+    {
+      "name": "Hover",
+      "frameWidth": 40,
+      "frameHeight": 64,
+      "durationsTicks": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        1
+      ]
+    },
+    {
+      "name": "Idle",
+      "frameWidth": 32,
+      "frameHeight": 48,
+      "durationsTicks": [
+        20,
+        12,
+        20,
+        40
+      ]
+    }
+  ]
+}

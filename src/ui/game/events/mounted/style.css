@@ -1,0 +1,71 @@
+.pm-mounted-flight[open] {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #f6fcff;
+  background: transparent;
+  overflow: hidden;
+}
+.pm-mounted-flight::backdrop {
+  background: #071a2926;
+}
+.pm-mounted-caption {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(480px, calc(100% - 24px));
+  box-sizing: border-box;
+  padding: 12px 18px;
+  border: 2px solid #b6d5df;
+  border-radius: 12px;
+  background: #102d3cf2;
+  text-align: center;
+  font-family: inherit;
+}
+.pm-mounted-caption h2 {
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.pm-mounted-caption p {
+  margin: 6px 0 10px;
+  font-size: 13px;
+}
+.pm-mounted-caption button {
+  min-height: 42px;
+  padding: 8px 14px;
+  color: #effcff;
+  background: #24546b;
+  border: 1px solid #b6d5df;
+  border-radius: 6px;
+  font: inherit;
+}
+.pm-mounted-sprite {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.pm-mounted-fallback {
+  position: absolute;
+  top: 48%;
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  text-shadow: 1px 2px #102d3c;
+}
+@media (max-width: 480px) {
+  .pm-mounted-caption {
+    top: auto;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .pm-mounted-caption h2 {
+    font-size: 15px;
+  }
+}

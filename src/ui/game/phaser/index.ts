@@ -824,11 +824,32 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
         if (signal.aborted || destroyed) break;
         if (effectsSeen.has(request.id)) continue;
         effectsSeen.add(request.id);
-        if (options.presentEffect)
-          await abortable(options.presentEffect(request, signal), signal);
-        if (request.type === 'fly')
-          await walk(request.playerId, [request.to], signal, true);
-        else if (!options.presentEffect) await pulse(request.tileId, signal);
+        if (request.type === 'fly' && options.presentEffect) {
+          const pawn = pawns.get(request.playerId);
+          pawn?.sprite.setVisible(false);
+          pawn?.shadow.setVisible(false);
+          element.dataset.mountedPlayer = request.playerId;
+          try {
+            await abortable(options.presentEffect(request, signal), signal);
+          } finally {
+            delete element.dataset.mountedPlayer;
+            if (!destroyed && pawn) {
+              pawn.tileId = request.to;
+              const index = view.map.tiles.findIndex(
+                (tile) => tile.id === request.to,
+              );
+              if (index >= 0) placePawn(pawn, foot(index, pawn.seat));
+              pawn.sprite.setVisible(true);
+              pawn.shadow.setVisible(true);
+            }
+          }
+        } else {
+          if (options.presentEffect)
+            await abortable(options.presentEffect(request, signal), signal);
+          if (request.type === 'fly')
+            await walk(request.playerId, [request.to], signal, true);
+          else if (!options.presentEffect) await pulse(request.tileId, signal);
+        }
       }
       if (!destroyed) await render(view, settings);
     }, presentationOptions.signal);
@@ -913,6 +934,28 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
         (signal) => walk(movement.playerId, movement.path, signal),
         settings.signal,
       );
+    },
+    flightAnchors(request: Extract<SpecialEventRequest, { type: 'fly' }>) {
+      if (destroyed || !scene.cameras?.main || !game.canvas) return undefined;
+      const pawn = pawns.get(request.playerId);
+      if (!pawn) return undefined;
+      const point = (id: TileId) => {
+        const index = view.map.tiles.findIndex((tile) => tile.id === id);
+        if (index < 0) return undefined;
+        const p = foot(index, pawn.seat);
+        const screen = scene.cameras.main.matrixCombined.transformPoint(
+          p.x,
+          p.y,
+        );
+        const bounds = game.canvas.getBoundingClientRect();
+        return {
+          x: bounds.left + (screen.x * bounds.width) / scene.scale.width,
+          y: bounds.top + (screen.y * bounds.height) / scene.scale.height,
+        };
+      };
+      const from = point(request.from),
+        to = point(request.to);
+      return from && to ? { from, to } : undefined;
     },
     present,
     cancel,

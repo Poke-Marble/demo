@@ -202,6 +202,12 @@ export function mountGameUI(
   const effects = createSpecialEventPresenter({
     root,
     lock: lockEffects,
+    mountedFlight: {
+      audio: feedback.audio,
+      pokemonForPlayer: (id) =>
+        view.state.players.find((p) => p.id === id)?.pokemonId,
+      anchors: (request) => board?.flightAnchors(request),
+    },
     partnerVisual(request) {
       const player = view.state.players.find((p) => p.id === request.playerId);
       return player ? sprite(player.pokemonId) : undefined;
@@ -264,6 +270,8 @@ export function mountGameUI(
         view: initial,
         onSelect: openTile,
         onStep: () => feedback.step(),
+        onFlightHover: () => feedback.audio.playFlight?.('hover'),
+        onFlightSelect: () => feedback.audio.playFlight?.('select'),
         presentEffect: async (request, signal) => {
           if (signal.aborted) return;
           const abort = () => effects.skip();

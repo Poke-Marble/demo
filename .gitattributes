@@ -2,3 +2,7 @@
 *.png binary
 src/assets/vendor/** -text
 src/data/sources/** -text
+
+# Byte-exact upstream originals; inspect through the source manifest.
+src/ui/game/events/mounted/assets/** -text -diff
+src/ui/game/events/mounted/assets/manifest.json text diff eol=lf

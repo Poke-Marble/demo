@@ -1,3 +1,5 @@
+export type FlightCue = 'hover' | 'select' | 'wing' | 'wind' | 'land';
+
 /** Shared presentation-only SFX contract. Inject this bus into future ability adapters. */
 export interface SfxSettings {
   muted: boolean;
@@ -9,7 +11,8 @@ export interface SfxBus {
   setVolume(value: number): void;
   getSettings(): Readonly<SfxSettings>;
   subscribe(listener: (settings: Readonly<SfxSettings>) => void): () => void;
-  play(cue: 'dice' | 'step'): void;
+  play(cue: 'dice' | 'step' | FlightCue): void;
+  playFlight?(cue: FlightCue): void;
   playConstruction?(
     type: 'grass' | 'fire' | 'water' | 'electric',
     final: boolean,
@@ -38,6 +41,7 @@ export function createFeedbackAudio(): SfxBus {
   let unlockGeneration = 0;
   let noise: AudioBuffer | undefined;
   let step = 0;
+  const flightTimes = new Map<FlightCue, number>();
   const voices = new Set<() => void>();
   const listeners = new Set<(s: Readonly<SfxSettings>) => void>();
   const stop = () => {
@@ -85,6 +89,13 @@ export function createFeedbackAudio(): SfxBus {
         listeners.delete(listener);
       };
     },
+    playFlight(cue) {
+      const now = performance.now();
+      const delay = cue === 'hover' ? 140 : cue === 'select' ? 100 : 160;
+      if (now - (flightTimes.get(cue) ?? -Infinity) < delay) return;
+      flightTimes.set(cue, now);
+      this.play(cue);
+    },
     play(cue) {
       if (
         destroyed ||
@@ -128,7 +139,16 @@ export function createFeedbackAudio(): SfxBus {
           }
         }
         const start = ctx.currentTime;
-        const duration = cue === 'dice' ? 0.58 : 0.075;
+        const duration =
+          cue === 'dice'
+            ? 0.58
+            : cue === 'wind'
+              ? 0.6
+              : cue === 'wing'
+                ? 0.18
+                : cue === 'land'
+                  ? 0.22
+                  : 0.075;
         const gain = ctx.createGain();
         nodes.push(gain);
         gain.connect(ctx.destination);
@@ -147,20 +167,37 @@ export function createFeedbackAudio(): SfxBus {
         const filter = ctx.createBiquadFilter();
         nodes.push(filter);
         filter.type = 'lowpass';
-        filter.frequency.value = cue === 'dice' ? 1500 : 700;
+        filter.frequency.value =
+          cue === 'dice'
+            ? 1500
+            : cue === 'wind'
+              ? 950
+              : cue === 'wing'
+                ? 420
+                : 700;
         filter.Q.value = 0.5;
         filter.connect(gain);
         const source = ctx.createBufferSource();
         nodes.push(source);
         sources.push(source);
         source.buffer = noise;
-        source.connect(filter);
+        if (cue !== 'hover' && cue !== 'select') source.connect(filter);
         const osc = ctx.createOscillator();
         nodes.push(osc);
         sources.push(osc);
         osc.type = 'sine';
         osc.frequency.setValueAtTime(
-          cue === 'dice' ? 145 : 210 + (step++ % 2) * 22,
+          cue === 'dice'
+            ? 145
+            : cue === 'hover'
+              ? 620
+              : cue === 'select'
+                ? 830
+                : cue === 'land'
+                  ? 120
+                  : cue === 'wing' || cue === 'wind'
+                    ? 75
+                    : 210 + (step++ % 2) * 22,
           start,
         );
         osc.frequency.exponentialRampToValueAtTime(85, start + duration);
