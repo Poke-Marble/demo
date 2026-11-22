@@ -16,7 +16,7 @@ import './preview.css';
 const root = document.querySelector<HTMLDivElement>('#app')!;
 root.innerHTML = `
   <main class="ability-lab">
-    <header><span class="eyebrow">POKE MARBLE / ABILITY LAB</span><h1>작은 특성, 새로운 한 수.</h1><p>스타팅 4종 · 원작 특성에서 영감을 받은 보드게임 각색 초안</p></header>
+    <header><span class="eyebrow">Poké Marble / ABILITY LAB</span><h1>작은 특성, 새로운 한 수.</h1><p>스타팅 4종 · 원작 특성에서 영감을 받은 보드게임 각색 초안</p></header>
     <section class="lab-layout">
       <div class="lab-stage"><div class="lab-board" aria-label="관동·성도 기준 보드 배경"><div class="board-center"><span>STARTER ABILITIES</span><h2>당신의 파트너가<br />빛나는 순간</h2><p>확정거래 → 견적 → 커밋 → 연출</p><small>32칸 실제맵 이름 참조 · 이동/경제는 시연하지 않음</small></div></div></div>
       <aside><h2>특성을 발동해 보세요</h2><p class="lab-caption">모든 금액은 테스트 영수증 기반입니다. 실제 게임 잔액에는 반영되지 않습니다.</p><div class="ability-buttons"></div>

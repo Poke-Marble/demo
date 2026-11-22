@@ -14,7 +14,7 @@ import './preview.css';
 const root = document.querySelector<HTMLElement>('#hud-preview')!;
 root.innerHTML = `
   <main class="hud-preview">
-    <header class="hud-preview-title"><div><p>POKE MARBLE / PLAYER HUD</p><h1>모험은 함께, 차례는 또렷하게.</h1></div><span class="hud-preview-tag">독립 UI 프리뷰</span></header>
+    <header class="hud-preview-title"><div><p>Poké Marble / PLAYER HUD</p><h1>모험은 함께, 차례는 또렷하게.</h1></div><span class="hud-preview-tag">독립 UI 프리뷰</span></header>
     <div class="pm-hud-layout">
       <section class="pm-hud-board-slot" aria-label="보드 자리">
         <div class="hud-preview-board">
