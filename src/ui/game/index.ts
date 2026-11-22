@@ -412,7 +412,7 @@ export function mountGameUI(
     content.classList.add('pm-setup-' + setupScreen);
     const intro = el('div', 'pm-lobby-intro');
     if (setupScreen === 'title')
-      intro.append(el('h1', 'pm-title', 'Poke Marble'));
+      intro.append(el('h1', 'pm-title', 'Poké Marble'));
     if (setupScreen === 'title') content.append(intro);
     const navigate = (screen: typeof setupScreen) => {
       setupScreen = screen;
@@ -571,7 +571,7 @@ export function mountGameUI(
       `pm-header${view.state.phase === 'setup' ? ' pm-header-setup' : ''}`,
     );
     if (view.state.phase !== 'setup')
-      header.append(el('strong', 'pm-brand', 'Poke Marble'));
+      header.append(el('strong', 'pm-brand', 'Poké Marble'));
     const tools = el('div', 'pm-header-tools');
     if (adapter.demo)
       tools.append(
@@ -849,7 +849,7 @@ export function mountGameUI(
         (p) => p.id === view.state.victory?.winnerId,
       );
       modal(
-        '여행 완료!',
+        'Poké Marble · 여행 완료!',
         `${winner?.name ?? '트레이너'} 승리 · ${view.state.victory ? victoryLabels[view.state.victory.reason] : '결과 확인'}${view.state.match?.finalRanking ? ` · 최종 자산 순위: ${view.state.match.finalRanking.map((r, i) => `${i + 1}위 ${view.state.players.find((p) => p.id === r.playerId)?.name} ${r.total} ₽ (현금 ${r.cash} + 토지·누적 건설원가 ${r.propertyCost})${r.bankrupt ? ' 파산' : ''}`).join(' / ')} · 동점: 현금 우선, 이후 원래 seat 순` : ''}`,
         [
           button(
