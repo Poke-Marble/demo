@@ -3,14 +3,8 @@
     "width": 1280,
     "height": 720,
     "geometry": {
-      "document": [
-        1280,
-        720
-      ],
-      "viewport": [
-        1280,
-        720
-      ],
+      "document": [1280, 720],
+      "viewport": [1280, 720],
       "header": {
         "x": 380.40625,
         "y": 18.796875,
@@ -107,14 +101,8 @@
     "width": 390,
     "height": 844,
     "geometry": {
-      "document": [
-        390,
-        844
-      ],
-      "viewport": [
-        390,
-        844
-      ],
+      "document": [390, 844],
+      "viewport": [390, 844],
       "header": {
         "x": 10,
         "y": 6,
@@ -211,14 +199,8 @@
     "width": 375,
     "height": 812,
     "geometry": {
-      "document": [
-        375,
-        812
-      ],
-      "viewport": [
-        375,
-        812
-      ],
+      "document": [375, 812],
+      "viewport": [375, 812],
       "header": {
         "x": 10,
         "y": 6,
@@ -315,14 +297,8 @@
     "width": 844,
     "height": 390,
     "geometry": {
-      "document": [
-        844,
-        390
-      ],
-      "viewport": [
-        844,
-        390
-      ],
+      "document": [844, 390],
+      "viewport": [844, 390],
       "header": {
         "x": 177.71875,
         "y": 11.109375,
