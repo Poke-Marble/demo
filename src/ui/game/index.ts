@@ -879,10 +879,15 @@ export function mountGameUI(
       );
     }
     if (!animating && !effectsLocked && !feedbackLocked)
-      effects.select(
-        view.flightSelection,
-        adapter.selectFlightDestination?.bind(adapter),
-      );
+      void ensureBoard().then((renderer) => {
+        if (disposed) return;
+        renderer?.setFlightSelection(
+          !animating && !effectsLocked && !feedbackLocked
+            ? view.flightSelection
+            : undefined,
+          adapter.selectFlightDestination?.bind(adapter),
+        );
+      });
     scheduleComputerTurn();
   }
   function scheduleComputerTurn() {
@@ -1141,6 +1146,7 @@ export function mountGameUI(
         acknowledge(received);
       return;
     }
+    board?.invalidateFlightSelection(u.view.flightSelection);
     if (
       u.events.some(
         (event) =>

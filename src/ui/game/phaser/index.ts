@@ -24,6 +24,7 @@ import { gameCredits } from '../events/credits';
 import { createMapLabels } from './labels';
 import { pawnDepth, standingFoot } from './occlusion';
 import './style.css';
+import { createBoardFlight } from './board-flight';
 
 export interface BoardVisuals {
   construction?: ReadonlyMap<TileId, ConstructionVisual>;
@@ -35,6 +36,8 @@ export interface PhaserBoardOptions extends BoardVisuals {
   onSelect(tileId: TileId): void;
   /** Shared external SFX; Phaser never creates an audio bus. */
   onStep?(): void;
+  onFlightHover?(): void;
+  onFlightSelect?(): void;
   onLockChange?(locked: boolean): void;
   /** Bridge to the existing HTML VS/flight presenter. Must honor AbortSignal. */
   presentEffect?(
@@ -105,15 +108,73 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
       tile.button.disabled = externalLock || destroyed;
       tile.button.setAttribute('aria-disabled', String(locked()));
     }
+    flight.lock(locked());
     element.dataset.locked = String(locked());
     options.onLockChange?.(locked());
   }
   function select(id: TileId) {
     labels.focus(id);
-    if (!locked()) options.onSelect(id);
+    if (locked()) return;
+    if (flight.selection) {
+      if (flight.pick(id)) options.onFlightSelect?.();
+    } else options.onSelect(id);
   }
   const labels = createMapLabels(surface, (id) => select(id as TileId));
 
+  let flightGraphics: Phaser.GameObjects.Graphics | undefined;
+  const flight = createBoardFlight(element, drawFlight);
+  function drawFlight() {
+    if (!flightGraphics) return;
+    flightGraphics.clear();
+    const selection = flight.selection;
+    if (!selection) return;
+    const { side, cells } = boardCells(view.map.tiles.length);
+    const geometry = (id: TileId) => {
+      const i = view.map.tiles.findIndex((t) => t.id === id);
+      return i < 0 ? undefined : tileGeometry(cells[i]!, side);
+    };
+    for (const destination of selection.destinations) {
+      const g = geometry(destination.tileId);
+      if (!g) continue;
+      const selected = destination.tileId === flight.candidate;
+      flightGraphics.lineStyle(
+        selected ? 4 : 2,
+        selected ? 0xffd34e : 0x2d9979,
+        1,
+      );
+      flightGraphics.fillStyle(
+        selected ? 0xffd34e : 0xb7ffcf,
+        selected ? 0.3 : 0.12,
+      );
+      const points = [
+        { x: g.x, y: g.y - g.height / 2 },
+        { x: g.x + g.width / 2, y: g.y },
+        { x: g.x, y: g.y + g.height / 2 },
+        { x: g.x - g.width / 2, y: g.y },
+      ];
+      const vectors = points.map((p) => new Phaser.Math.Vector2(p.x, p.y));
+      flightGraphics.fillPoints(vectors, true).strokePoints(vectors, true);
+    }
+    const origin = view.state.players.find(
+      (p) => p.id === selection.playerId,
+    )?.position;
+    const from = origin && geometry(origin);
+    const to = flight.candidate && geometry(flight.candidate);
+    if (from && to) {
+      const curve = new Phaser.Curves.QuadraticBezier(
+        new Phaser.Math.Vector2(from.x, from.y),
+        new Phaser.Math.Vector2(
+          (from.x + to.x) / 2,
+          Math.min(from.y, to.y) - 110,
+        ),
+        new Phaser.Math.Vector2(to.x, to.y),
+      );
+      flightGraphics
+        .lineStyle(4, 0xffd34e, 1)
+        .strokePoints(curve.getPoints(48));
+      flightGraphics.fillStyle(0xffd34e, 1).fillCircle(to.x, to.y, 6);
+    }
+  }
   class BoardScene extends Phaser.Scene {
     constructor() {
       super('board');
@@ -211,8 +272,11 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
               .setDepth(depthOrder(p));
         });
       }
-      this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-        if (pointer.getDistance() > 12 || locked()) return;
+      flightGraphics = this.add.graphics().setDepth(9000);
+      drawFlight();
+      let dragged = false;
+      let down = { x: 0, y: 0 };
+      const hitTile = (pointer: Phaser.Input.Pointer) => {
         const { side, cells } = boardCells(view.map.tiles.length);
         const point = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
         // Reverse depth for deterministic top-most diamond hit testing.
@@ -225,10 +289,39 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
                 Math.abs(point.y - g.y) / (g.height / 2) <=
               1,
           );
-        if (hit) select(hit.tile.id);
+        return hit?.tile.id;
+      };
+      this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        dragged = false;
+        const rect = this.game.canvas.getBoundingClientRect();
+        down = {
+          x: (pointer.x * rect.width) / this.scale.width,
+          y: (pointer.y * rect.height) / this.scale.height,
+        };
+      });
+      this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+        if (dragged || locked()) return;
+        const id = hitTile(pointer);
+        if (id) select(id);
       });
       this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-        if (!pointer.isDown || zoom <= 1) return;
+        if (!pointer.isDown) {
+          if (flight.selection && !locked()) {
+            const old = flight.hover;
+            flight.inspect(hitTile(pointer));
+            if (flight.hover && old !== flight.hover) options.onFlightHover?.();
+          }
+          return;
+        }
+        const rect = this.game.canvas.getBoundingClientRect();
+        if (
+          Math.hypot(
+            (pointer.x * rect.width) / this.scale.width - down.x,
+            (pointer.y * rect.height) / this.scale.height - down.y,
+          ) > 8
+        )
+          dragged = true;
+        if ((!flight.selection && zoom <= 1) || !dragged) return;
         const camera = this.cameras.main;
         camera.scrollX -= (pointer.x - pointer.prevPosition.x) / camera.zoom;
         camera.scrollY -= (pointer.y - pointer.prevPosition.y) / camera.zoom;
@@ -706,6 +799,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
     presentationOptions: { signal?: AbortSignal } = {},
   ) {
     if (update.id && seen.has(update.id)) return seen.get(update.id)!;
+    flight.invalidate(update.view.flightSelection);
     latestView = update.view;
     const settings = visuals;
     const job = schedule(async (signal) => {
@@ -762,6 +856,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
     });
   }
   function cancel() {
+    flight.set(undefined);
     generation++;
     for (const controller of active) controller.abort();
   }
@@ -787,6 +882,8 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
   tail = initialized.catch(() => {});
   return {
     element,
+    setFlightSelection: flight.set,
+    invalidateFlightSelection: flight.invalidate,
     ready: initialized,
     mount(parent: HTMLElement) {
       if (destroyed) throw new Error('Board destroyed');
@@ -801,6 +898,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
     ): Promise<Completion> {
       visuals = settings;
       if ('view' in next) return present(next);
+      flight.invalidate(next.flightSelection);
       latestView = next;
       return schedule(async () => {
         view = next;
@@ -839,6 +937,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
       revision++;
       readyDone();
       observer.disconnect();
+      flight.destroy();
       labels.destroy();
       media.removeEventListener('change', onMotion);
       controls.querySelectorAll('button').forEach((b) => (b.onclick = null));
