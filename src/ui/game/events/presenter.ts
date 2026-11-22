@@ -5,6 +5,7 @@ import type {
   SpecialEventRequest,
 } from './contracts';
 import { createLegendarySprite } from './legendary-sprite';
+import { worldEventRules } from '../../../game/world-events/index.ts';
 import { createEffectQueue } from './queue';
 import './special-events.css';
 import { decorateDestination } from './flight-picker/card';
@@ -64,11 +65,15 @@ export function createSpecialEventPresenter(options: {
         const description = options.describe(request);
         const dialog = node(
           'dialog',
-          `pm-event pm-event-${request.type}${request.type === 'trial-intro' ? ' pm-event-' + request.legendary : ''}`,
+          `pm-event pm-event-${request.type}${request.type !== 'fly' ? ' pm-event-' + request.legendary : ''}`,
         );
         dialog.setAttribute(
           'aria-label',
-          request.type === 'fly' ? '공중날기 연출' : '전설 시험 등장 연출',
+          request.type === 'fly'
+            ? '공중날기 연출'
+            : request.type === 'world-event'
+              ? '전체 맵 전설 이벤트'
+              : '전설 시험 등장 연출',
         );
         dialog.dataset.eventId = request.id;
         const stage = node('div', 'pm-event-stage');
@@ -83,7 +88,7 @@ export function createSpecialEventPresenter(options: {
         );
         const graphic = node('div', 'pm-event-graphic');
         const sprite = createLegendarySprite(
-          request.type === 'trial-intro' ? request.legendary : 'ho-oh',
+          request.type !== 'fly' ? request.legendary : 'ho-oh',
           media.matches,
           request.type === 'fly',
         );
@@ -108,10 +113,14 @@ export function createSpecialEventPresenter(options: {
           opponent.append(graphic, title);
           versus.append(partner, node('strong', '', 'VS'), opponent);
         }
+        if (request.type === 'world-event')
+          eyebrow.textContent = '전체 맵 이벤트';
         const reducedSummary =
           request.type === 'fly'
             ? `${description.playerName} · ${description.destinationName ?? request.to} 도착`
-            : `${description.partnerName} VS ${title.textContent}`;
+            : request.type === 'world-event'
+              ? `${title.textContent} · 모든 도시 ${request.legendary === 'lugia' ? '통행료' : '시설 건설비'} ${worldEventRules.discounts[request.legendary] * 100}% 감소 · ${request.expiresAfterRound}라운드 종료까지`
+              : `${description.partnerName} VS ${title.textContent}`;
         const status = node('p', 'pm-event-caption');
         status.setAttribute('role', 'status');
         const skip = action('연출 스킵 · Enter / Space / Esc', finish);
@@ -148,9 +157,11 @@ export function createSpecialEventPresenter(options: {
           dialog.dataset.phase = String(index);
           sprite.phase(index);
           status.textContent =
-            request.type === 'fly' && index === 3
+            request.type === 'world-event'
               ? reducedSummary
-              : `${description.playerName} · ${phases[index]}`;
+              : request.type === 'fly' && index === 3
+                ? reducedSummary
+                : `${description.playerName} · ${phases[index]}`;
         }
         dialog.oncancel = (event) => {
           event.preventDefault();

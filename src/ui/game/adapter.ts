@@ -43,6 +43,7 @@ export interface GamePrompt {
   dismissible?: boolean;
 }
 export interface GameView {
+  worldEvents?: import('../../game/world-events/index.ts').WorldEventsState;
   matchProgress?: import('../../game/match/index').MatchProgress;
   activeSkill?: {
     definition: import('../../game/skills/index.ts').SkillDefinition;

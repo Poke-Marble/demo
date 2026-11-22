@@ -1,4 +1,11 @@
 import {
+  createWorldEvents,
+  clearWorldEvents,
+  validWorldEvents,
+  worldEventRules,
+  type WorldEventsState,
+} from '../world-events/index.ts';
+import {
   createSkillsState,
   completeSkillBasicTurn,
   clearFinishedSkills,
@@ -44,6 +51,7 @@ export const defaultRules: CoreRules = Object.freeze({
 });
 
 export interface CoreState extends GameState {
+  readonly worldEvents?: WorldEventsState;
   readonly legendary?: LegendaryState;
   readonly skills?: SkillsState;
   readonly core: {
@@ -152,6 +160,7 @@ export function createGame(
     readonly skills?: boolean;
     readonly rules?: Partial<CoreRules>;
     readonly legendary?: Partial<LegendaryRules>;
+    readonly worldEvents?: object;
     readonly rulesPreset?: 'standard' | 'quick';
   } = {},
 ): CoreState {
@@ -186,6 +195,7 @@ export function createGame(
     throw new RangeError('Supply 2–4 uniquely identified, named players.');
   }
   return {
+    ...(options.worldEvents ? { worldEvents: createWorldEvents() } : {}),
     schemaVersion: 1,
     mapId: map.id,
     phase: 'playing',
@@ -201,11 +211,11 @@ export function createGame(
       ? { skills: createSkillsState(roster.map((p) => p.id)) }
       : {}),
     victory: null,
-    ...(options.legendary
+    ...(options.legendary || options.worldEvents
       ? {
           legendary: createLegendaryState(
             roster.map((p) => p.id),
-            options.legendary,
+            options.legendary ?? { initialRopes: 0 },
           ),
         }
       : {}),
@@ -267,6 +277,7 @@ export function dispatch(
   const active = state.players[activeIndex];
   if (
     !validMap(map) ||
+    !validWorldEvents(state, map.tiles) ||
     !validateSkills(state) ||
     (state.core.pendingDice !== undefined &&
       (state.core.turnStage !== 'awaiting-roll' ||
@@ -370,7 +381,11 @@ export function dispatch(
     const passes = Math.floor((distance + offsetFromStart) / map.tiles.length);
     const tile = map.tiles[(fromIndex + distance) % map.tiles.length]!;
     const amount = passes * state.core.rules.startReward;
-    if (!Number.isSafeInteger(active.balance + amount))
+    const worldReward =
+      state.worldEvents && tile.kind === 'special' && tile.special !== 'fly'
+        ? worldEventRules.arrivalReward
+        : 0;
+    if (!Number.isSafeInteger(active.balance + amount + worldReward))
       return reject('invalid-state');
     next = {
       ...spent,
@@ -457,7 +472,7 @@ export function dispatch(
   } else return reject('unsupported-action');
   if (action.type === 'end-turn')
     next = completeSkillBasicTurn(next, active.id, state.turnNumber);
-  next = clearFinishedSkills(next);
+  next = clearWorldEvents(clearFinishedSkills(next));
   return {
     ok: true,
     state: next,

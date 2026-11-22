@@ -30,6 +30,8 @@ export type PublicState = Pick<
   | 'holdings'
   | 'victory'
   | 'legendary'
+  | 'worldEvents'
+  | 'match'
   | 'skills'
 > & {
   readonly core: Pick<
@@ -71,6 +73,8 @@ function projection(s: PublicState): EconomyState {
     holdings: s.holdings,
     victory: s.victory,
     ...(s.legendary ? { legendary: s.legendary } : {}),
+    ...(s.worldEvents ? { worldEvents: s.worldEvents } : {}),
+    ...(s.match ? { match: s.match } : {}),
     ...(s.skills ? { skills: s.skills } : {}),
     // Required by the quote contract only. Never dispatch a random action here.
     core: {

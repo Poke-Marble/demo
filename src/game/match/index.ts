@@ -1,4 +1,5 @@
 import type { AssetRank, GameEvent, BoardSide } from '../contracts.ts';
+import { createWorldEvents } from '../world-events/index.ts';
 import type { EconomyState, EconomyContext } from '../economy/types.ts';
 import { validateEconomyState, money } from '../economy/catalog.ts';
 import { propertyCapital } from '../economy/quotes.ts';
@@ -147,6 +148,7 @@ export function finalizeMatch<S extends EconomyState>(
     state: {
       ...immediate.state,
       phase: 'finished',
+      ...(state.worldEvents ? { worldEvents: createWorldEvents() } : {}),
       victory,
       ...(state.match ? { match: { ...state.match, finalRanking } } : {}),
     },

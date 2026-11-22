@@ -1,3 +1,8 @@
+import {
+  clearWorldEvents,
+  currentRound,
+  worldEventRules,
+} from '../../../game/world-events/index.ts';
 import { normalizeRulesPreset } from '../../../game/rulesets.ts';
 import {
   clearFinishedSkills,
@@ -75,7 +80,8 @@ export function createIntegratedPreview(
     ...initializeEconomy(
       createGame(map, participants, {
         seed: options.seed ?? 42,
-        legendary: {},
+        legendary: { initialRopes: 0 },
+        worldEvents: {},
         rulesPreset,
         skills: true,
       }),
@@ -259,7 +265,7 @@ export function createIntegratedPreview(
                 set.phase === 'liquidating'
                   ? '채무 정산'
                   : trial
-                    ? '전설시험'
+                    ? '전설 이벤트'
                     : '이번 방문 선택',
               description,
               choices,
@@ -359,7 +365,16 @@ export function createIntegratedPreview(
             },
           }
         : {}),
-      ...(notice ? { notice } : {}),
+      ...(state.worldEvents ? { worldEvents: state.worldEvents } : {}),
+      notice: [
+        notice,
+        ...Object.entries(state.worldEvents?.active ?? {}).map(
+          ([key, event]) =>
+            `${key === 'lugia' ? '루기아 · 모든 도시 통행료' : '칠색조 · 모든 도시 시설비'} −${worldEventRules.discounts[key as 'lugia' | 'ho-oh'] * 100}% · ${event.expiresAfterRound}라운드 종료까지 (남은 ${event.expiresAfterRound - currentRound(state) + 1}라운드)`,
+        ),
+      ]
+        .filter(Boolean)
+        .join(' · '),
     };
   };
   function cancelPresentation() {
@@ -420,7 +435,7 @@ export function createIntegratedPreview(
     );
     if (!hasPendingSettlement(next)) {
       const final = finalizeMatch(next, context, { actorId: command.playerId });
-      next = clearFinishedSkills(final.state);
+      next = clearWorldEvents(clearFinishedSkills(final.state));
       events.push(...final.events);
     }
     state = next; // Single atomic publication: base money + ability ledger/money + victory.

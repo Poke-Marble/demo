@@ -11,13 +11,7 @@ import {
 import type { PlayerId, TileId } from '../contracts.ts';
 import { dispatch as dispatchCore } from '../core/index.ts';
 import { quoteBlessing, legalFlyDestinations } from '../legendary.ts';
-import {
-  check,
-  facilities,
-  money,
-  validateEconomyState,
-  modifiedAmount,
-} from './catalog.ts';
+import { check, facilities, money, validateEconomyState } from './catalog.ts';
 import {
   decisionReasons,
   propertyCapital,
@@ -27,6 +21,7 @@ import {
   quoteTakeover,
   quoteToll,
   quoteSkillUse,
+  quotePreBlessingAmount,
 } from './quotes.ts';
 import type {
   Debt,
@@ -416,11 +411,12 @@ export function dispatchEconomy<S extends EconomyState>(
       ensureQuote(quote);
       const old = s.holdings.find((h) => h.tileId === intent.tileId);
       if (intent.type === 'construct-property') {
-        const amount = modifiedAmount(
+        const amount = quotePreBlessingAmount(
+          s,
           c,
-          'upgrade',
           actor.id,
           intent.tileId,
+          'upgrade',
           quote.upgradeSubtotal,
         ).amount;
         s = consume(s, actor.id, 'upgrade', amount, quote.consumesBlessing);

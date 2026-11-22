@@ -5,6 +5,7 @@ import type {
 import type { LegendaryEvent } from '../../../game/legendary.ts';
 import type { DisplayMeta } from '../hud/model.ts';
 import type { UIUpdate } from '../adapter.ts';
+import { worldEventRules } from '../../../game/world-events/index.ts';
 
 export const legendaryName = (name: 'lugia' | 'ho-oh') =>
   name === 'lugia' ? '루기아' : '칠색조';
@@ -13,7 +14,7 @@ const percent = (rate: number) => `${Math.round(rate * 100)}%`;
 /** Projection only: trial counters, inventory and discounts all come from core. */
 export function specialHudMeta(state: EconomyState): DisplayMeta {
   const ext = state.legendary;
-  if (!ext) return {};
+  if (!ext || state.worldEvents) return {};
   return Object.fromEntries(
     state.players.map(({ id }) => {
       const p = ext.players[id]!;
@@ -57,6 +58,21 @@ export function specialFeedback(
   const texts: string[] = [];
   const playerName = (id: string) =>
     after.players.find((p) => p.id === id)!.name;
+  if (after.worldEvents) {
+    for (const event of result.events) {
+      if (event.type !== 'tile-landed') continue;
+      const key = `${after.turnNumber}:${event.playerId}:${event.tileId}`;
+      if (
+        !after.worldEvents.arrivals.includes(key) ||
+        before.worldEvents?.arrivals.includes(key)
+      )
+        continue;
+      const active = result.presentations.find((p) => p.type === 'world-event');
+      texts.push(
+        `${playerName(event.playerId)} · +${worldEventRules.arrivalReward} ₽ · ${active ? '전체 맵 이벤트 발동 · 카운터 초기화' : `방문자 ${after.worldEvents.visitors[event.tileId]?.length ?? 0}/${worldEventRules.visitorsRequired}명`}`,
+      );
+    }
+  }
   for (const event of specialEvents) {
     const player = after.legendary!.players[event.playerId]!;
     const prefix = `${playerName(event.playerId)} · `;

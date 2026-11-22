@@ -3,7 +3,8 @@ import type { PlayerId, TileId } from '../../../game/contracts';
 /** IDs must be stable across redelivery and unique within one game session. */
 export type SpecialEventRequest = { id: string } & (
   | {
-      type: 'trial-intro';
+      type: 'trial-intro' | 'world-event';
+      expiresAfterRound?: number;
       legendary: 'lugia' | 'ho-oh';
       playerId: PlayerId;
       tileId: TileId;

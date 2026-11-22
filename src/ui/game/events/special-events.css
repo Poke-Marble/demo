@@ -107,6 +107,12 @@
   width: 480px;
   height: 512px;
 }
+.pm-event-world-event .pm-event-graphic {
+  width: min(480px, 80vw);
+  height: auto;
+  aspect-ratio: 120 / 128;
+  flex-shrink: 0;
+}
 .pm-legendary-sprite {
   width: 100%;
   height: 100%;

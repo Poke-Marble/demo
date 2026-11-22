@@ -3,7 +3,7 @@ import type { FlightSelection } from '../contracts';
 const kinds = {
   city: '일반도시',
   landmark: '관광명소',
-  trial: '시험',
+  trial: '전설 이벤트',
   start: '출발',
   fly: '공중날기',
 };
