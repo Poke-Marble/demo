@@ -1,4 +1,5 @@
 import { mountResultDialog } from './result-dialog';
+import { createCurrencyPopups } from './currency-popup';
 import { createRulesPresetSelector } from './rules-preset';
 import type { RulesPreset } from '../../game/rulesets';
 import { createAbilityPresenter } from './abilities/presenter';
@@ -247,6 +248,12 @@ export function mountGameUI(
   let boardTask: Promise<PhaserBoardRenderer | undefined> | undefined;
   let boardRetirement = Promise.resolve();
   const boardHost = el('div', 'pm-integrated-board');
+  const currencyPopups = createCurrencyPopups({
+    initial: view,
+    surface: () =>
+      boardHost.querySelector<HTMLElement>('.phaser-board-surface'),
+    anchor: (id) => board?.getPlayerScreenAnchor(id),
+  });
   const construction = createConstructionPresenter(boardHost, {
     audio: feedback.audio,
   });
@@ -1016,6 +1023,7 @@ export function mountGameUI(
   }
   async function update(update: UIUpdate) {
     if (disposed) return;
+    const cashDeltas = currencyPopups.accept(update);
     const beforeView = view;
     const constructionCues = constructionGate.accept(beforeView, update);
     view = update.view;
@@ -1104,6 +1112,7 @@ export function mountGameUI(
       closeDialog();
       render();
       // Phaser owns movement/construction and delegates each effect once to HTML.
+      currencyPopups.show(cashDeltas);
       const presentation = renderer.present(update);
       if (feedback.suppressed) {
         effects.skip();
@@ -1216,6 +1225,7 @@ export function mountGameUI(
       animating = true;
     }
     if (u.view.state.phase === 'setup') {
+      currencyPopups.reset(u.view);
       resultDialog.reset();
       resultNotice.reset();
       cancelAbility();
@@ -1283,6 +1293,7 @@ export function mountGameUI(
     destroy() {
       if (disposed) return;
       disposed = true;
+      currencyPopups.destroy();
       resultDialog.destroy();
       resultNotice.destroy();
       turnHeader.destroy();

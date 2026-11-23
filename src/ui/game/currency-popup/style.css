@@ -1,0 +1,25 @@
+.pm-currency-popups {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  user-select: none;
+  z-index: 8;
+}
+.pm-currency-popup {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  font: 800 17px/1.25 var(--pm-font-game, system-ui, sans-serif);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px #142b3280;
+  -webkit-text-stroke: 2px #fff9;
+  paint-order: stroke fill;
+}
+.pm-currency-popup.is-income {
+  color: #146c38;
+}
+.pm-currency-popup.is-expense {
+  color: #b62536;
+}

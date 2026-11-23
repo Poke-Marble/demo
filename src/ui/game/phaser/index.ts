@@ -571,7 +571,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
     entry.images = [];
     entry.keys = [];
   }
-  const origins = new Map<string, { x: number; y: number }>();
+  const origins = new Map<string, { x: number; y: number; top: number }>();
   function anchor(pawn: Pawn) {
     const frame = pawn.sprite.frame;
     const key = `${pawn.sprite.texture.key}:${frame.name}`;
@@ -596,17 +596,20 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       let left = canvas.width,
         right = 0,
+        top = canvas.height,
         bottom = 0;
       for (let y = 0; y < canvas.height; y++)
         for (let x = 0; x < canvas.width; x++)
           if (pixels[(y * canvas.width + x) * 4 + 3]! > 16) {
             left = Math.min(left, x);
             right = Math.max(right, x + 1);
+            top = Math.min(top, y);
             bottom = Math.max(bottom, y + 1);
           }
       origin = {
         x: bottom ? (left + right) / 2 / canvas.width : 0.5,
         y: bottom ? bottom / canvas.height : 1,
+        top: bottom ? top / canvas.height : 0,
       };
       origins.set(key, origin);
     }
@@ -920,6 +923,25 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
         (signal) => walk(movement.playerId, movement.path, signal),
         settings.signal,
       );
+    },
+    /** Viewport CSS pixels above the current visible pawn frame, read-only. */
+    getPlayerScreenAnchor(playerId: PlayerId) {
+      if (destroyed || !scene.cameras?.main || !game.canvas) return undefined;
+      const pawn = pawns.get(playerId);
+      if (!pawn?.sprite.active || !pawn.sprite.visible) return undefined;
+      const sprite = pawn.sprite;
+      const origin = origins.get(`${sprite.texture.key}:${sprite.frame.name}`);
+      const top =
+        sprite.y - (sprite.originY - (origin?.top ?? 0)) * sprite.displayHeight;
+      const screen = scene.cameras.main.matrixCombined.transformPoint(
+        sprite.x,
+        top,
+      );
+      const bounds = game.canvas.getBoundingClientRect();
+      return {
+        x: bounds.left + (screen.x * bounds.width) / scene.scale.width,
+        y: bounds.top + (screen.y * bounds.height) / scene.scale.height - 8,
+      };
     },
     flightAnchors(request: Extract<SpecialEventRequest, { type: 'fly' }>) {
       if (destroyed || !scene.cameras?.main || !game.canvas) return undefined;
