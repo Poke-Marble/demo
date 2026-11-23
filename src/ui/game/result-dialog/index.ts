@@ -107,6 +107,12 @@ export function mountResultDialog(root: HTMLElement, restart: () => void) {
         restart();
       };
       dialog.addEventListener('cancel', (event) => event.preventDefault());
+      dialog.addEventListener('keydown', (event) => {
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          button.focus();
+        }
+      });
       dialog.append(title, reason, table, note, button);
       root.append(dialog);
       dialog.showModal();
