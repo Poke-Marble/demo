@@ -512,7 +512,9 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
           order: i,
           name: tile.nameKo,
           x: g.x,
-          y: g.y + g.height / 2 + 16,
+          y: g.y,
+          width: g.width,
+          height: g.height,
           special: tile.kind === 'special',
         });
         entry.images = [face, model];

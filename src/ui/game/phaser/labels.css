@@ -1,47 +1,34 @@
-﻿@import '../theme/theme.css';
+@import '../theme/theme.css';
 
-/* Only labels use browser rasterization. Canvas and sprite filtering stay intact. */
-.phaser-board-surface:has(> .phaser-map-labels) {
-  position: relative;
-}
 .phaser-map-labels {
   position: absolute;
   inset: 0;
   pointer-events: none;
   font-family: var(--pm-font-game, system-ui, sans-serif);
 }
-.phaser-map-labels > svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-.phaser-map-labels line {
-  stroke: #526d6b;
-  stroke-width: 1;
-  opacity: 0.45;
-}
+/* A bounded ground strip, above models only within its own tile edge. The
+   canvas receives pointer drags even when they start over a nameplate. */
 .phaser-board .phaser-map-label {
   position: absolute;
-  display: block;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  width: 76px;
+  height: 16px;
   margin: 0;
   padding: 0 2px;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  background: transparent;
-  color: #24454a;
-  text-shadow:
-    0 1px 1px #fffdef,
-    1px 0 1px #fffdef,
-    -1px 0 1px #fffdef;
+  border: 1px solid #718d80;
+  border-radius: 1px;
+  background: #fff7db;
+  color: #163640;
   font-family: inherit;
   font-size: 14px;
-  line-height: 18px;
+  line-height: 14px;
   font-weight: 400;
   white-space: nowrap;
-  pointer-events: auto;
-  cursor: pointer;
+  text-align: center;
+  transform-origin: 0 0;
+  pointer-events: none;
 }
 .phaser-board .phaser-map-label[hidden] {
   display: none;
@@ -49,66 +36,10 @@
 .phaser-board .phaser-map-label[aria-disabled='true'] {
   opacity: 1;
 }
-.phaser-board .phaser-map-label:focus-visible,
-.phaser-board .phaser-map-label:hover {
-  z-index: 2;
-  outline: 2px solid #513064;
-  outline-offset: 1px;
-  background: #fffdef;
-}
+.phaser-board .phaser-map-label[data-active='true'],
 .phaser-board .phaser-map-label:focus-visible {
-  outline-width: 1px;
-}
-.phaser-board .phaser-map-label[data-active='true'] {
-  background: #fffdef;
-  border-color: #788c82;
-  color: #163640;
-  z-index: 2;
-}
-.phaser-map-label-directory:not([hidden]) {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px;
-  margin-top: 4px;
-}
-.phaser-map-label-directory::before {
-  content: '도시 이름 · 선택하여 위치 확인';
-  grid-column: 1 / -1;
-  font-size: 14px;
-  line-height: 22px;
-}
-.phaser-board .phaser-map-label-directory .phaser-map-label {
-  position: static;
-  min-height: 40px;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  text-align: left;
-}
-.phaser-board .phaser-map-label-directory .phaser-map-label:focus-visible {
-  font-size: 14px;
-  line-height: 18px;
-}
-.phaser-board
-  .phaser-map-label-directory
-  .phaser-map-label:not([data-active='true']) {
-  color: #d4e3df;
-  text-shadow: none;
-}
-.phaser-board .phaser-map-label-directory .phaser-map-label:hover,
-.phaser-board .phaser-map-label-directory .phaser-map-label:focus-visible {
-  color: #163640;
-}
-.phaser-board .phaser-map-label-focused {
-  font-size: 14px;
-  line-height: 18px;
-  z-index: 2;
-  pointer-events: none;
-  border: 1px solid #788c82;
-  background: #fffdef;
-}
-.phaser-map-label-directory:not([hidden]) {
-  max-height: 112px;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  padding: 3px;
+  background: #ffe8a4;
+  border-color: #513064;
+  outline: 1px solid #513064;
+  outline-offset: 0;
 }

@@ -1,0 +1,109 @@
+{
+  "browser": "157.0.8103.80",
+  "phase": "after",
+  "checks": [
+    {
+      "width": 1280,
+      "height": 720,
+      "stage": "empty + four pawns",
+      "stable": true
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "stage": "final + four pawns",
+      "stable": true
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "textFit": [
+        {
+          "name": "소용돌이섬 · 루기아",
+          "fits": true,
+          "font": "6.36364px"
+        },
+        {
+          "name": "방울탑 · 칠색조",
+          "fits": true,
+          "font": "7.77778px"
+        },
+        {
+          "name": "공중날기",
+          "fits": true,
+          "font": "14px"
+        }
+      ],
+      "flight": "board click, pointer pan, keyboard candidate, explicit submit"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "stage": "empty + four pawns",
+      "stable": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "stage": "final + four pawns",
+      "stable": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "textFit": [
+        {
+          "name": "소용돌이섬 · 루기아",
+          "fits": true,
+          "font": "6.36364px"
+        },
+        {
+          "name": "방울탑 · 칠색조",
+          "fits": true,
+          "font": "7.77778px"
+        },
+        {
+          "name": "공중날기",
+          "fits": true,
+          "font": "14px"
+        }
+      ],
+      "flight": "board click, pointer pan, keyboard candidate, explicit submit"
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "stage": "empty + four pawns",
+      "stable": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "stage": "final + four pawns",
+      "stable": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "textFit": [
+        {
+          "name": "소용돌이섬 · 루기아",
+          "fits": true,
+          "font": "6.36364px"
+        },
+        {
+          "name": "방울탑 · 칠색조",
+          "fits": true,
+          "font": "7.77778px"
+        },
+        {
+          "name": "공중날기",
+          "fits": true,
+          "font": "14px"
+        }
+      ],
+      "flight": "board click, pointer pan, keyboard candidate, explicit submit"
+    }
+  ],
+  "errors": []
+}
