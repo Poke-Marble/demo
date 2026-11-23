@@ -40,7 +40,9 @@ export function matchProgress(state: EconomyState, context: EconomyContext) {
     remainingRounds: Math.max(0, m.roundLimit - m.completedRounds),
     globalTurnNumber: state.turnNumber,
     activePlayerId: state.activePlayerId,
-    extraRoll: false as const,
+    extraRoll:
+      !!state.core.doubleChain?.extraRollPending &&
+      state.core.turnStage === 'awaiting-roll',
     roundDefinition:
       '원래 seat 순서의 생존 참가자 기본 차례 1순환. 파산자 건너뛰기, 시험 체류 포함. 추가 굴림은 라운드를 늘리지 않음.',
     settlementPending: hasPendingSettlement(state),

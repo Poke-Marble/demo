@@ -87,6 +87,7 @@ export interface GameState {
   /** 2~4명, 배열 순서가 한 기기의 차례 순서다. 런타임 입력 검증은 후속 구현. */
   readonly players: readonly Player[];
   readonly activePlayerId: PlayerId;
+  /** Basic-turn ordinal; extra dice rolls keep this number until the chain settles. */
   readonly turnNumber: number;
   readonly match?: MatchState;
   readonly holdings: readonly CityHolding[];

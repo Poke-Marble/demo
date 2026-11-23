@@ -420,8 +420,36 @@ export function createIntegratedPreview(
       }
     }
     presentationBusy = waits.length > 0;
+    const publishedState = state;
     const current = Promise.all(waits).then(() => {
-      if (presentation === current) presentationBusy = false;
+      if (presentation !== current) return;
+      presentationBusy = false;
+      // Automatic continuation belongs after every listener's receipt ACK.
+      // Stale ACKs from reset/restart cannot advance a new session.
+      if (
+        state !== publishedState ||
+        state.phase !== 'playing' ||
+        !state.core.doubleChain?.extraRollPending ||
+        state.core.turnStage !== 'awaiting-end'
+      )
+        return;
+      const set = legal();
+      const remaining = set.actions.filter(
+        (a) => a.intent.type !== 'sell-property',
+      );
+      if (
+        set.phase !== 'core' ||
+        remaining.length !== 1 ||
+        remaining[0]!.intent.type !== 'end-turn'
+      )
+        return;
+      commit({
+        sessionId: state.economy.sessionId,
+        commandId: `double:${session}:${state.economy.revision}`,
+        expectedRevision: state.economy.revision,
+        playerId: state.activePlayerId,
+        intent: remaining[0]!.intent,
+      });
     });
     presentation = current;
   }
