@@ -179,7 +179,7 @@ export function createGameplayFeedback(
         'aria-label',
         values.length === 2 && values[0] === values[1]
           ? 'Double!'
-          : '??? ??? ?',
+          : '주사위 결과 확인 중',
       );
       audio.play('dice');
       const start = performance.now();
