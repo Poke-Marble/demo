@@ -1,0 +1,33 @@
+{
+  "repository": "https://github.com/PMDCollab/RawAsset",
+  "commit": "0b88bbd7dec6f3373d5ec2b0f40bbdc3f44ce90c",
+  "asset": {
+    "file": "Sky.1.png",
+    "sourcePath": "BG/Sky.1.png",
+    "sourceUrl": "https://raw.githubusercontent.com/PMDCollab/RawAsset/0b88bbd7dec6f3373d5ec2b0f40bbdc3f44ce90c/BG/Sky.1.png",
+    "width": 320,
+    "height": 240,
+    "bytes": 11356,
+    "sha256": "40d16ccd459bfb83bbd193cb8ce7822efeaaa570a0474f708d1150054e16beb7",
+    "gitBlobSha": "bad96859e15b9a6111ad6bd107c93a604937e17e",
+    "author": "unknown",
+    "license": "Unspecified",
+    "permissionVerified": false,
+    "modifications": "None. Original PNG bytes preserved. Runtime CSS cover crops/scales and a translucent solid overlay reduces backdrop contrast; no blur or pixel editing."
+  },
+  "audit": {
+    "date": "2026-11-23",
+    "pinnedRootTreeUrl": "https://api.github.com/repos/PMDCollab/RawAsset/git/trees/0b88bbd7dec6f3373d5ec2b0f40bbdc3f44ce90c",
+    "pinnedBgTreeUrl": "https://api.github.com/repos/PMDCollab/RawAsset/git/trees/422a16dda36b45668021783401c24970f97ae7a6",
+    "findings": [
+      "Complete nonrecursive root and BG trees both report truncated: false. Root has no README, LICENSE, LICENCE or COPYING; BG contains only 25 PNGs with no credits. The larger recursive tree is truncated and is not evidence for a whole-repository absence claim.",
+      "Root spritebot_credits.txt is a contributor directory without BG/Sky mapping; transfer.json and custom_transfer.json map portrait/sprite destinations, and added_nodes.txt lists Pokemon forms. None establishes Sky authorship or permission. Portrait/Sprite credits are not evidence for BG authorship or permission.",
+      "The repository API reports license: null; this is absence of a license declaration, not a grant of permission.",
+      "Sky.1.png path history through the pinned commit contains only Initial Commit, cc038f90d899bfa5ccc316e208d2fbbd2c6908f1 (2021-03-02). Its committer is not assigned as artist.",
+      "No asset-specific author, original game/extraction provenance or reuse terms were located. Do not transfer SpriteCollab CC BY-NC policy to this RawAsset BG.",
+      "Used only within the existing unofficial noncommercial PMD fan-game scope. Attribution and that scope do not establish permission. Preserve the project original-rightsholder notice."
+    ],
+    "historyUrl": "https://api.github.com/repos/PMDCollab/RawAsset/commits?path=BG/Sky.1.png&sha=0b88bbd7dec6f3373d5ec2b0f40bbdc3f44ce90c",
+    "repositoryMetadataUrl": "https://api.github.com/repos/PMDCollab/RawAsset"
+  }
+}

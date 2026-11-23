@@ -8,7 +8,15 @@
   aspect-ratio: 1000/720;
   overflow: hidden;
   border-radius: 18px;
-  background: #e8f0e4;
+  /* Keep the original pixels intact; soften only the backdrop, never the
+     canvas/labels. CSS painting stays behind every input and flight layer.
+     The solid color also covers a failed/missing background image. */
+  background-color: #e8f0e4;
+  background-image:
+    linear-gradient(#e8f0e4b8, #e8f0e4b8), var(--pm-board-sky, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   touch-action: pan-y;
 }
 .phaser-board-surface canvas {

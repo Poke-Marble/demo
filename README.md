@@ -81,6 +81,8 @@ OS의 동작 줄이기 설정을 반영하며 연출을 건너뛸 수 있습니�
 
 ## 라이선스와 크레딧
 
+- **보드 뒤 Sky 배경**: [PMDCollab/RawAsset](https://github.com/PMDCollab/RawAsset)의 `BG/Sky.1.png` 원본을 사용합니다. 작가는 `unknown`, 개별 라이선스는 `Unspecified`이며 이용 허락은 미확인입니다. SpriteCollab의 일반 CC BY-NC 정책을 이 BG의 허가로 간주하지 않습니다. [원본 URL·고정 커밋·SHA-256](src/ui/game/phaser/background/manifest.json), [조사 근거와 표시 방식](src/ui/game/phaser/background/README.md)을 보존합니다. 원본 픽셀은 수정하지 않고 보드 뒤에서만 확대·crop·옅은 단색 오버레이로 표시합니다.
+
 **자체 코드의 라이선스는 미정**입니다. [package.json](package.json)의 `UNLICENSED`를 유지하며 MIT 또는 전체 프로젝트에 대한 CC 라이선스를 선언하지 않습니다. 의존 패키지·외부 이미지·글꼴·데이터는 각각의 권리와 조건을 따릅니다.
 
 - **Pokémon** 원작·캐릭터·명칭 관련 권리는 Nintendo / Creatures Inc. / GAME FREAK inc. 등 원 권리자에게 있습니다. Pokémon Mystery Dungeon 원작 자료에는 Chunsoft / Spike Chunsoft 등 관련 제작자와 권리자의 권리가 있습니다.

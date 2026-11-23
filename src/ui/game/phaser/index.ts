@@ -25,6 +25,7 @@ import { createMapLabels } from './labels';
 import { pawnDepth, standingFoot } from './occlusion';
 import './style.css';
 import { createBoardFlight } from './board-flight';
+import skyBackgroundUrl from './background/Sky.1.png';
 
 export interface BoardVisuals {
   construction?: ReadonlyMap<TileId, ConstructionVisual>;
@@ -68,6 +69,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
   element.setAttribute('aria-label', 'Phaser 보드');
   const surface = document.createElement('div');
   surface.className = 'phaser-board-surface';
+  surface.style.setProperty('--pm-board-sky', `url("${skyBackgroundUrl}")`);
   const controls = document.createElement('nav');
   controls.className = 'phaser-board-controls';
   controls.setAttribute('aria-label', '보드 카메라');
@@ -337,7 +339,7 @@ export function createPhaserBoard(options: PhaserBoardOptions) {
     parent: surface,
     width: 1000,
     height: 720,
-    backgroundColor: '#e8f0e4',
+    transparent: true,
     audio: { noAudio: true },
     input: { keyboard: false },
     render: { antialias: true, pixelArt: false },
