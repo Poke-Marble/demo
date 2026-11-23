@@ -69,6 +69,8 @@ export interface SkillPlayerState {
   readonly pp: number;
   readonly usedThisBasicTurn: boolean;
   readonly prepared: PreparedSkill | null;
+  readonly forceDoubleNextRoll: boolean;
+  readonly paralyzed: boolean;
 }
 export interface SkillsState {
   readonly schemaVersion: 1;
@@ -92,7 +94,16 @@ export const createSkillsState = (ids: readonly PlayerId[]): SkillsState => ({
   rulesVersion: 'validation-start-1',
   lastEndedTurn: 0,
   players: Object.fromEntries(
-    ids.map((id) => [id, { pp: 3, usedThisBasicTurn: false, prepared: null }]),
+    ids.map((id) => [
+      id,
+      {
+        pp: 3,
+        usedThisBasicTurn: false,
+        prepared: null,
+        forceDoubleNextRoll: false,
+        paralyzed: false,
+      },
+    ]),
   ),
 });
 export function validateSkills(s: CoreState): boolean {
@@ -113,6 +124,8 @@ export function validateSkills(s: CoreState): boolean {
           a.pp >= 0 &&
           a.pp <= 3 &&
           typeof a.usedThisBasicTurn === 'boolean' &&
+          typeof a.forceDoubleNextRoll === 'boolean' &&
+          typeof a.paralyzed === 'boolean' &&
           (!a.prepared ||
             (a.usedThisBasicTurn &&
               ['signature', 'breakthrough'].includes(a.prepared.mode) &&
@@ -152,7 +165,7 @@ export function spendSkill<S extends CoreState>(
       ...s.skills!,
       players: {
         ...s.skills!.players,
-        [id]: { pp: a.pp - 1, usedThisBasicTurn: true, prepared },
+        [id]: { ...a, pp: a.pp - 1, usedThisBasicTurn: true, prepared },
       },
     },
   };
@@ -273,4 +286,44 @@ export function skillDiscountedAmount(
     (numerator * BigInt(10000 - rule.rateBps)) / 100000000n,
   );
   return Math.max(gross > 0 ? 1 : 0, baseline - rule.cap, composed);
+}
+
+/** Core owns seeded dice generation; this hook consumes only the one-roll flag. */
+export function consumeForcedDoubleRoll<S extends CoreState>(
+  s: S,
+  id: PlayerId,
+): { state: S; forceDouble: boolean } {
+  const a = s.skills?.players[id];
+  if (!a?.forceDoubleNextRoll) return { state: s, forceDouble: false };
+  return {
+    state: {
+      ...s,
+      skills: {
+        ...s.skills!,
+        players: {
+          ...s.skills!.players,
+          [id]: { ...a, forceDoubleNextRoll: false },
+        },
+      },
+    },
+    forceDouble: true,
+  };
+}
+/** Core calls once when the next basic turn starts, never for an extra roll. */
+export function consumeParalyzedBasicTurn<S extends CoreState>(
+  s: S,
+  id: PlayerId,
+): { state: S; skip: boolean } {
+  const a = s.skills?.players[id];
+  if (!a?.paralyzed) return { state: s, skip: false };
+  return {
+    state: {
+      ...s,
+      skills: {
+        ...s.skills!,
+        players: { ...s.skills!.players, [id]: { ...a, paralyzed: false } },
+      },
+    },
+    skip: true,
+  };
 }
