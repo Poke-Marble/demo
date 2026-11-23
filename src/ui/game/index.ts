@@ -1,3 +1,4 @@
+import { mountResultDialog } from './result-dialog';
 import { createRulesPresetSelector } from './rules-preset';
 import type { RulesPreset } from '../../game/rulesets';
 import { createAbilityPresenter } from './abilities/presenter';
@@ -91,6 +92,9 @@ export function mountGameUI(
   });
   root.append(host);
   const resultNotice = mountResultNotice(root);
+  const resultDialog = mountResultDialog(root, () => {
+    void invoke(() => adapter.restart());
+  });
   const feedback = createGameplayFeedback(root, options.sfx, () =>
     boardHost.querySelector<HTMLElement>('.phaser-board-surface'),
   );
@@ -622,6 +626,7 @@ export function mountGameUI(
         ? document.activeElement.dataset.focus
         : undefined;
     closeDialog();
+    if (view.state.phase !== 'finished') resultDialog.reset();
     spriteFrames = [];
     host.replaceChildren();
     const header = el(
@@ -906,23 +911,8 @@ export function mountGameUI(
       !feedbackLocked &&
       view.state.phase === 'finished'
     ) {
-      const winner = view.state.players.find(
-        (p) => p.id === view.state.victory?.winnerId,
-      );
-      modal(
-        'Poké Marble · 여행 완료!',
-        `${winner?.name ?? '트레이너'} 승리 · ${view.state.victory ? victoryLabels[view.state.victory.reason] : '결과 확인'}${view.state.match?.finalRanking ? ` · 최종 자산 순위: ${view.state.match.finalRanking.map((r, i) => `${i + 1}위 ${view.state.players.find((p) => p.id === r.playerId)?.name} ${r.total} ₽ (현금 ${r.cash} + 토지·누적 건설원가 ${r.propertyCost})${r.bankrupt ? ' 파산' : ''}`).join(' / ')} · 동점: 현금 우선, 이후 원래 seat 순` : ''}`,
-        [
-          button(
-            '새 여행 시작',
-            () => {
-              void invoke(() => adapter.restart());
-            },
-            'pm-primary',
-          ),
-        ],
-        false,
-      );
+      resultNotice.reset();
+      resultDialog.show(view, busy);
     } else if (
       !animating &&
       !effectsLocked &&
@@ -1176,7 +1166,8 @@ export function mountGameUI(
     feedbackLocked = pendingFeedback > 0;
     host.inert = effectsLocked || feedbackLocked;
     render();
-    resultNotice.show(update.results);
+    if (view.state.phase === 'finished') resultNotice.reset();
+    else resultNotice.show(update.results);
   }
   const completedPresentations = new WeakSet<() => void>();
   const hasConstruction = (u: UIUpdate) =>
@@ -1225,6 +1216,7 @@ export function mountGameUI(
       animating = true;
     }
     if (u.view.state.phase === 'setup') {
+      resultDialog.reset();
       resultNotice.reset();
       cancelAbility();
       constructionGate.reset();
@@ -1291,6 +1283,7 @@ export function mountGameUI(
     destroy() {
       if (disposed) return;
       disposed = true;
+      resultDialog.destroy();
       resultNotice.destroy();
       turnHeader.destroy();
       ability.destroy();
@@ -1320,10 +1313,3 @@ export function mountGameUI(
     },
   };
 }
-const victoryLabels = {
-  'last-player-standing': '마지막 생존',
-  'three-city-groups': '도시 그룹 3개',
-  'one-side-cities': '한 면 도시 독점',
-  'four-landmarks': '명소 4개',
-  'round-limit-assets': '라운드 제한 · 최종 자산',
-};

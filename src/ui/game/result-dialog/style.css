@@ -1,0 +1,103 @@
+.pm-dialog.pm-ranking-dialog {
+  inset: 8px 0;
+  width: min(520px, calc(100vw - 24px));
+  max-height: calc(100dvh - 16px);
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 20px;
+}
+.pm-dialog.pm-ranking-dialog h2 {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+.pm-ranking-reason {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.pm-ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.pm-ranking-table caption {
+  text-align: left;
+  padding: 6px 0;
+  font-weight: bold;
+}
+.pm-ranking-table th,
+.pm-ranking-table td {
+  padding: 7px 4px;
+  text-align: left;
+  border-bottom: 1px solid #b8b3a2;
+}
+.pm-ranking-table th:last-child,
+.pm-ranking-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+.pm-ranking-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pm-ranking-player > span:last-child {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.pm-ranking-player .pm-portrait {
+  flex-shrink: 0;
+}
+.pm-ranking-table small {
+  display: block;
+  color: #9b3434;
+}
+.pm-ranking-winner {
+  background: #fff0b9;
+  color: #33352b;
+  font-weight: bold;
+}
+.pm-ranking-note {
+  font-size: 10px;
+  line-height: 1.6;
+}
+.pm-dialog.pm-ranking-dialog > button {
+  width: 100%;
+  min-height: 40px;
+}
+.pm-ranking-fireworks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+@media (max-height: 450px) {
+  .pm-dialog.pm-ranking-dialog {
+    padding: 10px 16px;
+  }
+  .pm-dialog.pm-ranking-dialog h2 {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .pm-ranking-reason,
+  .pm-ranking-note {
+    margin: 4px 0;
+  }
+  .pm-ranking-table th,
+  .pm-ranking-table td {
+    padding: 3px 4px;
+  }
+  .pm-ranking-player .pm-portrait {
+    width: 28px;
+    height: 28px;
+  }
+  .pm-ranking-player .pm-portrait img {
+    width: 100%;
+    height: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-ranking-fireworks {
+    display: none;
+  }
+}
