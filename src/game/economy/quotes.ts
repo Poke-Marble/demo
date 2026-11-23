@@ -1,10 +1,6 @@
 import { startBuildReasons } from './start-build.ts';
 import { quoteWorldEvent } from '../world-events/index.ts';
-import {
-  economicSkillRule,
-  skillDiscountedAmount,
-  type SkillMode,
-} from '../skills/index.ts';
+import type { SkillMode } from '../skills/index.ts';
 import type { PlayerId, TileId } from '../contracts.ts';
 import { quoteBlessing } from '../legendary.ts';
 import {
@@ -101,18 +97,15 @@ function makeQuote(
   const gross = money(
     blessingKind === 'upgrade' ? land + modified.amount : modified.amount,
   );
-  const rule =
-    kind === 'toll' ||
-    (kind === 'takeover' && c.properties[tileId]?.kind === 'city')
-      ? economicSkillRule(s, playerId, tileId, kind)
-      : null;
-  const blessingRate =
-    blessed.consumed && blessingKind === 'toll'
-      ? s.legendary!.rules.tollDiscount
-      : 0;
+  const prepared = s.skills?.players[playerId]?.prepared;
+  const waived =
+    kind === 'toll' &&
+    prepared?.kind === 'toll' &&
+    prepared.tileId === tileId &&
+    prepared.landingId === s.economy.landing?.id;
   const total = money(
-    rule
-      ? skillDiscountedAmount(gross, blessingRate, rule)
+    waived
+      ? 0
       : blessingKind === 'upgrade'
         ? land + blessed.amount
         : blessed.amount,
@@ -142,7 +135,7 @@ function makeQuote(
     expectedRevenue: revenue,
     balanceAfter: p.balance + revenue - cost,
     shortfall,
-    consumesBlessing: blessed.consumed,
+    consumesBlessing: !waived && blessed.consumed,
     modifierIds: modified.ids,
     eligible: reasons.length === 0,
     reasons,
@@ -320,21 +313,55 @@ export function quoteSkillUse(
   mode: SkillMode,
   kind: 'toll' | 'takeover',
 ): Quote {
-  const projected = {
-    ...s,
-    skills: {
-      ...s.skills!,
-      players: {
-        ...s.skills!.players,
-        [playerId]: {
-          ...s.skills!.players[playerId]!,
-          usedThisBasicTurn: true,
-          prepared: { mode, tileId, kind },
+  const actor = s.players.find((p) => p.id === playerId);
+  const h = s.holdings.find((h) => h.tileId === tileId);
+  let projected = s;
+  if (
+    mode === 'signature' &&
+    kind === 'toll' &&
+    actor?.pokemonId === 'pokemon:0007'
+  )
+    projected = {
+      ...s,
+      skills: {
+        ...s.skills!,
+        players: {
+          ...s.skills!.players,
+          [playerId]: {
+            ...s.skills!.players[playerId]!,
+            usedThisBasicTurn: true,
+            prepared: { mode, tileId, kind, landingId: s.economy.landing?.id },
+          },
         },
       },
-    },
-  };
+    };
+  if (
+    mode === 'signature' &&
+    kind === 'toll' &&
+    actor?.pokemonId === 'pokemon:0004' &&
+    c.properties[tileId]?.kind === 'city' &&
+    h &&
+    h.facilityLevel > 0 &&
+    h.facilityLevel < 3
+  )
+    projected = {
+      ...s,
+      holdings: s.holdings.map((x) =>
+        x.tileId === tileId ? { ...x, facilityLevel: x.facilityLevel - 1 } : x,
+      ),
+      economy: {
+        ...s.economy,
+        developmentByTileId: {
+          ...s.economy.developmentByTileId,
+          [tileId]: {
+            stage: (h.facilityLevel - 1) as Stage,
+            facilities: facilities.slice(0, h.facilityLevel - 1),
+            centerReadyVisitOrdinal: null,
+          },
+        },
+      },
+    };
   return kind === 'toll'
     ? quoteToll(projected, c, playerId, tileId)
-    : quoteTakeover(projected, c, playerId, tileId);
+    : quoteTakeover(s, c, playerId, tileId);
 }

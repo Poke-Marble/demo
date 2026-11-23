@@ -3,7 +3,8 @@ import {
   clearFinishedSkills,
   completeSkillBasicTurn,
   clearPreparedSkill,
-  movementAdjustment,
+  cleanSkillTraps,
+  resolveSkillTrap,
   skillForPokemon,
   skillUnavailableReason,
   spendSkill,
@@ -162,7 +163,7 @@ function land<S extends EconomyState>(
   commandId: string,
   tileId: TileId,
   events: EconomyEvent[],
-  allowSkill = false,
+  _allowSkill = false,
 ): S {
   const id = s.activePlayerId;
   const ordinal = money(s.economy.visitOrdinalByPlayerId[id]! + 1);
@@ -178,17 +179,24 @@ function land<S extends EconomyState>(
       tileId,
       visitOrdinal: ordinal,
       propertyDecisionUsed: tile.kind === 'special' || tile.kind === 'start',
-      skillEligible: allowSkill,
+      skillEligible: true,
     },
   });
-  const quote = quoteToll(s, c, id, tileId);
-  const saving =
-    allowSkill &&
+  const holding = s.holdings.find(
+    (h) => h.tileId === tileId && h.ownerId !== id,
+  );
+  const type = skillForPokemon(
+    s.players.find((p) => p.id === id)!.pokemonId,
+  )?.type;
+  const canReact =
+    holding &&
     !skillUnavailableReason(s, id) &&
-    !s.legendary?.pendingFly &&
-    quote.total > 1 &&
-    quoteSkillUse(s, c, id, tileId, 'breakthrough', 'toll').total < quote.total;
-  if (saving)
+    (type === 'water' ||
+      (type === 'fire' &&
+        tile.kind === 'city' &&
+        holding.facilityLevel > 0 &&
+        holding.facilityLevel < 3));
+  if (canReact)
     return patch(s, {
       pendingToll: { tileId, landingId: s.economy.landing!.id },
     });
@@ -201,10 +209,17 @@ function settleLandingToll<S extends EconomyState>(
 ): S {
   const id = s.activePlayerId;
   const tileId = s.economy.landing!.tileId;
+  s = resolveSkillTrap(
+    s,
+    id,
+    tileId,
+    s.skills?.players[id]?.prepared?.landingId === s.economy.landing!.id,
+  );
   s = patch(s, { pendingToll: null });
   const quote = quoteToll(s, c, id, tileId);
   const holding = s.holdings.find((h) => h.tileId === tileId);
-  if (!holding || holding.ownerId === id || quote.gross === 0) return s;
+  if (!holding || holding.ownerId === id || quote.gross === 0)
+    return clearPreparedSkill(s, id);
   const debt: Debt = {
     id: `${s.economy.landing!.id}:debt`,
     landingId: s.economy.landing!.id,
@@ -331,65 +346,141 @@ export function dispatchEconomy<S extends EconomyState>(
         'start-build-decision-required',
       );
     }
+    let skillOnly = false;
     if (intent.type === 'use-skill') {
       check(
-        !pending &&
-          !skillUnavailableReason(s, actor.id) &&
-          s.economy.landing?.skillEligible !== false,
+        !pending && !skillUnavailableReason(s, actor.id),
         'skill-unavailable',
       );
-      check(
-        intent.landingId === s.economy.landing?.id &&
-          intent.tileId === s.economy.landing.tileId,
-        'wrong-landing',
-      );
-      check(
-        intent.mode === 'signature' || intent.mode === 'breakthrough',
-        'invalid-skill-mode',
-      );
-      const kind = s.economy.pendingToll ? 'toll' : 'takeover';
-      check(
-        kind === 'toll'
-          ? intent.mode === 'breakthrough' ||
-              skillForPokemon(actor.pokemonId)?.type === 'fire'
-          : intent.mode === 'signature' &&
-              skillForPokemon(actor.pokemonId)?.type === 'electric',
-        'invalid-skill-mode',
-      );
-      const q = quoteSkillUse(s, c, actor.id, intent.tileId, intent.mode, kind);
-      const base =
-        kind === 'toll'
-          ? quoteToll(s, c, actor.id, intent.tileId)
-          : quoteTakeover(s, c, actor.id, intent.tileId);
-      check(
-        q.eligible && q.total < base.total,
-        q.reasons[0] ?? 'no-skill-saving',
-      );
-      s = spendSkill(s, actor.id, {
-        mode: intent.mode,
-        tileId: intent.tileId,
-        kind,
-      });
+      check(intent.mode === 'signature', 'invalid-skill-mode');
       const definition = skillForPokemon(actor.pokemonId)!;
+      const tileId = intent.tileId;
+      const base = quoteToll(s, c, actor.id, tileId);
+      if (s.economy.pendingToll) {
+        check(
+          intent.landingId === s.economy.landing?.id &&
+            tileId === s.economy.landing.tileId,
+          'wrong-landing',
+        );
+        const h = s.holdings.find(
+          (h) => h.tileId === tileId && h.ownerId !== actor.id,
+        );
+        check(h, 'not-opponent-owned');
+        check(
+          definition.type === 'water' ||
+            (definition.type === 'fire' &&
+              c.properties[tileId]?.kind === 'city' &&
+              h.facilityLevel > 0 &&
+              h.facilityLevel < 3),
+          'skill-unavailable',
+        );
+        s = spendSkill(
+          s,
+          actor.id,
+          definition.type === 'water'
+            ? {
+                mode: 'signature',
+                tileId,
+                kind: 'toll',
+                landingId: intent.landingId,
+              }
+            : null,
+        );
+        if (definition.type === 'water')
+          s = resolveSkillTrap(s, actor.id, tileId, true);
+        else {
+          const stage = (h.facilityLevel - 1) as Stage;
+          s = patch(
+            {
+              ...s,
+              holdings: s.holdings.map((x) =>
+                x.tileId === tileId ? { ...x, facilityLevel: stage } : x,
+              ),
+            },
+            {
+              developmentByTileId: {
+                ...s.economy.developmentByTileId,
+                [tileId]: {
+                  stage,
+                  facilities: facilities.slice(0, stage),
+                  centerReadyVisitOrdinal:
+                    stage >= 2
+                      ? s.economy.developmentByTileId[tileId]!
+                          .centerReadyVisitOrdinal
+                      : null,
+                },
+              },
+            },
+          );
+        }
+      } else {
+        check(
+          !s.core.pendingDice &&
+            !s.economy.pendingStartBuild &&
+            intent.landingId === `turn:${s.turnNumber}`,
+          'wrong-skill-window',
+        );
+        if (definition.type === 'grass') {
+          check(
+            s.core.turnStage === 'awaiting-roll' && tileId === actor.position,
+            'wrong-skill-window',
+          );
+          s = spendSkill(s, actor.id, null);
+          s = {
+            ...s,
+            skills: {
+              ...s.skills!,
+              players: {
+                ...s.skills!.players,
+                [actor.id]: {
+                  ...s.skills!.players[actor.id]!,
+                  forceDoubleNextRoll: true,
+                },
+              },
+            },
+          };
+        } else {
+          check(
+            definition.type === 'electric' &&
+              c.properties[tileId]?.kind === 'city' &&
+              s.holdings.some(
+                (h) => h.tileId === tileId && h.ownerId === actor.id,
+              ) &&
+              !s.skills!.traps[tileId],
+            'invalid-trap-target',
+          );
+          s = spendSkill(s, actor.id, null);
+          s = {
+            ...s,
+            skills: {
+              ...s.skills!,
+              traps: { ...s.skills!.traps, [tileId]: actor.id },
+            },
+          };
+        }
+        skillOnly = true;
+      }
+      const after = quoteToll(s, c, actor.id, tileId);
       events.push({
         type: 'skill-activated',
         activation: {
           id: `${command.sessionId}:${command.commandId}:skill`,
           pokemonId: actor.pokemonId,
           type: definition.type,
-          name: intent.mode === 'breakthrough' ? '기술돌파' : definition.name,
-          description: `1PP · ${base.total - q.total} ₽ 절약`,
+          name: definition.name,
+          description:
+            definition.type === 'water'
+              ? `1PP ? ?? ??? ${base.total} ? ?? ? ?? ? ?? ?? ??`
+              : definition.type === 'fire'
+                ? `1PP ? ?? 1?? ?? ? ?? ??? ${after.total} ?`
+                : definition.type === 'grass'
+                  ? '1PP ? ?? ?? ?? ??'
+                  : '1PP ? ?? ?? ??',
           playerId: actor.id,
-          mode: intent.mode,
-          skillSavings: base.total - q.total,
+          mode: 'signature',
+          skillSavings: Math.max(0, base.total - after.total),
         },
       });
-      if (kind === 'takeover')
-        intent = {
-          type: 'takeover-property',
-          tileId: intent.tileId,
-          landingId: intent.landingId,
-        };
     }
     if (
       [
@@ -408,7 +499,9 @@ export function dispatchEconomy<S extends EconomyState>(
       const reasons = decisionReasons(s, actor.id, intent.tileId);
       check(reasons.length === 0, reasons[0]);
     }
-    if (
+    if (skillOnly) {
+      // The pre-roll/board-target skill is the entire atomic command.
+    } else if (
       intent.type === 'construct-property' ||
       intent.type === 'buy-landmark' ||
       intent.type === 'takeover-property'
@@ -601,32 +694,11 @@ export function dispatchEconomy<S extends EconomyState>(
           !s.economy.landing || s.economy.landing.propertyDecisionUsed,
           'property-decision-required',
         );
-      if (intent.type === 'resolve-dice' && intent.adjustment !== 0) {
-        check(
-          !skillUnavailableReason(s, actor.id) &&
-            intent.adjustment === movementAdjustment(s, actor.id),
-          'skill-unavailable',
-        );
-      }
+      if (intent.type === 'resolve-dice')
+        check(intent.adjustment === 0, 'unsupported-action');
       const result = dispatchCore(s, c.map, intent);
       check(result.ok, result.ok ? undefined : result.error);
       s = { ...s, ...result.state, economy: s.economy };
-      if (intent.type === 'resolve-dice' && intent.adjustment !== 0) {
-        const definition = skillForPokemon(actor.pokemonId)!;
-        events.push({
-          type: 'skill-activated',
-          activation: {
-            id: `${command.sessionId}:${command.commandId}:skill`,
-            pokemonId: actor.pokemonId,
-            type: definition.type,
-            name: definition.name,
-            description: `1PP · 이동 합계 ${intent.adjustment > 0 ? '+1' : '-1'}`,
-            playerId: actor.id,
-            mode: 'signature',
-            skillSavings: 0,
-          },
-        });
-      }
       events.push(...result.events);
       presentations = result.presentations ?? [];
       if (intent.type === 'end-turn') s = patch(s, { landing: null });
@@ -683,9 +755,9 @@ export function dispatchEconomy<S extends EconomyState>(
       events.push(...ended.events);
     }
     for (const event of events)
-      if (event.type === 'turn-ended')
+      if (event.type === 'turn-ended' && s.turnNumber !== original.turnNumber)
         s = completeSkillBasicTurn(s, event.playerId, original.turnNumber);
-    s = clearFinishedSkills(s);
+    s = cleanSkillTraps(clearFinishedSkills(s));
     const revision = money(s.economy.revision + 1);
     const ownership = (state: EconomyState) =>
       fingerprint(
@@ -822,36 +894,28 @@ export function getLegalActions(
         quoteToll(s, c, playerId, toll.tileId),
       );
       if (!skillUnavailableReason(s, playerId)) {
-        const modes: SkillMode[] =
-          skillForPokemon(actor.pokemonId)?.type === 'fire'
-            ? ['signature', 'breakthrough']
-            : ['breakthrough'];
-        for (const mode of modes) {
-          const q = quoteSkillUse(s, c, playerId, toll.tileId, mode, 'toll');
-          if (q.total < quoteToll(s, c, playerId, toll.tileId).total)
-            add(
-              {
-                type: 'use-skill',
-                mode,
-                tileId: toll.tileId,
-                landingId: toll.landingId,
-              },
-              q,
-            );
-        }
+        const q = quoteSkillUse(
+          s,
+          c,
+          playerId,
+          toll.tileId,
+          'signature',
+          'toll',
+        );
+        add(
+          {
+            type: 'use-skill',
+            mode: 'signature',
+            tileId: toll.tileId,
+            landingId: toll.landingId,
+          },
+          q,
+        );
       }
       return { revision: s.economy.revision, playerId, phase: 'core', actions };
     }
     if (s.core.pendingDice) {
       add({ type: 'resolve-dice', playerId, adjustment: 0 });
-      const adjustment = movementAdjustment(s, playerId);
-      const sum = s.core.pendingDice.values[0] + s.core.pendingDice.values[1];
-      if (
-        adjustment !== null &&
-        sum + adjustment >= 2 &&
-        sum + adjustment <= 12
-      )
-        add({ type: 'resolve-dice', playerId, adjustment });
       return { revision: s.economy.revision, playerId, phase: 'core', actions };
     }
     const debt = s.economy.pendingDebt;
@@ -888,6 +952,29 @@ export function getLegalActions(
       );
       return { revision: s.economy.revision, playerId, phase: 'core', actions };
     }
+    if (!skillUnavailableReason(s, playerId)) {
+      const type = skillForPokemon(actor.pokemonId)?.type;
+      if (type === 'grass' && s.core.turnStage === 'awaiting-roll')
+        add({
+          type: 'use-skill',
+          mode: 'signature',
+          tileId: actor.position,
+          landingId: `turn:${s.turnNumber}`,
+        });
+      if (type === 'electric')
+        for (const h of s.holdings.filter(
+          (h) =>
+            h.ownerId === playerId &&
+            c.properties[h.tileId]?.kind === 'city' &&
+            !s.skills!.traps[h.tileId],
+        ))
+          add({
+            type: 'use-skill',
+            mode: 'signature',
+            tileId: h.tileId,
+            landingId: `turn:${s.turnNumber}`,
+          });
+    }
     if (s.core.turnStage === 'awaiting-roll')
       add({ type: 'roll-dice', playerId });
     else {
@@ -917,34 +1004,6 @@ export function getLegalActions(
             { type: 'takeover-property', tileId: l.tileId, landingId: l.id },
             quoteTakeover(s, c, playerId, l.tileId),
           );
-        if (
-          l.skillEligible !== false &&
-          !skillUnavailableReason(s, playerId) &&
-          skillForPokemon(actor.pokemonId)?.type === 'electric' &&
-          h &&
-          h.ownerId !== playerId &&
-          prop.kind === 'city' &&
-          h.facilityLevel < 3
-        ) {
-          const q = quoteSkillUse(
-            s,
-            c,
-            playerId,
-            l.tileId,
-            'signature',
-            'takeover',
-          );
-          if (q.total < quoteTakeover(s, c, playerId, l.tileId).total)
-            add(
-              {
-                type: 'use-skill',
-                mode: 'signature',
-                tileId: l.tileId,
-                landingId: l.id,
-              },
-              q,
-            );
-        }
         add({ type: 'pass-property', tileId: l.tileId, landingId: l.id });
         return {
           revision: s.economy.revision,

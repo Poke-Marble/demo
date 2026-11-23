@@ -5,7 +5,7 @@ import type { CoreState } from '../core/index.ts';
 export type SkillType = 'grass' | 'water' | 'fire' | 'electric';
 export type SkillMode = 'signature' | 'breakthrough';
 export interface SkillDefinition {
-  readonly id: 'vine-whip' | 'water-gun' | 'ember' | 'thunder-shock';
+  readonly id: 'vine-whip' | 'water-gun' | 'ember' | 'thunder-wave';
   readonly pokemonId: PokemonId;
   readonly type: SkillType;
   readonly name: string;
@@ -15,46 +15,46 @@ export interface SkillDefinition {
   readonly detail: string;
 }
 const detail =
-  '공통 기술 돌파로 통행료를 15% 아껴요(최대 60). 상성이 유리하면 경제 기술 할인율이 10%p, 할인 한도가 25 올라가요. 불→풀, 물→불, 풀→물, 전기→물만 유리해요. 열세 불이익은 없고, 이동 기술에는 상성 추가 효과가 없어요. 가호와 함께 써도 할인 한도를 넘지 않아요. 비행·강제이동 중에는 사용할 수 없어요.';
+  '? ??? ??? 3PP, ?? ??. ?? ? 1PP? ???? ?? ?? ??? ??? ????? 1?? ??? ? ????. ?? ?? ??? ???? ?? ?? ???? ????.';
 export const skillCatalog: readonly SkillDefinition[] = [
   {
     id: 'vine-whip',
     pokemonId: 'pokemon:0001',
     type: 'grass',
-    name: '덩굴채찍',
-    summary: '이동 전 눈 합계를 1 줄여요 (최소 2칸)',
-    pros: ['공개된 눈으로 착지 조정', '원래 합계 유지는 PP 무료'],
-    cons: ['합계를 늘릴 수 없음', '조정 시 1PP'],
+    name: '????',
+    summary: '??? ? ??: ?? ??? 1? ?? ??',
+    pros: ['??? 1d6? ?? ???? ??'],
+    cons: ['?? ?? ??', '?? ???? ??'],
     detail,
   },
   {
     id: 'water-gun',
     pokemonId: 'pokemon:0007',
     type: 'water',
-    name: '물대포',
-    summary: '이동 전 눈 합계를 1 늘려요 (최대 12칸)',
-    pros: ['공개된 눈으로 착지 조정', '원래 합계 유지는 PP 무료'],
-    cons: ['합계를 줄일 수 없음', '조정 시 1PP'],
+    name: '???',
+    summary: '?? ??? ?? ? ?? ??? ??? ?? ?? ??',
+    pros: ['?? ?? ?? ?? ?? ??', '?? ?? ??? ?? ??'],
+    cons: ['?? ???? ???? ??'],
     detail,
   },
   {
     id: 'ember',
     pokemonId: 'pokemon:0004',
     type: 'fire',
-    name: '불꽃세례',
-    summary: '이번 착지 통행료를 25% 아껴요 (최대 100)',
-    pros: ['착지 후 실제 견적으로 선택', '상성 우위 시 35% · 최대 125'],
-    cons: ['인수비에는 적용 안 됨', '가호 중첩 후 순절약도 상한 적용'],
+    name: '????',
+    summary: '?? ???? ?? ? ??? ?? 1?? ??',
+    pros: ['?? ? ???? ?? ??', '? ??? ??'],
+    cons: ['? ??????? ?? ??', '????? ??? ?? ??'],
     detail,
   },
   {
-    id: 'thunder-shock',
+    id: 'thunder-wave',
     pokemonId: 'pokemon:0025',
     type: 'electric',
-    name: '전기쇼크',
-    summary: '일반 도시를 인수할 때 20% 아껴요 (최대 100)',
-    pros: ['실제 인수 견적으로 선택', '상성 우위 시 30% · 최대 125'],
-    cons: ['최종시설·명소 인수 면역 유지', '통행료에는 고유 효과 적용 안 됨'],
+    name: '?????',
+    summary: '? ?? 1?? ?? ?? ? ?? ????? ????? ??',
+    pros: ['?? ??? ??', '?? ???? ??'],
+    cons: ['?? ??? ?? ?? ??', '?? ??????? ???? ??', '??? ????? ? ??'],
     detail,
   },
 ];
@@ -64,6 +64,7 @@ export interface PreparedSkill {
   readonly mode: SkillMode;
   readonly tileId: TileId;
   readonly kind: 'toll' | 'takeover';
+  readonly landingId?: string;
 }
 export interface SkillPlayerState {
   readonly pp: number;
@@ -78,6 +79,7 @@ export interface SkillsState {
   readonly players: Readonly<Record<PlayerId, SkillPlayerState>>;
   /** Idempotent basic-turn lifecycle, independent of extra dice rolls. */
   readonly lastEndedTurn: number;
+  readonly traps: Readonly<Partial<Record<TileId, PlayerId>>>;
 }
 export interface SkillActivation {
   readonly playerId: PlayerId;
@@ -93,6 +95,7 @@ export const createSkillsState = (ids: readonly PlayerId[]): SkillsState => ({
   schemaVersion: 1,
   rulesVersion: 'validation-start-1',
   lastEndedTurn: 0,
+  traps: {},
   players: Object.fromEntries(
     ids.map((id) => [
       id,
@@ -115,6 +118,13 @@ export function validateSkills(s: CoreState): boolean {
       Number.isSafeInteger(x.lastEndedTurn) &&
       x.lastEndedTurn >= 0 &&
       x.lastEndedTurn <= s.turnNumber &&
+      !!x.traps &&
+      Object.entries(x.traps).every(
+        ([tileId, ownerId]) =>
+          s.holdings.some(
+            (h) => h.tileId === tileId && h.ownerId === ownerId,
+          ) && s.players.some((p) => p.id === ownerId && !p.bankrupt),
+      ) &&
       Object.keys(x.players).length === s.players.length &&
       s.players.every((p) => {
         const a = x.players[p.id];
@@ -221,73 +231,53 @@ export function clearFinishedSkills<S extends CoreState>(s: S): S {
     },
   };
 }
-export function movementAdjustment(s: CoreState, id: PlayerId): -1 | 1 | null {
-  if (skillUnavailableReason(s, id)) return null;
-  const type = skillForPokemon(
-    s.players.find((p) => p.id === id)!.pokemonId,
-  )?.type;
-  return type === 'grass' ? -1 : type === 'water' ? 1 : null;
+/** Temporary source compatibility until the core contract commit is integrated. */
+export function movementAdjustment(_s: CoreState, _id: PlayerId): null {
+  return null;
 }
 export function hasAdvantage(attacker: string, defender: string): boolean {
   return ['fire:grass', 'water:fire', 'grass:water', 'electric:water'].includes(
     `${attacker}:${defender}`,
   );
 }
-export function economicSkillRule(
-  s: CoreState,
+/** Remove traps when their installing owner no longer owns the property. */
+export function cleanSkillTraps<S extends CoreState>(s: S): S {
+  if (!s.skills) return s;
+  const traps = Object.fromEntries(
+    Object.entries(s.skills.traps).filter(
+      ([tileId, ownerId]) =>
+        s.holdings.some((h) => h.tileId === tileId && h.ownerId === ownerId) &&
+        s.players.some((p) => p.id === ownerId && !p.bankrupt),
+    ),
+  );
+  return { ...s, skills: { ...s.skills, traps } };
+}
+/** Arrival only. The economy calls this after the Water Gun reaction window. */
+export function resolveSkillTrap<S extends CoreState>(
+  s: S,
   id: PlayerId,
   tileId: TileId,
-  kind: 'toll' | 'takeover',
-) {
-  const prepared = s.skills?.players[id]?.prepared;
-  if (!prepared || prepared.tileId !== tileId || prepared.kind !== kind)
-    return null;
-  const p = s.players.find((p) => p.id === id)!;
-  const h = s.holdings.find((h) => h.tileId === tileId && h.ownerId !== id);
-  const owner = s.players.find((p) => p.id === h?.ownerId);
-  const attacker = skillForPokemon(p.pokemonId);
-  const defender = owner && skillForPokemon(owner.pokemonId);
-  if (!h || !attacker) return null;
-  if (
-    kind === 'takeover' &&
-    (prepared.mode !== 'signature' ||
-      attacker.type !== 'electric' ||
-      h.facilityLevel >= 3)
-  )
-    return null;
-  if (
-    kind === 'toll' &&
-    prepared.mode === 'signature' &&
-    attacker.type !== 'fire'
-  )
-    return null;
-  const bonus = defender && hasAdvantage(attacker.type, defender.type) ? 1 : 0;
+  disarm = false,
+): S {
+  const ownerId = s.skills?.traps[tileId];
+  if (!ownerId || ownerId === id) return s;
+  const traps = { ...s.skills!.traps };
+  delete traps[tileId];
   return {
-    rateBps:
-      (prepared.mode === 'breakthrough'
-        ? 1500
-        : kind === 'toll'
-          ? 2500
-          : 2000) +
-      bonus * 1000,
-    cap: (prepared.mode === 'breakthrough' ? 60 : 100) + bonus * 25,
+    ...s,
+    skills: {
+      ...s.skills!,
+      traps,
+      players: {
+        ...s.skills!.players,
+        [id]: {
+          ...s.skills!.players[id]!,
+          paralyzed: disarm ? s.skills!.players[id]!.paralyzed : true,
+        },
+      },
+    },
   };
 }
-/** Exact rational composition; skill savings measured against the same blessed baseline. */
-export function skillDiscountedAmount(
-  gross: number,
-  blessingRate: number,
-  rule: { rateBps: number; cap: number },
-): number {
-  const blessingBps = Math.round(blessingRate * 10000);
-  const numerator = BigInt(gross) * BigInt(10000 - blessingBps);
-  const baseline = Number((numerator + 9999n) / 10000n);
-  const composed = Number(
-    (numerator * BigInt(10000 - rule.rateBps)) / 100000000n,
-  );
-  return Math.max(gross > 0 ? 1 : 0, baseline - rule.cap, composed);
-}
-
 /** Core owns seeded dice generation; this hook consumes only the one-roll flag. */
 export function consumeForcedDoubleRoll<S extends CoreState>(
   s: S,
