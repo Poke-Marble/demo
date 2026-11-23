@@ -9,8 +9,8 @@ import {
   createSkillsState,
   completeSkillBasicTurn,
   clearFinishedSkills,
-  movementAdjustment,
-  spendSkill,
+  consumeForcedDoubleRoll,
+  consumeParalyzedBasicTurn,
   validateSkills,
   type SkillsState,
 } from '../skills/index.ts';
@@ -38,6 +38,12 @@ import type {
   PresentationRequest,
 } from '../legendary.ts';
 import { nextRandom } from './random.ts';
+import {
+  emptyDoubleChain,
+  recordDice,
+  validDoubleChain,
+  type DoubleChain,
+} from './doubles.ts';
 import { createMatch, validMatch, completeBasicTurn } from '../match/rounds.ts';
 
 export interface CoreRules {
@@ -56,6 +62,7 @@ export interface CoreState extends GameState {
   readonly skills?: SkillsState;
   readonly core: {
     readonly rngState: number;
+    readonly doubleChain?: DoubleChain;
     readonly pendingDice?:
       { readonly values: readonly [number, number] } | undefined;
     readonly turnStage: 'awaiting-roll' | 'awaiting-end';
@@ -219,7 +226,12 @@ export function createGame(
           ),
         }
       : {}),
-    core: { rngState: seed, turnStage: 'awaiting-roll', rules },
+    core: {
+      rngState: seed,
+      doubleChain: emptyDoubleChain(),
+      turnStage: 'awaiting-roll',
+      rules,
+    },
   };
 }
 
@@ -279,6 +291,7 @@ export function dispatch(
     !validMap(map) ||
     !validWorldEvents(state, map.tiles) ||
     !validateSkills(state) ||
+    !validDoubleChain(state.core.doubleChain) ||
     (state.core.pendingDice !== undefined &&
       (state.core.turnStage !== 'awaiting-roll' ||
         state.core.pendingDice.values.length !== 2 ||
@@ -322,37 +335,20 @@ export function dispatch(
       return reject('already-rolled');
     if (action.type === 'resolve-dice' && !state.core.pendingDice)
       return reject('roll-required');
-    if (
-      action.type === 'resolve-dice' &&
-      action.adjustment !== 0 &&
-      action.adjustment !== movementAdjustment(state, active.id)
-    )
+    if (action.type === 'resolve-dice' && action.adjustment !== 0)
       return reject('unsupported-action');
+    const forced = state.core.pendingDice
+      ? { state, forceDouble: false }
+      : consumeForcedDoubleRoll(state, active.id);
     const first = nextRandom(state.core.rngState);
-    const second = nextRandom(first.state);
+    const second = forced.forceDouble ? first : nextRandom(first.state);
     const values =
       state.core.pendingDice?.values ??
       ([
         Math.floor(first.value * 6) + 1,
         Math.floor(second.value * 6) + 1,
       ] as const);
-    if (
-      action.type === 'roll-dice' &&
-      movementAdjustment(state, active.id) !== null
-    ) {
-      return {
-        ok: true,
-        state: {
-          ...state,
-          core: {
-            ...state.core,
-            rngState: second.state,
-            pendingDice: { values },
-          },
-        },
-        events: [{ type: 'dice-revealed', playerId: active.id, values }],
-      };
-    }
+    const chain = recordDice(state.core.doubleChain, values);
     const fromIndex = map.tiles.findIndex(
       (tile) => tile.id === active.position,
     );
@@ -365,16 +361,6 @@ export function dispatch(
           (action.type === 'resolve-dice' ? action.adjustment : 0),
       ),
     );
-    if (
-      action.type === 'resolve-dice' &&
-      action.adjustment !== 0 &&
-      distance === values[0] + values[1]
-    )
-      return reject('unsupported-action');
-    const spent =
-      action.type === 'resolve-dice' && action.adjustment !== 0
-        ? spendSkill(state, active.id, null)
-        : state;
     const startIndex = map.tiles.findIndex((tile) => tile.kind === 'start');
     const offsetFromStart =
       (fromIndex - startIndex + map.tiles.length) % map.tiles.length;
@@ -388,7 +374,7 @@ export function dispatch(
     if (!Number.isSafeInteger(active.balance + amount + worldReward))
       return reject('invalid-state');
     next = {
-      ...spent,
+      ...forced.state,
       players: state.players.map((player) =>
         player.id === active.id
           ? { ...player, position: tile.id, balance: player.balance + amount }
@@ -399,6 +385,7 @@ export function dispatch(
         rngState:
           action.type === 'resolve-dice' ? state.core.rngState : second.state,
         pendingDice: undefined,
+        doubleChain: chain,
         turnStage: 'awaiting-end',
       },
     };
@@ -437,6 +424,20 @@ export function dispatch(
       next = applied;
       events.push(...(effect.events ?? []));
     }
+    if (
+      next.phase !== 'finished' &&
+      !next.players.find((p) => p.id === active.id)!.bankrupt &&
+      next.core.doubleChain?.extraRollPending &&
+      !next.legendary?.players[active.id]?.trial
+    ) {
+      return {
+        ok: true,
+        state: { ...next, core: { ...next.core, turnStage: 'awaiting-roll' } },
+        events,
+        presentations: [],
+      };
+    }
+    next = completeSkillBasicTurn(next, active.id, state.turnNumber);
     events.push({ type: 'turn-ended', playerId: active.id });
     if (next.phase !== 'finished') {
       let nextPlayer: Player | undefined;
@@ -460,18 +461,51 @@ export function dispatch(
           ...(next.match
             ? { match: completeBasicTurn(next, nextPlayer.id)! }
             : {}),
-          core: { ...next.core, turnStage: 'awaiting-roll' },
+          core: {
+            ...next.core,
+            doubleChain: emptyDoubleChain(),
+            turnStage: 'awaiting-roll',
+          },
         };
+        // Paralysis consumes a whole basic turn once, including round accounting.
+        while (
+          !next.match ||
+          next.match.completedRounds < next.match.roundLimit
+        ) {
+          const paralysis = consumeParalyzedBasicTurn(
+            next,
+            next.activePlayerId,
+          );
+          next = paralysis.state;
+          if (!paralysis.skip) break;
+          const skippedId = next.activePlayerId;
+          const skippedTurn = next.turnNumber;
+          const seat = next.players.findIndex((p) => p.id === skippedId);
+          const following = Array.from(
+            { length: next.players.length },
+            (_, i) => next.players[(seat + i + 1) % next.players.length]!,
+          ).find((p) => !p.bankrupt)!;
+          if (!Number.isSafeInteger(next.turnNumber + 1))
+            return reject('invalid-state');
+          next = completeSkillBasicTurn(next, skippedId, skippedTurn);
+          next = {
+            ...next,
+            ...(next.match
+              ? { match: completeBasicTurn(next, following.id)! }
+              : {}),
+            activePlayerId: following.id,
+            turnNumber: next.turnNumber + 1,
+          };
+          events.push({ type: 'turn-ended', playerId: skippedId });
+        }
         events.push({
           type: 'turn-started',
-          playerId: nextPlayer.id,
+          playerId: next.activePlayerId,
           turnNumber: next.turnNumber,
         });
       }
     }
   } else return reject('unsupported-action');
-  if (action.type === 'end-turn')
-    next = completeSkillBasicTurn(next, active.id, state.turnNumber);
   next = clearWorldEvents(clearFinishedSkills(next));
   return {
     ok: true,

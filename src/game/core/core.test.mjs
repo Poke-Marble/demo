@@ -181,7 +181,7 @@ test('wraps board and rewards each start crossing, including exact landing and s
   assert.ok(result.events.find((e) => e.type === 'start-rewarded').passes >= 1);
 });
 
-test('cycles supplied order, skips bankrupt players and grants no doubles bonus', () => {
+test('cycles supplied order, skips bankrupt players and continues doubles', () => {
   let state = make(4);
   state = {
     ...state,
@@ -199,7 +199,8 @@ test('cycles supplied order, skips bankrupt players and grants no doubles bonus'
   while (true) {
     const result = roll(make(2, { seed: doublesSeed }));
     if (result.events[0].values[0] === result.events[0].values[1]) {
-      assert.equal(end(result.state).state.activePlayerId, 'player:1');
+      assert.equal(end(result.state).state.activePlayerId, 'player:0');
+      assert.equal(end(result.state).state.turnNumber, 1);
       break;
     }
     doublesSeed++;

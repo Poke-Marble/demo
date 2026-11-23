@@ -48,6 +48,7 @@ export function createGameplayFeedback(
     cancelAnimationFrame(frame);
     frame = 0;
     overlay.hidden = true;
+    overlay.dataset.double = '';
     audio.stop();
     const done = finish;
     finish = undefined;
@@ -140,6 +141,19 @@ export function createGameplayFeedback(
       }
       ctx.restore();
     });
+    if (values.length === 2 && values[0] === values[1] && progress >= 0.82) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (progress - 0.82) / 0.08);
+      ctx.font = '900 40px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = '#fff9e8';
+      ctx.fillStyle = '#245e52';
+      ctx.strokeText('Double!', 280, 213);
+      ctx.fillText('Double!', 280, 213);
+      ctx.restore();
+    }
   }
   return {
     audio,
@@ -158,6 +172,15 @@ export function createGameplayFeedback(
       target.append(overlay);
       overlay.hidden = false;
       overlay.dataset.values = '';
+      overlay.dataset.double = String(
+        values.length === 2 && values[0] === values[1],
+      );
+      overlay.setAttribute(
+        'aria-label',
+        values.length === 2 && values[0] === values[1]
+          ? 'Double!'
+          : '??? ??? ?',
+      );
       audio.play('dice');
       const start = performance.now();
       await new Promise<void>((resolve) => {
@@ -169,9 +192,12 @@ export function createGameplayFeedback(
             return;
           }
           if (overlay.parentElement !== target) target.append(overlay);
-          const p = Math.min(1, (now - start) / 640);
+          const elapsed = now - start;
+          const p = Math.min(1, elapsed / 640);
           draw(values, p);
-          if (p >= 1) {
+          const duration =
+            values.length === 2 && values[0] === values[1] ? 960 : 640;
+          if (elapsed >= duration) {
             overlay.dataset.values = values.join(',');
             overlay.hidden = true;
             finish = undefined;
