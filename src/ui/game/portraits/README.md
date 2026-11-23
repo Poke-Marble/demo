@@ -71,7 +71,7 @@ cue id는 해당 세션 전체에서 유일하고 재전달할 때 동일해야 
 - 새게임/재시작의 `phase: setup` 업데이트에서 표정 타이머·중복 ID·기존 portrait 로더를 즉시 정리한다. 일반 재렌더에서도 종/플레이어가 바뀌면 이전 로더를 정리한다. `mountGameUI().destroy()`는 모든 portrait와 타이머를 해제한다.
 - 요청 generation과 해제한 load/error 핸들러로 이전 감정/이전 세션의 늦은 이미지가 현재 그림을 덮지 못한다.
 
-## 수집·검증·미리보기
+## 수집·검증
 
 루트 설정/lockfile이나 공통 에셋 수집기를 수정하지 않는 독립 스크립트다.
 
@@ -84,16 +84,6 @@ node --experimental-strip-types --test src/ui/game/portraits/emotions.test.mjs s
 npm run typecheck
 npm run lint
 npm run build
-node src/ui/game/demo/build-special.mjs
 ```
 
-기존 5193 포트에 listener가 없음을 확인한 뒤 서버를 복구했다.
-
-```powershell
-node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5193 --strictPort
-# http://127.0.0.1:5193/special-event-preview.html
-```
-
-`데모 장면 선택`을 펼치면 대상(전체 4명/개별 사람·COMPUTER), 9개 표정, 통행료 지불·수입 시연, 기존 시험 성공·실패·로프·비행과 재시작을 이용할 수 있다. 지속 표정은 재시작으로 해제한다. 데모 경제 시연은 잔액/상태를 계산하거나 바꾸지 않는다.
-
-2026-11-19 검증: portrait 전용 12개와 demo 보강 1개를 포함한 회귀 테스트 **44개**, 36개 portrait/53개 에셋·출처 파일 해시, typecheck/lint/build/별도 프리뷰 번들 통과. 전용 Chrome 창에서 네 종 Normal 실제 표시, 네 명 Joyous 지속, 재시작 Normal 복원, payer Worried/recipient Happy 및 자동 Normal 복귀를 관찰·캡처했다. 크레딧 파일별 조건 접근과 Esc 닫기도 확인했다. 좁은 화면/모바일 시각 검증과 브라우저의 실제 이미지 실패 시연은 미완료이며, 이미지 실패/늦은 로드/타이머는 테스트 대역으로 검증했다. 보드 내부 제목·크레딧·아트는 타 담당 파일이므로 수정하지 않았다.
+현재 게임 실행과 전체 회귀 검사는 [개발 안내](../../../../docs/maintenance.md)를 참고한다.

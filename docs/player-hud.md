@@ -1,16 +1,6 @@
 # 플레이어 HUD
 
-`feat/player-hud`의 독립 HTML/CSS 컴포넌트다. 구현 소유 범위는 `src/ui/game/hud/**`, `hud-preview.html`, 이 문서다. 기존 게임 진입점·어댑터·공통 CSS·integration·portraits·루트 설정은 수정하지 않는다. 실제 게임 화면에 꽂는 작업은 부모 통합 담당이 수행한다. Phaser·UI 프레임워크·폰트 의존성을 추가하지 않았다.
-
-## 실행
-
-```powershell
-node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5182 --strictPort
-```
-
-프리뷰: <http://127.0.0.1:5182/hud-preview.html>. 포트가 사용 중이면 실패하며 다른 포트로 우회하지 않는다. Windows npm 래퍼의 인수 전달 영향을 피하려고 Vite 실행 파일을 직접 사용한다.
-
-실제 `kantoJohtoMap`, `createInitialRoster('pokemon:0025')`, `createGame`의 초기 현금 1,500을 사용한다. 좌석 1이 전기인 구성으로 좌석 색과 타입 색을 구별할 수 있다. 도시·명소 소유권과 특성·가호·시험·컴퓨터 상태는 프리뷰에 명시된 표시용 스냅샷이다. 버튼으로 차례 전환, 확정 통행료, 표정, 파산, 긴 이름·큰 금액, 좌석 순서 변경, 동일 상태 갱신, 초기화를 시연한다. 보드는 별도 렌더러를 띄우지 않는 자리 표시자다.
+`src/ui/game/hud/`의 HTML/CSS 컴포넌트이며 실제 게임 UI에서 사용한다.
 
 ## 컴포넌트 API
 
@@ -157,31 +147,3 @@ observer.observe(boardHost);
 `hud.css`의 선택적 `.pm-hud-layout`은 `minmax(0, 1fr) 290px`의 두 영역을 예약한다. 보드 폭은 viewport 전체가 아닌 **boardHost의 실제 content box**로 계산한다. HUD는 canvas 위에 absolute overlay를 만들지 않으므로 입력 영역과 겹치지 않는다. 760px 이하는 보드 다음에 2×2 HUD, 340px 이하는 한 열 목록이다. HUD만 마운트해도 되며 이때 부모가 열 배치를 관리한다. 프리뷰의 시연 제어부는 모바일 HUD 다음에 배치한다.
 
 본문과 현금·버튼은 `--pm-font-game` 또는 부모의 글꼴을 상속한다. 폰트 파일 다운로드와 전역 폰트 설정은 `feat/ui-polish` 담당이다. 음소거 패널과 주사위 결과 역시 이 브랜치에서 수정하지 않는다.
-
-## 검증과 산출물
-
-```powershell
-node --test src/ui/game/hud/model.test.mjs
-npm run typecheck
-npm run lint
-npm run build
-node src/ui/game/hud/build-preview.mjs
-node src/ui/game/hud/browser-check.mjs
-npx prettier --check src/ui/game/hud hud-preview.html docs/player-hud.md
-```
-
-단위 테스트는 맵 kind와 소유권, 좌석 재배치와 타입, 권위 차례, optional 메타, 확정 현금 이벤트만 변환하는 동작을 검사한다. 브라우저 스크립트는 기존 `../feat-gameplay-feedback/artifacts/browser-tools/node_modules/playwright/index.mjs`를 읽기 전용 재사용한다. 다른 위치라면 `HUD_PLAYWRIGHT_PATH` 환경변수로 지정한다. 시스템 Chrome 경로는 `C:/Program Files/Google/Chrome/Application/chrome.exe`다. 새 패키지를 설치하지 않는다.
-
-전용 번들은 `dist/player-hud/hud-preview.html`이다. 일반 `npm run build`의 기본 진입점은 변경하지 않았다. 일반 빌드는 `dist`를 비우므로 **일반 빌드 → 전용 빌드 → 브라우저 검사** 순서를 사용한다.
-
-Chrome 157 검증: 1280×1000, 390×844(reduced motion) 및 전용 production bundle. DOM 측정으로 보드/행/초상화/이름/금액/버튼의 겹침과 가로 overflow를 검사한다. 일반 갱신과 좌석 재배치의 이미지 노드 재사용, 포커스 보존, Enter로 상세 열기·Escape 복귀, 확정 증감·중복 이벤트·live region 중복 방지, 외부 controller 공유·해제, 파산·표정·큰 금액·긴 이름을 확인한다.
-
-로컬 검증 결과는 Git 제외 경로 `artifacts/player-hud/`에 저장한다.
-
-- `desktop-1280.png`, `mobile-390.png`: 기본 배치
-- `desktop-stress-1280.png`, `mobile-stress-390.png`: 긴 이름·큰 금액·파산
-- `cash-emotion.png`, `assets-keyboard.png`: 확정 통행료·표정 / 키보드 상세
-- `production-1280.png`: 전용 번들 실행
-- `browser-report.json`: 검사 결과 및 페이지 오류 목록
-
-main 머지·원격 push·배포는 수행하지 않는다.

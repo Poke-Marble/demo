@@ -71,7 +71,7 @@ npm run build
 npm run preview
 ```
 
-빌드는 `dist/`에 생성됩니다. 코드 검사에는 `npm run typecheck`, `npm run lint`, `npm run format:check`를 사용할 수 있습니다. 데이터·에셋 출처와 개발 기록은 [docs](docs/), [데이터 수집 목록](scripts/samples.json), [에셋 manifest](src/assets/generated/sprites.json)에 있습니다.
+빌드는 `dist/`에 생성됩니다. 코드 검사에는 `npm run typecheck`, `npm run lint`, `npm run format:check`를 사용할 수 있습니다. 회귀 검사와 유지보수 명령은 [개발 안내](docs/maintenance.md), 데이터·에셋 출처는 [데이터 수집 목록](scripts/samples.json), [에셋 manifest](src/assets/generated/sprites.json)에 있습니다.
 
 ## 소리와 접근성
 

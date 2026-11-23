@@ -1,7 +1,5 @@
 # 주사위·걸음 피드백
 
-기준은 `main bde04c3`의 통합 데모다. 변경 범위는 `src/ui/game/feedback/**`, `src/ui/game/index.ts`, 이 문서, `feedback-preview.html`이다. core 상태, 시드/RNG, 주사위 결과, 경제·승리·시험 판정, 특수 이벤트 presenter/CSS, 전설 에셋은 수정하지 않았다. 워크트리 및 상위 경로와 내부에서 적용할 AGENTS.md는 발견되지 않았다.
-
 `../feat-starter-abilities/src/ui/game/abilities/audio.ts`는 읽기 전용으로 참고했다. 해당 모듈을 import/복사/수정하지 않는다. 외부 음원, 공식 효과음, 유료 API, 진동은 사용하지 않는다.
 
 ## 표현 순서와 수명
@@ -86,41 +84,3 @@ const destroyAll = () => {
 이 제약은 피드백 내부에 중계 객체를 하나 추가하는 것만으로 해결되지 않는다. 특성 음성까지 하나의 AudioContext/동시음 상한으로 묶으려면 특성 측에 외부 오디오/voice 공급자 주입 계약을 허용하는 별도 통합 변경이 필요하다. 이번에는 타 담당 파일이나 게임 index를 수정하지 않고 문서만 보완했다. 특성·전설시험 cue도 버스에 추가하지 않았다.
 
 주사위는 저역 필터를 거친 절차적 noise와 sine/envelope로 5회의 감쇠 타격을 합성한다. 걸음은 75ms의 작은 sine/noise 타격이며 좌우 느낌을 위해 두 주파수를 번갈아 쓴다. noise는 자체 고정 수열로 한 번 생성해 재사용한다. 최대 4음성/8 source이며 초과 시 가장 오래된 음성을 중지한다. 최대 사용자 볼륨에서도 envelope peak는 주사위 0.085, 걸음 0.045로 제한한다. 실제 기기의 청감상 크기까지 보장하는 수치는 아니다.
-
-## 실행 및 검증
-
-5176 미사용을 `Get-NetTCPConnection`으로 먼저 확인했다. 현재 이 워크트리의 Vite를 다음 명령으로 실행한다. 기존 5173 통합 데모나 다른 pane/워크트리는 수정·제어하지 않는다.
-
-```powershell
-node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5176 --strictPort
-```
-
-- 독립 프리뷰: <http://127.0.0.1:5176/feedback-preview.html> — 굴리기/7칸 이동, 두 소리 직접 듣기, 음소거/볼륨, 스킵/초기화.
-- 같은 소스의 실제 통합 데모: <http://127.0.0.1:5176/>.
-- 프리뷰 번들: `node src/ui/game/feedback/build-preview.mjs` → `dist/feedback-preview/feedback-preview.html`.
-
-검증 환경은 Windows, Node v22.17.0, 로컬 Google Chrome headless다. 자동 검증 코드와 작은 단위 테스트 더블을 구분해 저장했다.
-
-```powershell
-npm run typecheck
-npm run lint
-npm run build
-node src/ui/game/feedback/build-preview.mjs
-$tests = @(rg --files src -g '*.test.mjs' -g '*.test.ts')
-node --experimental-strip-types --test @tests
-npx prettier --check src/ui/game/index.ts src/ui/game/feedback feedback-preview.html docs/gameplay-feedback.md
-# 선택적 브라우저 도구는 ignored artifacts 안에 설치한다.
-npm install --prefix artifacts/browser-tools --no-package-lock --no-save playwright
-node src/ui/game/feedback/browser-check.mjs
-```
-
-2026-11-19 검증 결과:
-
-- typecheck, lint, 통합 build, 독립 프리뷰 build 통과. 전체 Node 테스트 **72/72 통과**, 그중 새 피드백 테스트 3개. 처음 `--experimental-strip-types` 없이 실행한 전체 검증은 기존 .ts import를 로드하지 못했고, 올바른 옵션으로 재실행해 통과했다.
-- 실제 Chrome의 dev 통합 데모에서 시작 → 주사위 → 7칸 이동을 확인했다. dev 독립 프리뷰와 **두 프로덕션 번들**도 각각 주사위 1회/걸음 7회가 관측되었다. 프로덕션 화면 검증용 서버는 테스트가 임시 로컬 포트에서 생성하고 종료한다.
-- 통합 UI에 제어된 update를 전달하는 fixture에서 동기 입력 잠금, 확정 텍스트/로그 지연, 시작/중복 waypoint 제외, 동일 Canvas 객체 유지, 복제 update ID 차단, 사람·컴퓨터 처리, 제자리·비인접 이동의 걸음 0회, reset/destroy를 확인했다. 컴퓨터 전체 AI 전략을 검증한 것은 아니다.
-- reduced motion의 즉시 확정/무음, 390px 화면 가로 넘침 없음, 음소거와 볼륨의 새로고침 유지, 스킵 후 추가 걸음 없음, AudioContext 생성 실패 후 게임 입력 잠금 해제를 확인했다.
-- 숨김 정리는 Chrome 안에서 `document.hidden`과 visibilitychange를 **모사**해 연출 중 취소를 검사했다. 실제 OS 탭 전환·백그라운드 절전 동작은 직접 검증하지 않았다.
-- 브라우저 오류 0건. AudioContext **running**, 합성 source 생성, analyser에서 **0이 아닌 PCM peak**를 확인했다. 직접 스피커/헤드폰으로 청취하지 않았으므로 청감·장치 출력 성공은 미검증이다.
-
-실행 증거는 ignored 로컬 `artifacts/gameplay-feedback/`에 있다. [브라우저 보고서](../artifacts/gameplay-feedback/browser-report.json), [전체 테스트 로그](../artifacts/gameplay-feedback/tests.log), [실제 통합 굴림 화면](../artifacts/gameplay-feedback/real-integrated-roll.png), [도착 화면](../artifacts/gameplay-feedback/real-integrated-arrival.png), [독립 프리뷰](../artifacts/gameplay-feedback/preview-rolling.png), [390px/reduced 화면](../artifacts/gameplay-feedback/integrated-mobile-reduced.png), 두 `production-*.png`를 생성했다. PNG를 열어 주사위 가독성·위치, 기존 보드 보존, 모바일 배치를 시각 확인했다. 이 증거는 로컬에 보존하며 커밋에는 재현 스크립트를 포함한다.

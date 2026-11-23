@@ -131,26 +131,3 @@ if (choice) submit(choice.intent, 'session-command-1');
 승리 판정기·실제 AI 전략·UI/integration 연결은 구현하지 않았다. 확정 receipt의 ownershipChanged와 debtPending, 최종 players/holdings를 외부 승리 담당이 소비할 수 있다. 채무 도중에는 승리를 판정하지 않는다. 파산 시 경제 dispatcher는 현재 코어의 내부 end-turn을 호출해 다음 생존자로 넘긴다. 승리 담당은 반환된 확정 스냅샷에서 finished/victory를 설정하고 이후 추가 행동을 막아야 한다. 승리 판정을 내부 차례이동보다 앞에 넣는 최종 통합은 coordinator 담당 경계다.
 
 관광 소유는 holdings level0, development 없음이다. 도시 소유는 holdings와 development의 1:1 대응을 검증한다. 아트 연결은 holdings 유무로 미소유/소유를 먼저 구분하고 development.stage/facilities와 context.properties의 finalFacilityKey를 전달한다. 기존 통합 UI를 바꾸지 않았으므로 이 브랜치만으로 완성 게임이 되지는 않는다.
-
-## 검증 기록
-
-전용 테스트는 실제 32칸 맵, 24도시/8그룹/4관광, 4인 180명령 시뮬레이션, 매 명령 JSON 복원·재전달·불변식 검증을 포함한다. 직접 경계 테스트는 중간시설 비용 누락/재청구 방지, 합산 할인, 정확한 잔액/1원부족, 잘못된 입력/토큰/actor/revision, 소유·재방문·해금, 통행료→인수, 채무 중 여러 번 매각·최종정산, 자동/조기파산 순서, 0/0%/100% 가호, 실패 시 소비 없음, 외부 확장 보존을 다룬다.
-
-재현 명령:
-
-```powershell
-npm ci
-node --experimental-strip-types --test src/game/economy/economy.test.mjs
-$tests = rg --files -g '*.test.mjs' src
-node --experimental-strip-types --test $tests
-npm run typecheck
-npm run lint
-npm run build
-node src/game/economy/browser-smoke.mjs 'C:\Program Files\Google\Chrome\Application\chrome.exe'
-npx prettier --check src/game/economy docs/economy-implementation.md
-git diff --check
-```
-
-검증 결과: `npm ci` 성공(취약점0), 경제22/전체90 테스트 통과, typecheck/lint/build/담당파일 Prettier/diff 검사 통과. 브라우저용 독립 ESM 번들 생성에 성공했다. `browser-smoke.mjs`는 Vite가 설치한 esbuild로 실제 맵+경제 모듈을 묶고, 독립 임시 프로필의 headless Chrome에서 roll→합법 견적→숍 동시구매→영수증 검증→기존 roll 재전달의 무이벤트 처리를 실행하여 PASS를 확인했다. 사용자 브라우저/pane을 제어하지 않으며 임시 프로필/HTML은 검사 후 제거한다.
-
-순수 모듈이며 기존 UI/integration에서 import하지 않아 화면 변화는 없다. 실제 통합 경제 화면의 시각 검증은 후속 UI 연결 시 필요하다. 루트 설정/lockfile/기존 소스는 수정하지 않는다. 로컬 기능 커밋만 남기고 main 병합/원격 push/배포는 하지 않는다.

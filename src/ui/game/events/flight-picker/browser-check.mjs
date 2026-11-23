@@ -1,21 +1,20 @@
 /* global WebSocket, setTimeout, console, fetch */
 import { Buffer } from 'node:buffer';
-import { URL } from 'node:url';
 import { spawn, execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { format } from 'prettier';
 
 // Isolated headless Chrome only; never attaches to another pane or profile.
 const profile = await mkdtemp(join(tmpdir(), 'flight-picker-chrome-'));
-const here = fileURLToPath(new URL('.', import.meta.url));
-const evidence = process.env.FLIGHT_EVIDENCE ?? join(here, 'evidence');
+const evidence = process.env.FLIGHT_EVIDENCE ?? 'artifacts/flight-picker';
 await mkdir(evidence, { recursive: true });
-const baselinePath = join(here, 'baseline.ts');
+const baselineDirectory = 'artifacts/flight-picker';
+await mkdir(baselineDirectory, { recursive: true });
+const baselinePath = join(baselineDirectory, 'baseline.ts');
 const baseline = execFileSync(
   'git',
   ['show', 'a18c2c4:src/ui/game/events/presenter.ts'],
@@ -24,8 +23,12 @@ const baseline = execFileSync(
 await writeFile(
   baselinePath,
   baseline
-    .replaceAll("from './", "from '../")
-    .replace("import './special-events.css'", "import '../special-events.css'"),
+    .replaceAll("from './", "from '/src/ui/game/events/")
+    .replaceAll("from '../../../game/", "from '/src/game/")
+    .replace(
+      "import './special-events.css'",
+      "import '/src/ui/game/events/special-events.css'",
+    ),
 );
 const chrome = spawn(
   process.argv[2] ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -137,7 +140,7 @@ try {
   assert.ok(setup.canvas);
   // Compare the original presenter on exactly the same authoritative snapshot.
   await evaluate(
-    `(async()=>{ document.querySelector('.pm-flight-picker').close(); const {createSpecialEventPresenter}=await import('/src/ui/game/events/flight-picker/baseline.ts'); window.old=createSpecialEventPresenter({root:host,describe:()=>({playerName:'나',partnerName:'꼬부기'}),lock:()=>{}}); old.select(flight,()=>{}); })()`,
+    `(async()=>{ document.querySelector('.pm-flight-picker').close(); const {createSpecialEventPresenter}=await import('/artifacts/flight-picker/baseline.ts'); window.old=createSpecialEventPresenter({root:host,describe:()=>({playerName:'나',partnerName:'꼬부기'}),lock:()=>{}}); old.select(flight,()=>{}); })()`,
   );
   for (const width of [1280, 390]) {
     await send('Emulation.setDeviceMetricsOverride', {

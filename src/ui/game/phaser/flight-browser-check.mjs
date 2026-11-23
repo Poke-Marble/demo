@@ -1,19 +1,16 @@
 /* global WebSocket, setTimeout, console, fetch */
 import { Buffer } from 'node:buffer';
-import { URL } from 'node:url';
 import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { format } from 'prettier';
 
 // Isolated headless Chrome only; never attaches to another pane or profile.
 const profile = await mkdtemp(join(tmpdir(), 'flight-picker-chrome-'));
-const here = fileURLToPath(new URL('.', import.meta.url));
-const evidence = process.env.FLIGHT_EVIDENCE ?? join(here, 'evidence');
+const evidence = process.env.FLIGHT_EVIDENCE ?? 'artifacts/board-flight';
 await mkdir(evidence, { recursive: true });
 const chrome = spawn(
   process.argv[2] ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe',

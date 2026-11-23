@@ -25,9 +25,3 @@ This is the approved Poke validation-start plan, not Pokémon video-game effect 
 `ui/game/adapter.ts` exports `GameView.activeSkill:{definition,statusLabel,cooldownLabel,unavailableReason?,choice?:UIChoice}` and `UIUpdate.skillActivations`. The legacy `cooldownLabel` field now displays remaining PP and no recharge; it is not a cooldown. The full opaque legal choice set remains in `actions`/`prompt`; `activeSkill.choice` is only a convenience for the first skill option. Select via `adapter.choose(selectionId,choiceId)`. UI does no RNG, pricing, resource arithmetic or legality inference. The status label includes revealed dice and sum. The separate UI worker owns `ui/game/skills` and minimal `ui/game/index.ts` hooks; AI worker owns public outlooks/planning.
 
 Save consumers must preserve the full skills ledger, pending dice, pending toll, landing eligibility, prepared debt, blessing state and processed-command receipts together. JSON round trips at these boundaries are regression-tested; no new save feature is included.
-
-## Validation
-
-Focused skill tests cover both actual adjusted movements, free keep, special landing, bounds, all four asymmetric advantages, all starter shared skills, Ember/Thunder capped actual settlements, takeover immunity and atomic failure, blessing stacking/caps, discounted debt + liquidation, JSON snapshots, duplicate/conflicting commands, turn-use unlock without PP refill, flight exclusion and invalid saved resources. Existing settlement tests now verify the absence of old automatic cash rewards, while preserving all four original victory paths.
-
-Production integration simulations exercise human legal choices and all three AI seats with deterministic seeds. These are behavior regressions, not balance evidence. No original assets or victory definitions are changed. Branch commits are delivered to the coordinator; main merging and remote push are coordinator-owned.

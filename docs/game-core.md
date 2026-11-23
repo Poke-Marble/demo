@@ -111,25 +111,3 @@ const hooks = {
 };
 // 각 모듈은 HookEffect를 반환하도록 어댑터를 둔다.
 ```
-
-## 검증 및 기반 반영
-
-독립 규칙 테스트(추가 패키지 불필요, Node >=22.17):
-
-```powershell
-node --experimental-strip-types --test src/game/core/core.test.mjs
-```
-
-초기화/입력 거부, 100턴 시드 재현·불변 입력, 정확한 출발 착지/다중 통과/
-중간 start 위치, 더블 무보너스, 순서·파산 건너뛰기, 훅 효과·승리·종료 이후
-거부·잘못된 훅의 원자적 취소를 검증한다. 테스트는 src/game/core에만 둔다.
-
-feat/init이 커밋되고 그 작업트리가 깨끗해질 때까지 공통 파일을 복제하지 않는다.
-준비되면 자신의 변경을 먼저 커밋하고 자신의 브랜치에서만
-`git merge feat/init --no-edit` 후 규칙 테스트 및 npm run typecheck/lint/build를 수행한다.
-미준비 상태의 검증 범위와 최종 커밋 정보는 완료보고에 명시한다.
-
-2026-11-18 독립 검증: 규칙 테스트 7개, 담당 경로 ESLint 및 Prettier,
-초기 계약을 메모리로 읽어 적용한 strict TypeScript 검사가 통과했다.
-이 독립 타입 검사는 계약 파일을 현재 작업트리에 복제하지 않는다.
-기반 커밋 전에는 전체 프로젝트 npm typecheck/lint/build의 통합 성공을 주장하지 않는다.

@@ -45,19 +45,3 @@ The four-reason victory config remains valid. A fifth `round-limit-assets` entry
 | `finalRanking`, `endReason`                          | Recorded final asset ranking and actual victory reason                                                                                                               |
 
 `AssetRank`: `{playerId, seat, cash, propertyCost, total, bankrupt}`. The result dialog uses the recorded ranking and explicitly names the tie-break rules. Header and victory-progress modal rendering are owned by `poke-turn-ui`; this branch leaves header/HUD layout unchanged.
-
-## Validation and preview
-
-Completed once: seven match boundary tests; 24 existing core/victory/integration tests (including three real seeded games and presentation-ack/restart rejection). Typecheck and lint passed. No unrelated whole-suite expansion was performed.
-
-Reproducible Chrome harness:
-
-```powershell
-node src/game/match/build-preview.mjs
-npx vite preview --host 127.0.0.1 --port 5204 --strictPort --outDir artifacts/match-preview
-node src/game/match/browser-check.mjs
-```
-
-Preview: http://127.0.0.1:5204/ ; clean harness: http://127.0.0.1:5204/src/game/match/preview.html . The harness starts a fresh real quick session, drives legal human/AI decisions without mutating state/RNG, fast-forwards earlier presentation, and mounts the actual UI before the final basic turn. Final movement, result and restart use production UI/adapter presentation acknowledgements.
-
-Chrome 157, seed42: 19 completed rounds at T80; exactly 20 basic turns per seat after final completion; `round-limit-assets`, winner player2: 2487 = cash737 + property1750. Final modal shows all four scores and tie-break text. Finished financial command is blocked. Restart clears rounds/ranking and changes session; the actual setup flow starts another fresh standard game (30 rounds, T1/revision0). No page errors or failed requests. Evidence is under `docs/evidence/round-limited-match/`.

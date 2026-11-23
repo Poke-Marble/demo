@@ -79,17 +79,3 @@ createProjectedBoard({
 | olivine   | lighthouse       | [Olivine Lighthouse](https://bulbapedia.bulbagarden.net/wiki/Olivine_Lighthouse). 게임 간판의 Glitter Lighthouse / かがやきのとうだい, 한국어 빛남의 등대. 모형 UI에서는 ‘담청 · 등대’로 축약                               |
 
 나머지는 조정 가능한 대표시설 선택이다. 회색→박물관, 갈색/무궁→항구, 인주/보라→문화회관, 황토→지역 회관(lodge), 연분홍/사파리/산·호수 POI→관리소, 석영→리그, 상록/블루/도라지/고동/진청/검은먹→체육관, 홍련→연구소로 정했다. 이 전체 목록을 원작의 확정 최종 건축/게임 규칙이라고 주장하지 않는다. 특히 인주 문화회관은 **시험 방울탑과 구별하기 위한 가정**, 호수/유적의 관리소·박물관도 보드용 가정이다. 데이터 소유자가 finalFacility를 넘기면 이 기본 매핑보다 우선한다. 숫자 ID만 있는 기존 UI fixture는 명시적 메타데이터가 없으면 lodge로 안전하게 대체하며 배열 index로 실제 지리를 추정하지 않는다.
-
-## 프리뷰와 검증
-
-`node src/ui/game/art/preview.mjs` → `/board-art-preview.html`. 무소유부터 다섯 버튼으로 모든 도시 상태를 전환한다. `?stage=final`, `?stage=final&corners=1&overlap=1`로 대표시설/모서리/말 중첩을 직접 열 수 있다. corners는 독립 프리뷰의 ID·종류만 바꾼 가상 배치이며 실제 맵을 수정하지 않는다. 아래 갤러리는 단계와 주요 도시 대표시설을 보여준다.
-
-별도 번들: `node src/ui/game/art/preview.mjs --build`; 기존 `game-preview.html`도 읽기 전용 입력으로 함께 번들한다. `--serve-built`는 5195에서 제공한다. 하위 경로도 상대 hashed asset URL로 검증한다. 브라우저 테스트 재현 명령은 `browser-check.mjs`의 로컬 Playwright 설치 방식과 기존 `playtest-followup.md` 서버 명령을 따른다. 서버 5194(dev), 5195(bundle), 5196/board-art(subpath)를 사용한다.
-
-검증 대상은 개발/번들/하위 경로 각각 1200px·390px의 다섯 상태, 무소유 빈 SVG/캠프 깃발만/지원동 누적, 320ms 등장·연출 끝내기·reduced-motion, 32칸 포인터 클릭과 Tab/Enter, 네 말 겹침·깊이, PNG 없는 모형 표시, 실제 기존 게임 데모의 시작 흐름 및 holdings 렌더다. Node 테스트는 소유/단계 매핑, 대표시설 구분, footprint의 타일 내부 포함, 보드와 같은 투영 기울기, 메타데이터 우선순위와 연출 조건을 검사한다.
-
-검증 결과: typecheck/lint/build/독립 프리뷰 번들 및 Node 테스트 24개 통과(맵 내부 검증 9개 포함). 세 실행 경로×두 화면 크기의 단계 전환, 타일 클릭 총 192회, 키보드·reduced-motion 검증 통과. 기존 실제 데모도 세 경로×두 크기에서 타이틀→파트너→맵→게임 시작과 실제 holdings의 무소유/숍/센터/최종 렌더, 타일 정보 대화상자 클릭을 확인했다. 두 PNG 지면+네 CSS 포켓몬 배경 6종 디코딩 성공, 시설/수목 PNG 요청은 없다.
-
-캡처/기계 판독 결과는 git 제외 `artifacts/construction-qa/`: `{dev,production,subpath}-{1200,390}-{unowned,camp,shop,center,final,overlap}.png`, `existing-demo-{dev,production,subpath}-{1200,390}.png`, `before-flat-{1200,390}.png`, `report.json`. 이전 캡처는 비교용이며 현재 코드 렌더와 혼동하지 않는다.
-
-검증 한계: 격리 headless Chrome 기준이다. 이벤트·경제·새 실제맵 브랜치와 병합한 연속 플레이/건설 가능 조건은 미검증이며 이 작업 범위 밖이다. 기존 게임 데모의 32칸은 숫자 ID의 UI fixture라 실제 도시 대표시설 메타데이터 연결은 별도다. 원격 푸시·배포·main 병합은 하지 않는다.

@@ -19,10 +19,8 @@ const combined = process.argv.includes('--combined');
 const baselineReport = combined
   ? JSON.parse(
       await readFile(
-        new URL(
-          '../src/ui/game/phaser/polish-evidence/report.json',
-          import.meta.url,
-        ),
+        process.env.BOARD_POLISH_BASELINE ??
+          'artifacts/board-polish-baseline/report.json',
         'utf8',
       ),
     )

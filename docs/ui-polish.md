@@ -4,7 +4,7 @@
 
 ## 동작
 
-- 게임 왼쪽 하단의 상시 음소거/볼륨 패널을 마운트하지 않는다. `createGameplayFeedback()`와 `SfxBus`의 생성·저장 설정·실제 pointerdown/keydown unlock·음성 정리 수명은 그대로 유지한다. 강제 음소거 해제나 볼륨 변경은 하지 않는다. 독립 `feedback-preview.html`은 기존 오디오 점검 도구를 유지한다.
+- 게임 왼쪽 하단의 상시 음소거/볼륨 패널을 마운트하지 않는다. `createGameplayFeedback()`와 `SfxBus`의 생성·저장 설정·실제 pointerdown/keydown unlock·음성 정리 수명은 그대로 유지한다. 강제 음소거 해제나 볼륨 변경은 하지 않는다.
 - 주사위/걸음 연출 동안만 오른쪽 위에 `연출 스킵 · Esc` 버튼을 표시한다. 게임 host의 inert 바깥에 있어 입력 잠금 중에도 동작한다. Esc 또는 버튼은 `feedback.skip()`과 현재 이동 대기 타이머 해제를 호출한다. 확정 상태/기록은 정상 처리하고 기존 큐가 입력 잠금을 해제한다. 특수 이벤트 presenter의 자체 스킵/ack를 대체하지 않는다. 종료 시 버튼과 키 리스너를 제거한다.
 - 보드 중앙과 오른쪽 결과는 `이동 —` → `굴리는 중…` → `이동 9칸 · 이동 중…` → `이동 9칸 · 완료` 순으로 표시한다. 컴퓨터 상태 표시에도 합계를 유지한다. `theme/dice.ts`는 전달받은 실제 배열 전체를 합산하는 표현 함수다. Canvas에는 원본 배열을 계속 전달하며 RNG·이동 경로·주사위 기록의 개별 눈은 바꾸지 않는다. 합계로 이동 거리를 다시 만들지 않는다.
 
@@ -32,36 +32,3 @@ MVP의 정산/ack 변경과 병합할 때 `index.ts`에서 다음 작은 변경�
 3. `dice` 초기/리셋·굴림 전/후·이동 종료 텍스트와 오른쪽 결과 텍스트 변경. 컴퓨터 progress에는 합계 span 유지.
 
 기존 `adapter` 호출, update 큐, 구독, 연출 ack, pendingFeedback, inert 잠금 및 효과 presenter 흐름은 유지해야 한다. 스킵은 기존 타이머 map을 해제하며 update 처리나 ack를 직접 실행하지 않는다. 아직 main에 없는 MVP 코드를 가져오거나 병합하지 않았다.
-
-## 검증과 실행
-
-포트 5187의 미사용을 확인한 뒤 이 워크트리에서 strict Vite를 시작했다.
-
-```powershell
-node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5187 --strictPort
-```
-
-프리뷰: <http://127.0.0.1:5187/>. 현재 브랜치의 통합 데모이며 병렬 MVP/Phaser/HUD 완성본이 합쳐진 화면은 아니다.
-
-```powershell
-npm run typecheck
-npm run lint
-npm run build
-$tests = @(rg --files src -g '*.test.mjs' -g '*.test.ts')
-node --experimental-strip-types --test @tests
-npx prettier --check src/ui/game/index.ts src/ui/game/theme docs/ui-polish.md
-npm install --prefix artifacts/browser-tools --no-package-lock --no-save playwright
-$env:HEADED = '1'
-node src/ui/game/theme/browser-check.mjs
-```
-
-2026-11-20: typecheck/lint/build 통과, 전체 Node 테스트 **154/154** 통과. 새 테스트는 임의 개수 배열 합계/불변성 및 결과 공개 전 텍스트를 검사한다. 실제 설치된 Google Chrome을 headless와 headed 모드로 실행해 1280×900, 390×900에서 다음을 확인했다.
-
-- 로컬 폰트 decode/loaded, 실제 계산된 font-family, 브라우저 오류 0건.
-- 패널 부재, 연출 중에만 스킵 표시, 주사위/이동/완료 문구와 중앙·오른쪽 합계, 컴퓨터 결과 합계.
-- 기존 경로 9단계의 발소리 호출, 실제 제스처 후 AudioContext running 및 합성 source 생성. 직접 스피커로 청취한 검증은 아니다.
-- Esc로 주사위 스킵, 버튼으로 걷는 중 스킵, 남은 발소리 중지, 입력 잠금 해제, destroy 정리.
-- mute=true/volume=0.2 저장·재마운트 유지, reduced motion 즉시 확정/스킵 숨김.
-- 문서/중앙 결과/오른쪽 결과의 가로 넘침 0, 전후 캡처 시각 검사. 데스크톱 굴리기 버튼 줄바꿈은 여백을 줄여 해결했다.
-
-증거는 ignored `artifacts/ui-polish/`에 보존한다: `browser-report.json`, `tests.log`, `before-title.png`, `before-board.png`, `after-title-{1280,390}.png`, `rolling-{1280,390}.png`, `moving-{1280,390}.png`, `after-board-{1280,390}.png`. 재현용 브라우저 스크립트는 `theme/browser-check.mjs`에 커밋한다.

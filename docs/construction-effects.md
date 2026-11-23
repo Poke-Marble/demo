@@ -37,32 +37,3 @@
 현재 Phaser 공개 API에는 카메라를 반영한 칸별 screen anchor가 없다. 담당 중인 `phaser/index.ts`는 수정하지 않았다. 실제 연결은 보드 host 중앙(x=50%, y=43%)의 확정 강조다. 특정 칸에 실제 건물이 솟는 것처럼 잘못된 좌표를 사용하지 않는다. Canvas 건물은 중앙 문장용 실루엣이며 실제 칸의 건물 모델은 기존 Phaser가 갱신한다.
 
 `createConstructionPresenter`의 선택적 `anchor(tileId)`는 board host 기준 CSS pixel `{ x, y }`를 받는다. 향후 Phaser 담당자가 카메라 pan/zoom·viewport·DOM offset을 반영한 함수를 공개하면 이 콜백으로 주입할 수 있다. 좌표는 매 프레임 조회하며 비유한/화면 밖 값은 중앙으로 대체한다. caption은 보드 중앙에 유지한다. 특성 이벤트나 금융 처리 경로를 합칠 필요는 없다.
-
-## 실행과 검증
-
-이 워크트리에서 `npm ci` 후 다음으로 strict 개발 서버를 시작했다. 5191이 비어 있어 해당 포트에서 시작됐다.
-
-```powershell
-node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5191 --strictPort
-```
-
-- 실제 게임: http://127.0.0.1:5191/
-- 독립 프리뷰: http://127.0.0.1:5191/src/ui/game/construction-effects/preview.html
-
-```powershell
-node --experimental-strip-types --test src/ui/game/construction-effects/model.test.mjs src/ui/game/construction-effects/presenter.test.mjs src/ui/game/feedback/audio.test.mjs src/ui/game/feedback/feedback.test.mjs src/ui/game/abilities/presenter.test.mjs src/ui/game/integration/adapter.test.mjs
-node src/ui/game/construction-effects/browser-check.mjs
-node src/ui/game/construction-effects/build-preview.mjs
-npm run typecheck
-npm run lint
-npm run build
-npm run format:check
-```
-
-Node 22.17은 기존 TS 직접 import 테스트에 `--experimental-strip-types`가 필요하다. 브라우저 테스트는 기존 인접 워크트리의 Playwright 설치를 읽기 전용으로 재사용한다(`PLAYWRIGHT_PATH`로 교체 가능). 그 워크트리의 파일을 수정하지 않는다. 테스트 코드는 모두 이 담당 디렉터리에 있다.
-
-Chrome 증거는 `src/ui/game/construction-effects/evidence/`에 저장한다. `preview-1280.png`, `preview-390.png`는 독립 시연이며, `game-final-1280.png`는 합법적인 stage 2 재방문 fixture에서 수정 없는 `dispatchEconomy`로 최종건설을 확정하고 그 실제 이벤트를 mountGameUI에 전달한 최종완성/특성 순서 검증이다. 원명령 재전달도 실제 producer의 replay 결과(events=[])로 검증한다. `game-real-390.png`는 seed=1 실제 경제 어댑터에서 주사위와 합법 건설 선택을 실행한 확정 거래다. 최종시설 fixture는 UI 검증용이고 실제 게임의 자금/시드/판정에는 설치하지 않는다. 자동 검증 결과는 `browser-report.json`에 기록한다. 독립 프리뷰 빌드 산출물은 `artifacts/construction-effects-preview/`에 생성한다.
-
-검증 결과: 신규·관련 회귀 테스트 총 34개 통과, typecheck/lint/format check/게임 build/독립 preview build 통과. Chrome 157의 1280×900·390×900, DPR 2에서 JavaScript 오류 0개. 실제 최종건설 이벤트, 거래 재전달, 건설→특성→ack 순서, 입력 잠금, pointer pass, 상시 음소거 패널 부재, 스킵/restart/감소모션 전환/destroy 후 ack 해제를 확인했다.
-
-빌드에는 기존 Phaser 대형 청크 경고가 있다. 배포·푸시·main 병합은 하지 않는다.

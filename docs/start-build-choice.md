@@ -24,20 +24,3 @@
 `hasPendingSettlement`가 새 기회를 포함한다. 따라서 pending 동안 `rankAssets`는 거절하고 `finalizeMatch`와 최종 순위 공개는 보류한다. 해결 후에는 기존 승리·라운드 제한 처리가 적용된다. AI public projection은 기회를 포함하며 사람과 동일 `getLegalActions` 후보를 사용한다.
 
 UI는 기존 공용 `modal()`과 adapter prompt를 사용한다. 소유 재산 목록과 공용 dialog overflow 구조는 property UI 브랜치 소유이며 이 브랜치에서 수정하지 않는다. 해당 브랜치의 `.pm-dialog-body` 스크롤과 고정 footer가 통합 시 그대로 적용된다.
-
-## 검증·프리뷰
-
-로컬 dev 프리뷰: <http://127.0.0.1:5221/>. 요청 포트 5212는 통합 담당의 기존 preview가 사용 중이므로 종료·교체하지 않았다. 5192도 유지했다.
-
-경제 경계 테스트: `node --experimental-strip-types --test src/game/economy/start-build.test.mjs`.
-Chrome 검증: `node scripts/check-start-build.mjs` (기본 5221). seed 3 quick 실제 경기의 45번째 턴까지 합법 명령으로 진행한 뒤 실제 START 기회를 UI에 마운트한다. 테스트용 위치·소유권·잔액 주입은 없다. 1280×844 및 390×844에서 스킵, 유료 센터 건설, 최종 시설, 이중 클릭·stale 콜백을 확인한다. 결과와 PNG는 `artifacts/start-build/`에 생성한다.
-
-2026-11-22 검증 결과:
-
-- 경제·매치·AI·integration 관련 기존 및 초기 START 테스트 95개 통과. canonical helper와 추가 경계 확인 후 START 테스트 7개 통과.
-- `npm run lint`, `npm run build`, `git diff --check` 통과. 빌드는 기존 Phaser 청크 크기 경고만 발생.
-- 실제 Chrome 142, 1280×844 / 390×844 각 스킵·센터·최종 시설 총 6사례 통과. START 3주회, 45턴에서 잔액 318₽ 기준 스킵 318₽, 센터 238₽(80₽ 지불), 최종 시설 268₽(50₽ 지불). 각 사례 revision 증가 1회, stale 입력 후 상태 동일, 실제 START 착지 이력 보존, 부채 없음, 페이지 오류 없음.
-- 데스크톱 dialog x=335..945, 모바일 x=18..372. 양쪽 document scrollWidth가 viewport와 같고 모든 버튼이 화면 안에 표시됨.
-- AI가 실제 `plan`으로 합법 건설/스킵을 선택하고 권위 dispatch에서 기회를 해결함. 마지막 라운드의 pending 기회는 자산 평가·승리를 보류하고 스킵 해결 후 정상 자산 승리로 마무리함.
-
-선택한 화면과 전체 수치 증거는 [evidence/start-build-choice](evidence/start-build-choice)에 보관한다. 임시 탐색 스크립트와 테스트 원시 로그는 커밋하지 않았다. world-events 통합 뒤 이벤트별 금액 검증은 그 브랜치의 canonical helper를 유지한 통합본에서 재확인해야 한다.

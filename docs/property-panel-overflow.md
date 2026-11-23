@@ -1,8 +1,5 @@
 # Property panel bounds
 
-Branch: `fix/property-panel-overflow`, based on `098d23d` (includes `f33b7b8`).
-Local preview: http://127.0.0.1:5213/.
-
 ## Reproduction and cause
 
 The original report predates f33's grouped sale actions. On this baseline,

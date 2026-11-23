@@ -9,6 +9,21 @@ const moduleURL = (text) =>
   `data:text/javascript,${encodeURIComponent(stripTypeScriptTypes(text)).replaceAll("'", '%27')}`;
 const cardURL = moduleURL(await source('./card.ts'));
 const queueURL = moduleURL(await source('../queue.ts'));
+const worldURL = moduleURL(
+  await source('../../../../game/world-events/index.ts'),
+);
+// Use the same asset-free mounted presenter harness as presenter.test.mjs.
+const mountedURL = moduleURL(
+  (await source('../mounted/presenter.ts'))
+    .replace(/^import .*;\r?\n/gm, '')
+    .replace(
+      'const hoverDurations =',
+      `const manifest = ${await source('../mounted/assets/manifest.json')};
+const findSprite = () => ({});
+const hoverUrl = ''; const idleUrl = '';
+const hoverDurations =`,
+    ),
+);
 const { createSpecialEventPresenter } = await import(
   moduleURL(
     (await source('../presenter.ts'))
@@ -18,6 +33,11 @@ const { createSpecialEventPresenter } = await import(
       )
       .replace("from './queue'", `from '${queueURL}'`)
       .replace("from './flight-picker/card'", `from '${cardURL}'`)
+      .replace(
+        "from '../../../game/world-events/index.ts'",
+        `from '${worldURL}'`,
+      )
+      .replace("from './mounted/presenter'", `from '${mountedURL}'`)
       .replaceAll(/^import '\.\/.*\.css';$/gm, ''),
   )
 );

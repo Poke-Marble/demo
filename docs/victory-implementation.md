@@ -1,7 +1,5 @@
 # 승리 판정 구현 및 연결 계약
 
-기준: `main bde04c3`, 실제 `kantoJohtoMap` (`map:kanto-johto:v3`). 변경 범위는 `src/game/victory/**`와 이 문서뿐이다. 상위 경로와 담당 경로에서 적용할 AGENTS.md는 발견되지 않았으며, 이번 순수 TypeScript 도메인 작업에 해당하는 제공 skill은 없다. core/contracts/hooks/UI/integration 및 경제 모듈은 수정하거나 연결하지 않았다.
-
 ## 공개 API
 
 ```ts
@@ -101,24 +99,3 @@ function afterSettlement<S extends GameState>(settled: S, actorId: PlayerId) {
 ```
 
 경로는 위 코드를 `src/game/victory/adapter.ts`에 두는 경우다. adapter 파일 자체는 추가하지 않았다. 아직 존재하지 않는 경제 모듈을 import하지 않는다. 실제 호출자는 정산 트랜잭션 경계를 소유하는 계층이어야 한다. core의 기존 hook에 바로 꽂으면 그 hook 이후에 정산이 남는지 확인할 수 없으므로 여기서는 연결하지 않는다. 반환 state에는 core 필드와 기존 전설 상태를 보존하며, 승리 확정 자체는 전설시험·잔액·파산·건물·턴 번호를 변경하지 않는다.
-
-## 검증 및 한계
-
-재현 명령(Node 22.17.0):
-
-```powershell
-npm ci
-node --experimental-strip-types --test src/game/victory/victory.test.mjs
-$testFiles = rg --files src -g '*.test.mjs' -g '*.test.ts'
-node --experimental-strip-types --test $testFiles
-npm run typecheck
-npm run lint
-npm run build
-npm run format:check
-```
-
-승리 전용 테스트는 시드/UI 없이 실제 v3 데이터를 직접 사용한다. 8개 그룹의 개별 미충족, 8C3=56개 조합과 도시 누락, 네 변의 6도시/명소 구분, 4명소/3명소 경계, POI 일반도시 구분, 시설 0/3 동등성, 마지막 생존자/0명/파산자 재산, 여러 후보/조건/행위자/설정 우선순위, sample 및 손상된 맵/소유/종료 레코드, 불변성/확장 상태 보존/이벤트 1회/JSON 재호출을 검증한다.
-
-실행 결과: `npm ci` 성공(취약점 0), 승리 테스트 11개 통과, 전체 Node 테스트 80개 통과(별도 맵 검증 파일 내부 13항목도 통과), typecheck/lint/build/format:check 통과. Node 22의 타입 제거 기능은 experimental 경고를 출력하지만 테스트는 정상 종료한다. lint 최초 실행에서 테스트의 `structuredClone` 전역 선언 문제를 발견해 담당 테스트 안에서 JSON 복사로 바꾼 뒤 다시 통과시켰다.
-
-독립 규칙 모듈이라 화면 변경과 전용 프리뷰 번들은 없다. 기존 UI에 연결되지 않아 브라우저 화면만으로 이 모듈을 검증할 수 없다. 실제 연결 후 거래 직후·파산 정리 직후 승리 화면과 입력 차단의 브라우저 검증은 통합 담당 범위에 남는다. npm build는 기존 앱의 회귀 검증이며, 미연결 승리 모듈 자체는 전체 TypeScript 검사 및 직접 실행 테스트로 검증한다. 서버 저장/동시 실행/경제 정산 완료 여부와 임의 JSON 스키마 검증은 이 모듈의 책임이 아니다.

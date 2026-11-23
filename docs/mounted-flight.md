@@ -1,7 +1,5 @@
 # 아머까오 탑승 공중날기
 
-기준 main `098d23d`, 작업 브랜치 `feat/mounted-flight-presentation`. main 병합·push 없음. 작업 경로 및 상위 경로에서 적용할 AGENTS.md는 발견되지 않았다.
-
 ## 자산 선택 근거
 
 [PMDCollab/SpriteCollab 공식 저장소의 slot 0823](https://github.com/PMDCollab/SpriteCollab/tree/948c79de39e3fe3067f1fd26294e19d864325cc9/sprite/0823)를 직접 조회하고 원본 Idle/Hover PNG, AnimData.xml, credits.txt를 다운로드했다. 아머까오의 존재나 사용 허가를 종 이름으로 추정하지 않았다. 두 시트가 실제 존재하고, [개별 credits](https://github.com/PMDCollab/SpriteCollab/blob/948c79de39e3fe3067f1fd26294e19d864325cc9/sprite/0823/credits.txt)의 2024-10-07 Soulja 기여 항목이 Idle와 Hover를 모두 `CC_BY-NC_4`로 명시하므로 대체 새를 사용할 필요가 없었다.
@@ -25,30 +23,3 @@ board-flight 담당자의 `c0c017f`와 합의한 API는 `PhaserBoardOptions.onFl
 합성 효과음은 기존 `SfxBus`의 AudioContext, 저장 mute/volume, unlock, voice cap 4, stop/destroy를 사용한다. 별도 게임 음원 파일은 없다. hover 140ms, select 100ms, wing/wind/land 160ms 제한을 적용했다. HTML hover는 버튼을 누른 drag와 touch를 무시하고, 이미 선택한 목적지를 재선택하면 tick을 반복하지 않는다.
 
 감소 모션은 정적 도착 요약 160ms, 이미지/메타데이터 실패는 이름 fallback 후 완료한다. 로딩은 1800ms 후 fallback으로 전환하며 500ms 뒤 완료한다. skip/abort/동작 설정 변경/destroy에서 RAF·타이머·이미지 핸들러·효과음을 정리하고 완료 Promise를 한 번만 resolve한다. 게임 규칙/위치/거래는 연출이 결정하지 않는다.
-
-## 검증
-
-Chrome `157.0.8103.80`, 실제 설치 Chrome의 headless 렌더러. 1280×720 및 390×844에서 [18개 사례 결과](../src/ui/game/events/mounted/evidence/results.json)를 기록했다. 시각 검수에서 모바일 캡션을 하단으로 옮기고 승객이 상단에 잘리지 않도록 보정한 후 재검증했다.
-
-- 4스타팅 각각 탑승, 이륙·횡단·착지, 실제 목적지, redelivery ack 1회.
-- Enter/Space/Escape skip, 최초 감소 모션, 재생 중 감소 모션 전환, mount 로드 실패, destroy 2회와 canvas 제거.
-- 공유 오디오의 제스처 전 무음, 기존 unlock 이후 재생, mute·volume 0, hover 100회 호출당 1회 재생, stop.
-- [설정 UI](../src/ui/game/events/mounted/evidence/audio-settings.json): 실제 소리 설정에서 volume 25%, 음소거 반영.
-- [playerId 검증](../src/ui/game/events/mounted/evidence/player-id.json): player:3 → pokemon:0007 → 목적지 10, ack 1. 첫 번째 플레이어를 고정 승객으로 쓰지 않는다.
-- production adapter의 합법 명령으로만 seed 1을 126단계 진행해 공중날기 선택에 도달했다. DOM/게임 상태를 임의 주입하지 않았다. 실제 fly 요청 `game:1:human:1:253:0`, `tile:kj:fly` → `tile:kj:pallet`, revision 253→254. 목적지 확정을 중복 호출해도 거래 1회, 두 화면 크기에서 actualPosition 일치·ack 1회·입력 잠금 해제를 확인했다.
-
-재현:
-
-```powershell
-node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5215 --strictPort
-node src/ui/game/events/mounted/browser-check.mjs
-node scripts/verify-mounted-assets.mjs
-node --experimental-strip-types --test src/ui/game/events/presenter.test.mjs src/ui/game/events/queue.test.mjs src/ui/game/feedback/audio.test.mjs
-npm run typecheck
-npm run lint
-npm run build
-```
-
-단위검사 15개, 원본 파일 해시 10개, typecheck/lint/build 통과. Vite의 기존 Phaser chunk 크기 경고는 유지된다. browser-check의 Playwright import 경로는 이 작업 환경의 기존 `feat-board-art/artifacts/browser-tools` 설치를 사용한다.
-
-Preview: [선택 승객 4종 시연](http://127.0.0.1:5215/mounted-flight-preview.html), [실제 규칙 비행](http://127.0.0.1:5215/actual-flight-preview.html), [제품 화면](http://127.0.0.1:5215/). 시연 entry만 QA hook을 제공하며 제품 entry에는 새 hook을 노출하지 않는다.

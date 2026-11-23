@@ -12,3 +12,14 @@ Thumbs.db
 .vscode/
 .idea/
 artifacts/
+
+# Generated QA output only; upstream portraits/evidence remains tracked.
+/docs/evidence/
+/docs/game-ui-shots/
+/src/ui/game/**/evidence/
+!/src/ui/game/portraits/evidence/
+!/src/ui/game/portraits/evidence/**
+/src/ui/game/**/*-evidence/
+**/preview-bundle/
+playwright-report/
+test-results/

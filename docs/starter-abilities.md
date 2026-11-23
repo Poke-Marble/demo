@@ -1,7 +1,5 @@
 # 스타팅 특성: 독립 발동 모듈과 연출 프리뷰
 
-담당 `feat/starter-abilities`, 공통 기준 `main bde04c3`. 구현은 `src/game/abilities/**`, `src/ui/game/abilities/**`, `ability-preview.html`, 본 문서 안에만 있다. 조상 경로와 저장소에서 AGENTS.md를 검색했으며 발견되지 않았다. 기존 contracts/core/index/events/adapter/integration, 설정, lockfile은 수정하지 않는다. 새 에이전트, 다른 작업 pane 제어, 병합, push, 배포를 수행하지 않는다.
-
 ## 원작 사실과 자체 각색
 
 아래 이름은 **기술(move)이 아니라 특성(Ability)** 이다. 한국 공식 도감에서 종과 특성 이름을 확인했다(2026-11-19). 잎·불꽃·물결·번개는 자체 생성 연출이며 공식 기술을 재현하거나 공식 음원을 사용하지 않는다.
@@ -122,35 +120,6 @@ presenter.destroy();
 - 클릭/키보드 버튼 이벤트에서 AudioContext를 생성/resume한다. oscillator + 자체 noise buffer + lowpass + envelope만 쓴다. 기본 사용자 음량 0.18, 상한 0.35, 합성 gain에 추가 0.35 배율을 적용한다. 실제 출력 크기는 기기 음량에 따라 달라진다.
 - 음소거/음량 변경은 현재 노드를 즉시 정리한다. AudioContext 미지원/resume 실패/재생 실패는 무음 처리한다. 오디오 재생은 경제 로직에 영향을 주지 않는다.
 - 취소·교체·완료 시 노드 stop/disconnect, destroy 시 rAF 취소·큐 비우기·ResizeObserver 해제·resize listener 해제·이미지 콜백 해제·AudioContext close. 프리뷰는 pagehide/HMR에서도 정리한다.
-
-## 프리뷰와 재현
-
-개발 주소: **http://127.0.0.1:5174/ability-preview.html**. 시작 전 해당 포트의 listener가 없음을 확인했고 strictPort로 서버를 실행했다. 기존 5173 서버는 제어하지 않았다.
-
-```powershell
-npm ci
-node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5174 --strictPort
-```
-
-프리뷰는 기존 관동·성도 32칸 실제맵의 이름을 읽기 전용으로 사용한 보드 배경이다. 기존 통합 UI 자체는 수정/복제하지 않았다. 4종 버튼, 음소거, 음량, 4종 동시 입력, 동일 거래 10회, 큐 취소, 마지막 연출 재시작, 언마운트/재생성이 있다. 각 새 거래는 테스트 전역 턴을 올린다. 실제 잔액·승리·컴퓨터전략은 연결하지 않았으며 모든 효과는 테스트 확정영수증에서 시연한다.
-
-루트 기본 build에 새 HTML 엔트리를 추가하지 않으므로 독립 번들은 별도 생성한다.
-
-```powershell
-node src/ui/game/abilities/build-preview.mjs
-node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 5174 --strictPort --outDir src/ui/game/abilities/preview-bundle
-```
-
-두 서버를 같은 포트에 동시에 실행하지 않는다. bundle 출력 폴더는 검증 후 정리하며 로컬 소스에서 재생성 가능하다.
-
-## 검증 결과와 한계
-
-- npm ci: 성공, 취약점 0. 루트 package/lockfile 변경 없음.
-- `node --experimental-strip-types --test src/game/abilities/activation.test.mjs src/ui/game/abilities/audio.test.mjs src/ui/game/abilities/presenter.test.mjs`: 12개 테스트 통과. 4종 견적, 중복 1000회, 직렬화 복구, 턴 한도, stale revision, 위조 견적, 입력·규칙 변경, 0소모/재귀 차단, 소수/비정상 화폐, 정확한 내림·상한, WebAudio unlock 실패 및 노드 정리를 검사한다. 프레젠터는 Vite 메모리 번들 + 모의 DOM으로 FIFO, 16개 큐 상한, 중복 억제, 취소/재시작, reduced-motion 링, resize, 언마운트/재생성의 rAF·관찰자·리스너 정리를 검증한다. 실제 브라우저 검증을 대체하지 않는다.
-- `npm run typecheck`, `npm run lint`, `npm run build`, `npm run format:check`: 전체 저장소 검사. 기본 앱 build와 독립 프리뷰 build 모두 성공.
-- 개발 서버의 프리뷰 HTML 및 Vite 변환 preview.ts 요청은 각각 HTTP 200. 독립 번들 산출물은 HTML 0.45 kB, CSS 4.63 kB, JS 126.98 kB(초상화와 맵 포함)로 생성 성공 후 정리했다. 생성 스크립트는 소스와 함께 보존한다.
-- 브라우저 시도: in-app browser는 `The browser access host is unavailable`, 네이티브 CUA는 최소화 창 상태 오류. computer-use 스킬의 Windows 대체 경로는 창 상태 조회 후 새 탭 입력에서 현재 URL 확신 부족으로 도구가 중단했다. 이후 UI 조작을 중단했다. **화면 렌더·실제 청취·모바일/DPR/reduced-motion·큐의 실브라우저 검증은 미완료**이다. 타입/번들/단위 테스트를 시각·청취 검증으로 간주하지 않는다.
-- 금융 원자성은 외부 적용 전제다. 원장 롤백/리셋, 위조 영수증, 임의 턴 진행, 취소된 거래의 사후 보상, 매각 차익까지 이 모듈만으로 방지할 수 없다. 연결 담당은 위 경계를 반드시 지켜야 한다.
 
 ## 이용 조건
 
