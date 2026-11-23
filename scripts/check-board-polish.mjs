@@ -1,4 +1,4 @@
-/* global window, document, innerWidth, innerHeight, getComputedStyle, MutationObserver */
+/* global window, document, innerWidth, innerHeight, getComputedStyle, MutationObserver, Image */
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -11,7 +11,22 @@ const { chromium } = await import(
       'C:/Users/hyun/.herdr/worktrees/demo/feat-board-art/artifacts/browser-tools/node_modules/playwright/index.mjs',
   ).href
 );
-const folder = 'artifacts/board-polish';
+const folder = process.env.BOARD_POLISH_EVIDENCE ?? 'artifacts/board-polish';
+const sourceOrigin = process.env.BOARD_POLISH_ORIGIN ?? 'http://127.0.0.1:5233';
+const productionOrigin =
+  process.env.BOARD_POLISH_PRODUCTION ?? 'http://127.0.0.1:5232';
+const combined = process.argv.includes('--combined');
+const baselineReport = combined
+  ? JSON.parse(
+      await readFile(
+        new URL(
+          '../src/ui/game/phaser/polish-evidence/report.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    )
+  : undefined;
 await mkdir(folder, { recursive: true });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const resume = process.argv.includes('--resume');
@@ -180,27 +195,60 @@ function centered(m) {
 try {
   if (!resume)
     for (const [width, height] of sizes) {
-      const page = await browser.newPage({
-        viewport: { width, height },
-        deviceScaleFactor: 1,
-      });
-      // Baseline uses the untouched e07aa30 source extracted inside ignored artifacts.
-      await fixture(page, 'http://127.0.0.1:5234');
-      await page.screenshot({
-        path: `${folder}/before-${width}x${height}.png`,
-      });
-      await page.getByRole('button', { name: /주사위 굴리기/ }).click();
-      await page.locator('.pm-feedback-overlay:not([hidden])').waitFor();
-      const before = await metrics(page);
-      await page.screenshot({
-        path: `${folder}/before-dice-${width}x${height}.png`,
-      });
-      await page.close();
+      let before = baselineReport?.views.find(
+        (v) => v.width === width && v.height === height,
+      )?.before;
+      if (!combined) {
+        const page = await browser.newPage({
+          viewport: { width, height },
+          deviceScaleFactor: 1,
+        });
+        // Baseline uses the untouched e07aa30 source extracted inside ignored artifacts.
+        await fixture(page, 'http://127.0.0.1:5234');
+        await page.screenshot({
+          path: `${folder}/before-${width}x${height}.png`,
+        });
+        await page.getByRole('button', { name: /주사위 굴리기/ }).click();
+        await page.locator('.pm-feedback-overlay:not([hidden])').waitFor();
+        before = await metrics(page);
+        await page.screenshot({
+          path: `${folder}/before-dice-${width}x${height}.png`,
+        });
+        await page.close();
+      }
       const after = await browser.newPage({
         viewport: { width, height },
         deviceScaleFactor: 1,
       });
-      await fixture(after, 'http://127.0.0.1:5233');
+      await fixture(after, sourceOrigin);
+      const background = combined
+        ? await after.evaluate(async () => {
+            const surface = document.querySelector('.phaser-board-surface');
+            const source = surface.style
+              .getPropertyValue('--pm-board-sky')
+              .trim()
+              .slice(4, -1)
+              .replaceAll('"', '');
+            const image = new Image();
+            image.src = source;
+            await image.decode();
+            const response = await fetch(image.currentSrc);
+            return {
+              source: image.currentSrc,
+              width: image.naturalWidth,
+              height: image.naturalHeight,
+              status: response.status,
+              mime: response.headers.get('content-type'),
+              transparent: window.boardGame.config.transparent,
+            };
+          })
+        : undefined;
+      if (combined) {
+        assert.deepEqual([background.width, background.height], [320, 240]);
+        assert.equal(background.status, 200);
+        assert.ok(background.mime.startsWith('image/png'));
+        assert.equal(background.transparent, true);
+      }
       await after.screenshot({
         path: `${folder}/after-${width}x${height}.png`,
       });
@@ -216,7 +264,7 @@ try {
         await after.locator('.pm-dice-result').innerText(),
         /이동 선택/,
       );
-      report.views.push({ width, height, before, after: measured });
+      report.views.push({ width, height, before, after: measured, background });
       console.log(
         'VIEW',
         width,
@@ -314,7 +362,7 @@ try {
     const life = await browser.newPage({
       viewport: { width: 1280, height: 720 },
     });
-    await fixture(life, 'http://127.0.0.1:5233');
+    await fixture(life, sourceOrigin);
     report.lifecycle = await life.evaluate(async () => {
       const { createGameplayFeedback } =
         await import('/demo/src/ui/game/feedback/controller.ts');
@@ -388,7 +436,7 @@ try {
     const flight = await browser.newPage({
       viewport: { width: 1280, height: 720 },
     });
-    await fixture(flight, 'http://127.0.0.1:5233', 42, 'pokemon:0007');
+    await fixture(flight, sourceOrigin, 42, 'pokemon:0007');
     await flight.evaluate(async () => {
       window.q.ui.destroy();
       const { createIntegratedPreview } =
@@ -538,7 +586,7 @@ try {
   const cleanup = await browser.newPage({
     viewport: { width: 390, height: 844 },
   });
-  await fixture(cleanup, 'http://127.0.0.1:5233');
+  await fixture(cleanup, sourceOrigin);
   await cleanup.evaluate(() => window.q.ui.destroy());
   await cleanup.waitForTimeout(50);
   assert.equal(await cleanup.locator('.pm-feedback-overlay').count(), 0);
@@ -549,7 +597,7 @@ try {
     viewport: { width: 1280, height: 720 },
   });
   production.on('pageerror', (e) => report.errors.push(e.message));
-  await production.goto('http://127.0.0.1:5232/demo/?fast&seed=1');
+  await production.goto(`${productionOrigin}/demo/?fast&seed=1`);
   if (!report.production) {
     await production.getByRole('button', { name: /NEW GAME/ }).click();
     await production
@@ -598,7 +646,7 @@ try {
   await reduced.route('**/src/main.ts*', (r) =>
     r.fulfill({ contentType: 'text/javascript', body: '' }),
   );
-  await reduced.goto('http://127.0.0.1:5233/demo/');
+  await reduced.goto(`${sourceOrigin}/demo/`);
   report.reducedMotion = await reduced.evaluate(async () => {
     const { createGameplayFeedback } =
       await import('/demo/src/ui/game/feedback/controller.ts');

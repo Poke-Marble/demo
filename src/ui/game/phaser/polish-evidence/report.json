@@ -26,18 +26,9 @@
           "bottom": 480,
           "left": 360
         },
-        "diceDelta": [
-          204,
-          -35
-        ],
-        "cameraDelta": [
-          -4.005432288067823e-7,
-          -4.0051298810794833e-7
-        ],
-        "pageDelta": [
-          -204,
-          35
-        ],
+        "diceDelta": [204, -35],
+        "cameraDelta": [-4.005432288067823e-7, -4.0051298810794833e-7],
+        "pageDelta": [-204, 35],
         "inside": false,
         "relative": "relative",
         "controls": 1,
@@ -67,18 +58,9 @@
           "bottom": 494,
           "left": 156
         },
-        "diceDelta": [
-          0,
-          0
-        ],
-        "cameraDelta": [
-          0.000002403259259153856,
-          -8.010304100025678e-7
-        ],
-        "pageDelta": [
-          -204,
-          14
-        ],
+        "diceDelta": [0, 0],
+        "cameraDelta": [0.000002403259259153856, -8.010304100025678e-7],
+        "pageDelta": [-204, 14],
         "inside": true,
         "relative": "relative",
         "controls": 0,
@@ -112,18 +94,9 @@
           "bottom": 501.390625,
           "left": 9.75
         },
-        "diceDelta": [
-          0,
-          143.9296875
-        ],
-        "cameraDelta": [
-          0.0000012350082272405416,
-          0
-        ],
-        "pageDelta": [
-          0,
-          -143.9296875
-        ],
+        "diceDelta": [0, 143.9296875],
+        "cameraDelta": [0.0000012350082272405416, 0],
+        "pageDelta": [0, -143.9296875],
         "inside": false,
         "relative": "relative",
         "controls": 1,
@@ -153,18 +126,9 @@
           "bottom": 336.34375,
           "left": 10
         },
-        "diceDelta": [
-          0,
-          -0.0078125
-        ],
-        "cameraDelta": [
-          0.0000012350082272405416,
-          -1.763415866662399e-7
-        ],
-        "pageDelta": [
-          0,
-          -164.9296875
-        ],
+        "diceDelta": [0, -0.0078125],
+        "cameraDelta": [0.0000012350082272405416, -1.763415866662399e-7],
+        "pageDelta": [0, -164.9296875],
         "inside": true,
         "relative": "relative",
         "controls": 0,
@@ -198,18 +162,9 @@
           "bottom": 315,
           "left": 142
         },
-        "diceDelta": [
-          170,
-          -34.796875
-        ],
-        "cameraDelta": [
-          0.0000012693405153640924,
-          3.4597977105477185e-7
-        ],
-        "pageDelta": [
-          -170,
-          34.796875
-        ],
+        "diceDelta": [170, -34.796875],
+        "cameraDelta": [0.0000012693405153640924, 3.4597977105477185e-7],
+        "pageDelta": [-170, 34.796875],
         "inside": false,
         "relative": "relative",
         "controls": 1,
@@ -239,18 +194,9 @@
           "bottom": 312.5,
           "left": 10
         },
-        "diceDelta": [
-          0,
-          -0.0078125
-        ],
-        "cameraDelta": [
-          -2.30789197530612e-7,
-          -2.3098078827388235e-7
-        ],
-        "pageDelta": [
-          -170,
-          13.796875
-        ],
+        "diceDelta": [0, -0.0078125],
+        "cameraDelta": [-2.30789197530612e-7, -2.3098078827388235e-7],
+        "pageDelta": [-170, 13.796875],
         "inside": true,
         "relative": "relative",
         "controls": 0,
@@ -284,18 +230,9 @@
           "bottom": 660,
           "left": 680
         },
-        "diceDelta": [
-          204,
-          -35
-        ],
-        "cameraDelta": [
-          0,
-          7.061315727696638e-7
-        ],
-        "pageDelta": [
-          -204,
-          35
-        ],
+        "diceDelta": [204, -35],
+        "cameraDelta": [0, 7.061315727696638e-7],
+        "pageDelta": [-204, 35],
         "inside": true,
         "relative": "relative",
         "controls": 1,
@@ -325,18 +262,9 @@
           "bottom": 674,
           "left": 476
         },
-        "diceDelta": [
-          0,
-          0
-        ],
-        "cameraDelta": [
-          -0.000001411438006471144,
-          -0.0000014108325103734387
-        ],
-        "pageDelta": [
-          -204,
-          14
-        ],
+        "diceDelta": [0, 0],
+        "cameraDelta": [-0.000001411438006471144, -0.0000014108325103734387],
+        "pageDelta": [-204, 14],
         "inside": true,
         "relative": "relative",
         "controls": 0,
@@ -507,11 +435,7 @@
       {
         "id": "group:kj:kanto-origin",
         "kind": "group",
-        "propertyIds": [
-          "tile:kj:pallet",
-          "tile:kj:viridian",
-          "tile:kj:pewter"
-        ]
+        "propertyIds": ["tile:kj:pallet", "tile:kj:viridian", "tile:kj:pewter"]
       },
       {
         "id": "group:kj:kanto-east",
@@ -814,10 +738,7 @@
   "observerCleanup": true,
   "production": {
     "url": "http://127.0.0.1:5232/demo/?fast&seed=1",
-    "delta": [
-      0,
-      0
-    ],
+    "delta": [0, 0],
     "controls": 0,
     "mutePreserved": true
   },
