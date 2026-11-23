@@ -1,0 +1,123 @@
+{
+  "baseline": "e07aa30",
+  "browser": "157.0.8103.80",
+  "build": "passed",
+  "lint": "passed",
+  "formatTouchedFiles": "passed",
+  "productionOrigin": "http://127.0.0.1:5242/demo/",
+  "devFlightOrigin": "http://127.0.0.1:5243/demo/actual-flight-preview.html",
+  "production": [
+    {
+      "viewport": [1280, 720],
+      "surfaceUnchanged": true,
+      "noDocumentScroll": true,
+      "fontLoaded": true,
+      "selectionAndDrag": true,
+      "localSky": [
+        {
+          "url": "http://127.0.0.1:5242/demo/assets/Sky.1-BktRwsNu.png",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "viewport": [390, 844],
+      "surfaceUnchanged": true,
+      "noDocumentScroll": true,
+      "fontLoaded": true,
+      "selectionAndDrag": true,
+      "localSky": [
+        {
+          "url": "http://127.0.0.1:5242/demo/assets/Sky.1-BktRwsNu.png",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "viewport": [844, 390],
+      "surfaceUnchanged": true,
+      "noDocumentScroll": true,
+      "fontLoaded": true,
+      "selectionAndDrag": true,
+      "localSky": [
+        {
+          "url": "http://127.0.0.1:5242/demo/assets/Sky.1-BktRwsNu.png",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "viewport": [390, 667],
+      "surfaceUnchanged": true,
+      "noDocumentScroll": true,
+      "fontLoaded": true,
+      "selectionAndDrag": true,
+      "localSky": [
+        {
+          "url": "http://127.0.0.1:5242/demo/assets/Sky.1-BktRwsNu.png",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "flightViewports": [
+    [1280, 720],
+    [390, 844],
+    [844, 390],
+    [1920, 1080]
+  ],
+  "flightReceipt": [
+    {
+      "id": "game:1:human:1:307:0",
+      "from": "tile:kj:fly",
+      "to": "tile:kj:pallet",
+      "ack": 1,
+      "revision": 308,
+      "actualPosition": "tile:kj:pallet"
+    }
+  ],
+  "flightDragSuppressedSelection": true,
+  "fallback": [
+    {
+      "width": 1280,
+      "height": 720,
+      "blocked": 3,
+      "color": "rgb(232, 240, 228)",
+      "rect": {
+        "x": 16,
+        "y": 130,
+        "width": 840,
+        "height": 530,
+        "top": 130,
+        "right": 856,
+        "bottom": 660,
+        "left": 16
+      },
+      "rollClickable": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "blocked": 3,
+      "color": "rgb(232, 240, 228)",
+      "rect": {
+        "x": 10,
+        "y": 134.6875,
+        "width": 370,
+        "height": 282.765625,
+        "top": 134.6875,
+        "right": 380,
+        "bottom": 417.453125,
+        "left": 10
+      },
+      "rollClickable": true
+    }
+  ],
+  "deliveredSky": {
+    "status": 200,
+    "sha256": "40d16ccd459bfb83bbd193cb8ce7822efeaaa570a0474f708d1150054e16beb7"
+  },
+  "errors": [],
+  "hudPixelIdentical": ["1280x720 right rail", "390x844 below board"],
+  "coordination": "Existing baseline ellipse/zoom buttons untouched here; separate board-polish branch owns their removal and dice anchors. Combined-branch verification belongs to coordinator."
+}
