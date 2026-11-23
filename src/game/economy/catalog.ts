@@ -3,11 +3,7 @@ import {
   rulesPresets,
   type RulesPreset,
 } from '../rulesets.ts';
-import {
-  validateSkills,
-  economicSkillRule,
-  skillDiscountedAmount,
-} from '../skills/index.ts';
+import { validateSkills } from '../skills/index.ts';
 import type { BoardDefinition } from '../../data/maps/types.ts';
 import { validMatch } from '../match/rounds.ts';
 import { toMapDefinition } from '../../data/maps/types.ts';
@@ -412,14 +408,7 @@ export function validateEconomyState(s: EconomyState, c: EconomyContext): void {
     );
     const blessed = quoteBlessing(s, d.debtorId, 'toll', d.gross);
     check(
-      (economicSkillRule(s, d.debtorId, d.tileId, 'toll')
-        ? skillDiscountedAmount(
-            d.gross,
-            blessed.consumed ? s.legendary!.rules.tollDiscount : 0,
-            economicSkillRule(s, d.debtorId, d.tileId, 'toll')!,
-          )
-        : blessed.amount) === d.amount &&
-        blessed.consumed === d.consumesBlessing,
+      blessed.amount === d.amount && blessed.consumed === d.consumesBlessing,
     );
   }
   if (s.legendary) {

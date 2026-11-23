@@ -1,14 +1,12 @@
 import { startBuildCandidates, quoteStartBuild } from './start-build.ts';
 import {
   clearFinishedSkills,
-  completeSkillBasicTurn,
   clearPreparedSkill,
   cleanSkillTraps,
   resolveSkillTrap,
   skillForPokemon,
   skillUnavailableReason,
   spendSkill,
-  type SkillMode,
 } from '../skills/index.ts';
 import type { PlayerId, TileId } from '../contracts.ts';
 import { dispatch as dispatchCore } from '../core/index.ts';
@@ -83,6 +81,13 @@ function consume<S extends EconomyState>(
   amount: number,
   expected: boolean,
 ): S {
+  if (
+    kind === 'toll' &&
+    s.skills?.players[playerId]?.prepared?.landingId ===
+      s.economy.landing?.id &&
+    s.skills?.players[playerId]?.prepared
+  )
+    return s;
   const result = quoteBlessing(s, playerId, kind, amount);
   check(result.consumed === expected, 'blessing-conflict');
   // Merge only the legendary patch, never replace a newer money/ownership snapshot.
@@ -94,7 +99,10 @@ function dropProperty<S extends EconomyState>(s: S, tileId: TileId): S {
   const development = { ...s.economy.developmentByTileId };
   delete development[tileId];
   return patch(
-    { ...s, holdings: s.holdings.filter((h) => h.tileId !== tileId) },
+    cleanSkillTraps({
+      ...s,
+      holdings: s.holdings.filter((h) => h.tileId !== tileId),
+    }),
     { developmentByTileId: development },
   );
 }
@@ -470,12 +478,12 @@ export function dispatchEconomy<S extends EconomyState>(
           name: definition.name,
           description:
             definition.type === 'water'
-              ? `1PP ? ?? ??? ${base.total} ? ?? ? ?? ? ?? ?? ??`
+              ? `1PP · 이번 통행료 ${base.total} ₽ 면제 · 해당 칸 전기 함정 해제`
               : definition.type === 'fire'
-                ? `1PP ? ?? 1?? ?? ? ?? ??? ${after.total} ?`
+                ? `1PP · 시설 1단계 파괴 · 현재 통행료 ${after.total} ₽`
                 : definition.type === 'grass'
-                  ? '1PP ? ?? ?? ?? ??'
-                  : '1PP ? ?? ?? ??',
+                  ? '1PP · 다음 굴림 더블 보장'
+                  : '1PP · 전기 함정 설치',
           playerId: actor.id,
           mode: 'signature',
           skillSavings: Math.max(0, base.total - after.total),
@@ -754,9 +762,6 @@ export function dispatchEconomy<S extends EconomyState>(
       );
       events.push(...ended.events);
     }
-    for (const event of events)
-      if (event.type === 'turn-ended' && s.turnNumber !== original.turnNumber)
-        s = completeSkillBasicTurn(s, event.playerId, original.turnNumber);
     s = cleanSkillTraps(clearFinishedSkills(s));
     const revision = money(s.economy.revision + 1);
     const ownership = (state: EconomyState) =>

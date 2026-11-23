@@ -47,7 +47,7 @@ export function createSkillPresenter(
     }
     const item = current;
     element.dataset.type = item.type;
-    title.textContent = `${item.name} · ${item.mode === 'breakthrough' ? '기술돌파' : '고유기술'}`;
+    title.textContent = `${item.name} · 고유기술`;
     status.textContent = item.description;
     const sprite = findSprite(item.pokemonId, 'Idle');
     portrait.replaceChildren();

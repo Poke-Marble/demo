@@ -3,7 +3,7 @@ import type { CoreState } from '../core/index.ts';
 
 /** Poke validation-start rules, not effects or numbers from the Pokémon games. */
 export type SkillType = 'grass' | 'water' | 'fire' | 'electric';
-export type SkillMode = 'signature' | 'breakthrough';
+export type SkillMode = 'signature';
 export interface SkillDefinition {
   readonly id: 'vine-whip' | 'water-gun' | 'ember' | 'thunder-wave';
   readonly pokemonId: PokemonId;
@@ -15,46 +15,50 @@ export interface SkillDefinition {
   readonly detail: string;
 }
 const detail =
-  '? ??? ??? 3PP, ?? ??. ?? ? 1PP? ???? ?? ?? ??? ??? ????? 1?? ??? ? ????. ?? ?? ??? ???? ?? ?? ???? ????.';
+  '각 기술은 경기당 3PP, 회복 없음. 사용 시 1PP를 소비하며 더블 추가 굴림을 포함한 기본차례당 1회만 사용할 수 있습니다. 원작 공격 상성은 표현이며 추가 수치 보너스는 없습니다.';
 export const skillCatalog: readonly SkillDefinition[] = [
   {
     id: 'vine-whip',
     pokemonId: 'pokemon:0001',
     type: 'grass',
-    name: '????',
-    summary: '??? ? ??: ?? ??? 1? ?? ??',
-    pros: ['??? 1d6? ?? ???? ??'],
-    cons: ['?? ?? ??', '?? ???? ??'],
+    name: '덩굴채찍',
+    summary: '굴리기 전 사용: 다음 주사위 1회 더블 보장',
+    pros: ['무작위 1d6의 눈을 복제하여 더블'],
+    cons: ['자동 이동 아님', '다음 굴림에만 적용'],
     detail,
   },
   {
     id: 'water-gun',
     pokemonId: 'pokemon:0007',
     type: 'water',
-    name: '???',
-    summary: '?? ??? ?? ? ?? ??? ??? ?? ?? ??',
-    pros: ['?? ?? ?? ?? ?? ??', '?? ?? ??? ?? ??'],
-    cons: ['?? ???? ???? ??'],
+    name: '물대포',
+    summary: '상대 사유지 착지 시 이번 통행료 면제와 전기 함정 해제',
+    pros: ['마비 적용 전에 사용 여부 선택', '이번 착지 통행료 전액 면제'],
+    cons: ['다음 착지에는 적용되지 않음'],
     detail,
   },
   {
     id: 'ember',
     pokemonId: 'pokemon:0004',
     type: 'fire',
-    name: '????',
-    summary: '?? ???? ?? ? ??? ?? 1?? ??',
-    pros: ['?? ? ???? ?? ??', '? ??? ??'],
-    cons: ['? ??????? ?? ??', '????? ??? ?? ??'],
+    name: '불꽃세례',
+    summary: '상대 일반도시 착지 시 최상위 시설 1단계 파괴',
+    pros: ['파괴 후 통행료를 다시 정산', '땅 소유권 유지'],
+    cons: ['빈 캠프·명소에는 사용 불가', '최종시설이 있으면 완전 보호'],
     detail,
   },
   {
     id: 'thunder-wave',
     pokemonId: 'pokemon:0025',
     type: 'electric',
-    name: '?????',
-    summary: '? ?? 1?? ?? ?? ? ?? ????? ????? ??',
-    pros: ['?? ??? ??', '?? ???? ??'],
-    cons: ['?? ??? ?? ?? ??', '?? ??????? ???? ??', '??? ????? ? ??'],
+    name: '전기자석파',
+    summary: '내 도시 1곳에 상대 착지 시 다음 기본차례를 마비시키는 함정',
+    pros: ['밟기 전까지 유지', '비행 착지에도 발동'],
+    cons: [
+      '같은 도시에 중복 설치 불가',
+      '자기 착지·통과에는 발동하지 않음',
+      '소유권 변경·파산 시 제거',
+    ],
     detail,
   },
 ];
@@ -63,7 +67,7 @@ export const skillForPokemon = (id: string) =>
 export interface PreparedSkill {
   readonly mode: SkillMode;
   readonly tileId: TileId;
-  readonly kind: 'toll' | 'takeover';
+  readonly kind: 'toll';
   readonly landingId?: string;
 }
 export interface SkillPlayerState {
@@ -138,8 +142,8 @@ export function validateSkills(s: CoreState): boolean {
           typeof a.paralyzed === 'boolean' &&
           (!a.prepared ||
             (a.usedThisBasicTurn &&
-              ['signature', 'breakthrough'].includes(a.prepared.mode) &&
-              ['toll', 'takeover'].includes(a.prepared.kind) &&
+              a.prepared.mode === 'signature' &&
+              a.prepared.kind === 'toll' &&
               typeof a.prepared.tileId === 'string'))
         );
       }))
@@ -222,18 +226,20 @@ export function clearFinishedSkills<S extends CoreState>(s: S): S {
     ...s,
     skills: {
       ...s.skills,
+      traps: {},
       players: Object.fromEntries(
         Object.entries(s.skills.players).map(([id, p]) => [
           id,
-          { ...p, prepared: null },
+          {
+            ...p,
+            prepared: null,
+            forceDoubleNextRoll: false,
+            paralyzed: false,
+          },
         ]),
       ),
     },
   };
-}
-/** Temporary source compatibility until the core contract commit is integrated. */
-export function movementAdjustment(_s: CoreState, _id: PlayerId): null {
-  return null;
 }
 export function hasAdvantage(attacker: string, defender: string): boolean {
   return ['fire:grass', 'water:fire', 'grass:water', 'electric:water'].includes(

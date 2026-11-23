@@ -20,17 +20,18 @@ import {
   quoteStartBuild,
 } from './index.ts';
 const c = createEconomyContext(kantoJohtoMap);
-test('actual water +1 can reach START, but raw dice exact START adjusted away cannot', () => {
-  const water = fresh(0, 10000, 1);
-  water.players = water.players.map((p) =>
-    p.id === id
-      ? { ...p, pokemonId: 'pokemon:0007' }
-      : p.id === 'player:2'
-        ? { ...p, pokemonId: 'pokemon:0001' }
-        : p,
-  );
-  assert.ok(arrive(water, 1).state.economy.pendingStartBuild);
-  assert.equal(arrive(fresh(), -1).state.economy.pendingStartBuild, undefined);
+test('only exact unadjusted START arrival creates an opportunity; old adjustments reject', () => {
+  for (const adjustment of [-1, 1]) {
+    const s = fresh();
+    assert.equal(
+      dispatchEconomy(
+        s,
+        c,
+        command(s, { type: 'resolve-dice', playerId: id, adjustment }),
+      ).ok,
+      false,
+    );
+  }
   const noCities = fresh();
   noCities.holdings = [];
   noCities.economy.developmentByTileId = {};
@@ -220,15 +221,12 @@ test('exact normal arrival offers one next stage, preserves salary/lap and actua
   assert.ok(dispatch(built, { type: 'end-turn', playerId: id }).ok);
 });
 
-test('initial, passing and flight never mint an opportunity; actual skill -1 counts', () => {
+test('initial, passing and flight never mint an opportunity', () => {
   assert.equal(
     initializeEconomy(createGame(map, roster, { seed: 1 }), c, 'initial')
       .economy.pendingStartBuild,
     undefined,
   );
-  const adjusted = arrive(fresh(0, 10000, -1), -1).state;
-  assert.ok(adjusted.economy.pendingStartBuild);
-  assert.equal(adjusted.skills.players[id].pp, 2);
   const pass = fresh();
   pass.players = pass.players.map((p) =>
     p.id === id

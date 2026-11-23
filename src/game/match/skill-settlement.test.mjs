@@ -62,10 +62,10 @@ function deferred(s) {
 
 test('revealed dice cannot end a basic turn, advance a round, or publish final assets', () => {
   const before = fresh();
-  const revealed = act(before, {
-    type: 'roll-dice',
-    playerId: before.activePlayerId,
-  });
+  const revealed = {
+    ...before,
+    core: { ...before.core, pendingDice: { values: [3, 4] } },
+  };
   assert.ok(revealed.core.pendingDice);
   assert.deepEqual(revealed.match, before.match);
   const ended = dispatch(revealed, map, {
@@ -104,18 +104,15 @@ test('unpaid mandatory toll defers victory/ranking until exactly-once payment', 
       },
     },
   };
-  const revealed = act(positioned, {
+  const water = {
+    ...positioned,
+    players: positioned.players.map((p, i) =>
+      i ? p : { ...p, pokemonId: 'pokemon:0007' },
+    ),
+  };
+  const landed = act(water, {
     type: 'roll-dice',
     playerId: before.activePlayerId,
-  });
-  assert.equal(
-    revealed.core.pendingDice.values.reduce((a, b) => a + b),
-    7,
-  );
-  const landed = act(revealed, {
-    type: 'resolve-dice',
-    playerId: before.activePlayerId,
-    adjustment: 0,
   });
   assert.ok(landed.economy.pendingToll);
   assert.equal(landed.players[0].balance, before.players[0].balance);
