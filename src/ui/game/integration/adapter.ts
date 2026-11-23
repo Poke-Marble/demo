@@ -43,6 +43,7 @@ import type { GameEvent } from '../../../game/contracts';
 import type { GameSetup, GameUIAdapter, GameView, UIUpdate } from '../adapter';
 import { createInitialRoster } from '../setup.ts';
 import { presentationMap } from './map.ts';
+import { newGameSeed, validateSeed } from './seed.ts';
 
 export interface IntegratedState extends EconomyState {
   readonly abilityLedger: AbilityLedger;
@@ -68,6 +69,10 @@ const labels: Partial<Record<EconomyIntent['type'], string>> = {
 export function createIntegratedPreview(
   options: { computerDelayMs?: number; seed?: number } = {},
 ) {
+  const explicitSeed =
+    options.seed === undefined ? undefined : validateSeed(options.seed);
+  // Setup is only a preview; reserve entropy for an accepted start().
+  const previewSeed = explicitSeed ?? 0;
   let rulesPreset = normalizeRulesPreset();
   let context = createEconomyContext(
     kantoJohtoMap,
@@ -77,10 +82,10 @@ export function createIntegratedPreview(
   let participants = createInitialRoster('pokemon:0001');
   let session = 0,
     serial = 0;
-  const fresh = (): IntegratedState => ({
+  const fresh = (seed: number): IntegratedState => ({
     ...initializeEconomy(
       createGame(map, participants, {
-        seed: options.seed ?? 42,
+        seed,
         legendary: { initialRopes: 0 },
         worldEvents: {},
         rulesPreset,
@@ -93,7 +98,7 @@ export function createIntegratedPreview(
     abilityOutbox: [],
     abilityReceipts: [],
   });
-  let state: IntegratedState = { ...fresh(), phase: 'setup' };
+  let state: IntegratedState = { ...fresh(previewSeed), phase: 'setup' };
   let notice = '';
   const listeners = new Set<(update: UIUpdate) => void>();
   const acknowledgements = new Map<() => void, (update: UIUpdate) => void>();
@@ -496,65 +501,67 @@ export function createIntegratedPreview(
     return projected!;
   };
   const aiCommands = new Map<string, EconomyCommand>();
-  const executor = createExecutor<EconomyIntent>(
-    {
-      read: snapshot,
-      async dispatch(command, signal) {
-        if (signal.aborted || command.session !== state.economy.sessionId)
-          return { accepted: false };
-        const known = aiCommands.get(command.commandId);
-        if (known) {
-          const replay = dispatchEconomy(state, context, known);
-          return { accepted: replay.ok && replay.replayed };
-        }
-        if (
-          human() ||
-          command.turn !== String(state.turnNumber) ||
-          command.revision !== String(state.economy.revision)
-        )
-          return { accepted: false };
-        const candidate = legal().actions.find(
-          (a) =>
-            a.actionKey === command.candidateId &&
-            JSON.stringify(a.intent) === JSON.stringify(command.action),
-        );
-        if (!candidate) return { accepted: false };
-        const envelope: EconomyCommand = {
-          sessionId: command.session,
-          commandId: `ai:${session}:${aiCommands.size}`,
-          expectedRevision: state.economy.revision,
-          playerId: state.activePlayerId,
-          intent: candidate.intent,
-        };
-        const accepted = commit(envelope);
-        if (accepted) aiCommands.set(command.commandId, envelope);
-        return { accepted };
-      },
-      async awaitPresentation(_, signal) {
-        if (signal.aborted) return;
-        await new Promise<void>((resolve) => {
-          const done = () => {
-            signal.removeEventListener('abort', done);
-            resolve();
+  const createSessionExecutor = (seed: number) =>
+    createExecutor<EconomyIntent>(
+      {
+        read: snapshot,
+        async dispatch(command, signal) {
+          if (signal.aborted || command.session !== state.economy.sessionId)
+            return { accepted: false };
+          const known = aiCommands.get(command.commandId);
+          if (known) {
+            const replay = dispatchEconomy(state, context, known);
+            return { accepted: replay.ok && replay.replayed };
+          }
+          if (
+            human() ||
+            command.turn !== String(state.turnNumber) ||
+            command.revision !== String(state.economy.revision)
+          )
+            return { accepted: false };
+          const candidate = legal().actions.find(
+            (a) =>
+              a.actionKey === command.candidateId &&
+              JSON.stringify(a.intent) === JSON.stringify(command.action),
+          );
+          if (!candidate) return { accepted: false };
+          const envelope: EconomyCommand = {
+            sessionId: command.session,
+            commandId: `ai:${session}:${aiCommands.size}`,
+            expectedRevision: state.economy.revision,
+            playerId: state.activePlayerId,
+            intent: candidate.intent,
           };
-          signal.addEventListener('abort', done, { once: true });
-          void presentation.then(done);
-        });
+          const accepted = commit(envelope);
+          if (accepted) aiCommands.set(command.commandId, envelope);
+          return { accepted };
+        },
+        async awaitPresentation(_, signal) {
+          if (signal.aborted) return;
+          await new Promise<void>((resolve) => {
+            const done = () => {
+              signal.removeEventListener('abort', done);
+              resolve();
+            };
+            signal.addEventListener('abort', done, { once: true });
+            void presentation.then(done);
+          });
+        },
+        delay: (signal) =>
+          new Promise<void>((resolve) => {
+            if (signal.aborted) return resolve();
+            const done = () => {
+              clearTimeout(timer);
+              signal.removeEventListener('abort', done);
+              resolve();
+            };
+            const timer = setTimeout(done, options.computerDelayMs ?? 350);
+            signal.addEventListener('abort', done, { once: true });
+          }),
       },
-      delay: (signal) =>
-        new Promise<void>((resolve) => {
-          if (signal.aborted) return resolve();
-          const done = () => {
-            clearTimeout(timer);
-            signal.removeEventListener('abort', done);
-            resolve();
-          };
-          const timer = setTimeout(done, options.computerDelayMs ?? 350);
-          signal.addEventListener('abort', done, { once: true });
-        }),
-    },
-    { seed: options.seed ?? 42, maxActions: 64, callbackTimeoutMs: 60000 },
-  );
+      { seed, maxActions: 64, callbackTimeoutMs: 60000 },
+    );
+  let executor = createSessionExecutor(previewSeed);
   function humanCommit(a: Legal | undefined) {
     if (!human() || executor.busy || !a) return;
     commit({
@@ -596,13 +603,16 @@ export function createIntegratedPreview(
         kantoJohtoMap,
         economyProfileForPreset(nextPreset),
       );
+      const seed = explicitSeed ?? newGameSeed();
       executor.cancel();
       cancelPresentation();
+      aiCommands.clear();
+      executor = createSessionExecutor(seed);
       session++;
       rulesPreset = nextPreset;
       context = nextContext;
       participants = setup.participants.map((p) => ({ ...p }));
-      state = fresh();
+      state = fresh(seed);
       notice = '';
       publish();
     },
@@ -648,8 +658,10 @@ export function createIntegratedPreview(
     restart() {
       executor.cancel();
       cancelPresentation();
+      aiCommands.clear();
+      executor = createSessionExecutor(previewSeed);
       session++;
-      state = { ...fresh(), phase: 'setup' };
+      state = { ...fresh(previewSeed), phase: 'setup' };
       notice = '';
       publish();
     },

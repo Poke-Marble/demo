@@ -1,10 +1,12 @@
 /* global AbortController, setImmediate, setTimeout, console */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { URLSearchParams } from 'node:url';
 import { createIntegratedPreview } from './adapter.ts';
 import { kantoJohtoMap } from '../../../data/maps/kanto-johto.ts';
 import { createInitialRoster } from '../setup.ts';
 import { plan } from '../../../game/ai/planner.ts';
+import { seedFromQuery } from './seed.ts';
 
 const start = (p) =>
   p.adapter.start({
@@ -94,6 +96,109 @@ function humanStep(p) {
   else if (v.prompt) p.adapter.choose(v.prompt.id, decision.candidate.id);
   else p.adapter.dispatch(a);
 }
+
+test('only accepted NEW GAME consumes one crypto uint32; previews and restart consume none', (t) => {
+  const seeds = [0, 0xffffffff, 123456];
+  const random = t.mock.method(
+    globalThis.crypto,
+    'getRandomValues',
+    (values) => {
+      assert.ok(values instanceof Uint32Array);
+      assert.equal(values.length, 1);
+      assert.ok(seeds.length, 'no extra entropy requests');
+      values[0] = seeds.shift();
+      return values;
+    },
+  );
+  const p = createIntegratedPreview();
+  assert.equal(random.mock.callCount(), 0);
+  assert.equal(p.getState().phase, 'setup');
+  assert.throws(() => p.adapter.start({ mapId: 'invalid', participants: [] }));
+  assert.equal(random.mock.callCount(), 0);
+  start(p);
+  assert.equal(p.getState().core.rngState, 0);
+  const firstSession = p.getState().economy.sessionId;
+  start(p);
+  assert.equal(p.getState().core.rngState, 0xffffffff);
+  assert.notEqual(p.getState().economy.sessionId, firstSession);
+  p.adapter.restart();
+  assert.equal(p.getState().phase, 'setup');
+  assert.equal(random.mock.callCount(), 2);
+  start(p);
+  assert.equal(p.getState().core.rngState, 123456);
+  assert.equal(random.mock.callCount(), 3);
+  p.adapter.dispatch({ type: 'roll-dice', playerId: 'player:1' });
+  assert.notEqual(p.getState().core.rngState, 123456);
+  assert.equal(random.mock.callCount(), 3, 'rolls still use core RNG');
+});
+
+test('query seed accepts uint32 including zero; missing/invalid values use fresh games', () => {
+  for (const [query, expected] of [
+    ['', undefined],
+    ['seed=', undefined],
+    ['seed=+', undefined],
+    ['seed=oops', undefined],
+    ['seed=-1', undefined],
+    ['seed=1.5', undefined],
+    ['seed=4294967296', undefined],
+    ['seed=NaN', undefined],
+    ['seed=Infinity', undefined],
+    ['seed=0', 0],
+    ['seed=42', 42],
+    ['seed=4294967295', 0xffffffff],
+  ])
+    assert.equal(seedFromQuery(new URLSearchParams(query)), expected, query);
+  for (const seed of [-1, 0x100000000, NaN, Infinity, 1.5, null])
+    assert.throws(() => createIntegratedPreview({ seed }), RangeError);
+});
+
+for (const rulesPreset of ['standard', 'quick'])
+  test(`explicit zero replays human and all AI legal sequences after restart: ${rulesPreset}`, async (t) => {
+    t.mock.method(globalThis.crypto, 'getRandomValues', () => {
+      assert.fail('explicit seed must never request entropy');
+    });
+    const p = createIntegratedPreview({ seed: 0, computerDelayMs: 0 });
+    const play = async () => {
+      p.adapter.start({
+        mapId: kantoJohtoMap.id,
+        participants: createInitialRoster('pokemon:0007'),
+        rulesPreset,
+      });
+      assert.equal(p.getState().core.rngState, 0);
+      const trace = [];
+      const computers = new Set();
+      while (p.getState().turnNumber < 9) {
+        const before = p.getState();
+        if (before.activePlayerId === 'player:1') humanStep(p);
+        else {
+          computers.add(before.activePlayerId);
+          await p.adapter.runComputerTurn(
+            before.activePlayerId,
+            new AbortController().signal,
+          );
+        }
+        const after = p.getState();
+        assert.ok(
+          after.economy.revision > before.economy.revision,
+          'legal progress',
+        );
+        trace.push({
+          turn: after.turnNumber,
+          actor: after.activePlayerId,
+          rng: after.core.rngState,
+          dice: after.core.pendingDice,
+          players: after.players,
+          holdings: after.holdings,
+          revision: after.economy.revision,
+        });
+      }
+      assert.equal(computers.size, 3);
+      return trace;
+    };
+    const first = await play();
+    p.adapter.restart();
+    assert.deepEqual(await play(), first);
+  });
 
 test('32 real tiles, legal quotes, presentation ack blocks finance and restart rejects stale choice', async () => {
   const p = createIntegratedPreview({ computerDelayMs: 0 });
