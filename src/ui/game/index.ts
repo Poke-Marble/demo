@@ -91,7 +91,9 @@ export function mountGameUI(
   });
   root.append(host);
   const resultNotice = mountResultNotice(root);
-  const feedback = createGameplayFeedback(root, options.sfx);
+  const feedback = createGameplayFeedback(root, options.sfx, () =>
+    boardHost.querySelector<HTMLElement>('.phaser-board-surface'),
+  );
   const abilityWaiters = new Map<string, () => void>();
   const skillWaiters = new Map<string, () => void>();
   const skillFX = createSkillPresenter(root, (activation) => {

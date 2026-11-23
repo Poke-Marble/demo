@@ -5,6 +5,7 @@ import './feedback.css';
 export function createGameplayFeedback(
   root: HTMLElement,
   audio: SfxBus = createFeedbackAudio(),
+  boardTarget: () => HTMLElement | null = () => root,
 ) {
   const overlay = document.createElement('div');
   overlay.className = 'pm-feedback-overlay';
@@ -152,6 +153,9 @@ export function createGameplayFeedback(
     async roll(values: readonly number[]) {
       cancel();
       if (disposed || skipped || document.hidden || reduced.matches) return;
+      const target = boardTarget();
+      if (!target?.isConnected) return;
+      target.append(overlay);
       overlay.hidden = false;
       overlay.dataset.values = '';
       audio.play('dice');
@@ -159,6 +163,12 @@ export function createGameplayFeedback(
       await new Promise<void>((resolve) => {
         finish = resolve;
         const tick = (now: number) => {
+          const target = boardTarget();
+          if (!target?.isConnected) {
+            cancel();
+            return;
+          }
+          if (overlay.parentElement !== target) target.append(overlay);
           const p = Math.min(1, (now - start) / 640);
           draw(values, p);
           if (p >= 1) {
